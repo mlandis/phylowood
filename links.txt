@@ -1,0 +1,3 @@
+data speeds	http://blog.tojicode.com/2012/04/if-i-built-physics-engine.html
+list selector	http://harvesthq.github.com/chosen/
+file reader	http://www.html5rocks.com/en/tutorials/file/dndfiles/

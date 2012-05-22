@@ -1,0 +1,43 @@
+<html>
+  <head>
+    <script type="text/javascript" src="http://mbostock.github.com/d3/d3.js"></script>
+    <script type="text/javascript" src="https://raw.github.com/jasondavies/conrec.js/master/conrec.js"></script>
+    <script type="text/javascript" src="multiplot.js"></script>
+  </head>
+  <body>
+    <script type="text/javascript">
+        var c = new Conrec(),
+            xs = d3.range(0, data[0].length),
+            ys = d3.range(0, data.length),
+            zs = d3.range(-5, 2, 1),
+            w = 500, h = 500,
+            x=d3.scale.linear().range([0,w]).domain([0,data[0].length]),
+            y=d3.scale.linear().range([0,h]).domain([0,data.length]),
+            colours = d3.scale.linear().domain([-5,2]).range(["red", "green"]);
+            
+        c.contour(data, 0, xs.length-1, 0, ys.length-1, xs, ys, zs.length, zs);
+        
+        svg=d3.select("body").append("svg:svg")
+            .attr("width",w)
+            .attr("height",h)
+            
+        svg.selectAll("g")
+            .data(d3.nest().key(function(d) { return d.level}).entries(c.contourList()))
+            .enter()
+            .append("svg:g")
+                .attr("class",function(d) { return "level_"+d.key})
+                .style("fill",function(d) { console.log(d);return colours(d.key);})
+                .style("stroke","black")
+                .style("opacity",0.5)
+                .selectAll("path")
+                    .data(function(d) { return d.values})
+                    .enter()
+          
+                    .append("svg:path")
+                        .attr("d",d3.svg.line()
+                            .x(function(d) { return x(d.x)})
+                            .y(function(d) { return y(d.y)})
+                            )
+    </script>
+  </body>
+</html>
