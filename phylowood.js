@@ -187,62 +187,11 @@ Phylowood.initGeo = function(geoStr) {
 	}
 
 	// load map
-
-	// dynamically
-	// ...via OpenLayers
-
-/*
-	// e.g.
-	var olW, olE, olN, olS;
-	if (geoScaleH > geoScaleW) {
-		olScaleW = geoScaleH - geoScaleW;
-	}
-	else {
-		olScaleH = (geoScaleW - geoScaleH);
-	}
-*/	
+	// ... dynamically, via OpenLayers
+	// Phylowood.testOpenLayers();
 	
-	
-	// create map
-	this.olmap = new OpenLayers.Map("divGeo", {
-		controls: [
-			new OpenLayers.Control.Navigation(),
-			new OpenLayers.Control.ArgParser(),
-			new OpenLayers.Control.Attribution()
-		]
-	});
-	/*
-	// remove controls
-	var numControl = this.olmap.controls.length;
-	for (var i = 0; i < numControl; i++) {
-		this.olmap.controls[0].deactivate();
-		this.olmap.removeControl(this.olmap.controls[0]);
-	}
-	*/
-	
-	this.olwms = new OpenLayers.Layer.WMS( "OpenLayers WMS", 
-                                            "http://labs.metacarta.com/wms/vmap0?", 
-                                            {'layers': 'basic'},
-                                            {'minExtent': new OpenLayers.Bounds(-1,-1,1,1),
-                                             'maxExtent': new OpenLayers.Bounds(maxW,maxS,maxE,maxN),
-                                             'minResolution': "auto",
-                                             'maxResolution': "auto"});
-
-    this.olmap.addLayer(this.olwms);
-   	//var exportMapControl = new OpenLayers.Control.ExportMap();
-    /*
-
-	this.olmap.addControl(exportMapControl);
-	this.olmap.addControl(new OpenLayers.Control.LayerSwitcher());
-	this.olmap.zoomToExtent(new OpenLayers.Bounds(-11.8296875, 39.54021484375, 10.6703125, 50.79021484375));
-	var olmapCanvas = OpenLayers.Util.getElement("exportedImage");
-	exportMapControl.trigger(olmapCanvas);
-	OpenLayers.Util.getElement("downloadLink").href = canvas.toDataURL();
-	*/
-
-	// render the map at defined zoom
-	this.olmap.zoomToMaxExtent();
-	
+	// ... dynamically, via Polymaps
+	// Phylowood.testPolyMaps();
 	
 	// ... statically, via createElement and filepath
 	var imageFile = "./phylowood.default.jpg";
@@ -515,7 +464,7 @@ TESTING
 ***/
 
 
-Phylowood.maptest2 = function() {
+Phylowood.testOpenLayers = function() {
 	this.olmap = new OpenLayers.Map("divGeo", {
 		size: new OpenLayers.Size( { w:200, h:200 } ),
 		controls: [
@@ -558,7 +507,7 @@ Phylowood.maptest2 = function() {
 	this.olmap.zoomToMaxExtent();
 };
 
-Phylowood.testMap = function() {
+Phylowood.testPolyMaps = function() {
 
 	// reformat Phylowood data into this JSON-like format
 	// expects input as ...
@@ -620,4 +569,4 @@ Phylowood.testMap = function() {
 	
 };
 
-Phylowood.testMap();
+//Phylowood.testPolyMaps();
