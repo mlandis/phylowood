@@ -1,3 +1,6 @@
+// namespace
+var Phylowood = Phylowood || {};
+
 /***
 FILE HANDLING
 ***/
@@ -8,7 +11,7 @@ if (window.File && window.FileReader && window.FileList && window.Blob) {
   alert('The File APIs are not fully supported in this browser.');
 }
 
-// Store file contents to Phylowood.data.infile
+// Store file contents to Phylowood.infile
 function handleFileSelect(evt) {
 	var f;
 	f = evt.target.files[0];
@@ -20,7 +23,7 @@ function handleFileSelect(evt) {
 		txtArea.value = this.result;
 		document.getElementById('divGeo').appendChild(txtArea);
 		*/
-		Phylowood.Data.infile = this.result;
+		Phylowood.infile = this.result;
 		// console.log("inputFile.result = " + this.result);
 	};
 	fr.onerror = function(e) {
@@ -30,15 +33,12 @@ function handleFileSelect(evt) {
 }
 document.getElementById('files').addEventListener('change', handleFileSelect, false);
 
-
 /***
 INITIALIZE DATA
 ***/
 
-var Phylowood = Phylowood || {};
-
-Phylowood.init = function() {
-	this.parseInput(this.Data.infile);
+Phylowood.initialize = function() {
+	this.parseInput(this.infile);
 };
 
 Phylowood.parseInput = function(inputStr) {
@@ -74,8 +74,8 @@ Phylowood.parseInput = function(inputStr) {
 
 Phylowood.initStates = function(statesStr) {
 	
-	this.Data.taxa = [];
-	this.Data.states = [];
+	this.taxa = [];
+	this.states = [];
 	
 	var statesTokens = statesStr.split("\n");
 	var taxonTokens;
@@ -83,26 +83,27 @@ Phylowood.initStates = function(statesStr) {
 	for (var i = 0; i < statesTokens.length; i++) {
 		taxonTokens = statesTokens[i].split(" ");
 		if (taxonTokens.length > 1) {
-			this.Data.taxa.push(taxonTokens[0]);
+			this.taxa.push(taxonTokens[0]);
 			var taxonVals = [];
 			for (var j = 1; j < taxonTokens.length; j++) {
 				taxonVals.push(parseFloat(taxonTokens[j]));
 			}
-			this.Data.states.push(taxonVals);
+			this.states.push(taxonVals);
 		}
 	}
 	
 	/*
 	console.log("Phylowood.initStates():");
-	console.log(this.Data.taxa);
-	console.log(this.Data.states);
+	console.log(this.taxa);
+	console.log(this.states);
 	*/
+	
 };
 
 Phylowood.initGeo = function(geoStr) {
 	
 	// parse string for geoCoords
-	this.Data.geoCoords = [];
+	this.geoCoords = [];
 	
 	var geoTokens = geoStr.split("\n");
 	var coordTokens;
@@ -117,25 +118,25 @@ Phylowood.initGeo = function(geoStr) {
 			// store coordinates
 			coordVals.push(parseFloat(coordTokens[0]));
 			coordVals.push(parseFloat(coordTokens[1]));
-			this.Data.geoCoords.push(coordVals);
+			this.geoCoords.push(coordVals);
 			
 			// compute maxima for geographical coordinates
-			if (this.Data.geoCoords[i][0] > maxN)
-				maxN = this.Data.geoCoords[i][0];
-			if (this.Data.geoCoords[i][0] < maxS)
-				maxS = this.Data.geoCoords[i][0];
-			if (this.Data.geoCoords[i][1] > maxE)
-				maxE = this.Data.geoCoords[i][1];
-			if (this.Data.geoCoords[i][1] < maxW)
-				maxW = this.Data.geoCoords[i][1];
+			if (this.geoCoords[i][0] > maxN)
+				maxN = this.geoCoords[i][0];
+			if (this.geoCoords[i][0] < maxS)
+				maxS = this.geoCoords[i][0];
+			if (this.geoCoords[i][1] > maxE)
+				maxE = this.geoCoords[i][1];
+			if (this.geoCoords[i][1] < maxW)
+				maxW = this.geoCoords[i][1];
 		}
 	}
 	
-	var numAreas = this.Data.geoCoords.length;
+	var numAreas = this.geoCoords.length;
 	
 	// construct distance matrix geoDistances
 	this.distanceType = "Euclidean";
-	this.Data.geoDistances = [];
+	this.geoDistances = [];
 	for (var i = 0; i < numAreas; i++) {
 		var distanceVals = [];
 		for (var j = 0; j < numAreas; j++) {
@@ -144,11 +145,11 @@ Phylowood.initGeo = function(geoStr) {
 			}
 			else {
 				distanceVals.push( Phylowood.distance(
-					this.Data.geoCoords[i],
-					this.Data.geoCoords[j]));
+					this.geoCoords[i],
+					this.geoCoords[j]));
 			}
 		}
-		this.Data.geoDistances.push(distanceVals);
+		this.geoDistances.push(distanceVals);
 	}
 	
 	// define drawable space for map and coordinates
@@ -177,18 +178,20 @@ Phylowood.initGeo = function(geoStr) {
 
 
 	// scale coordinates
-	this.Data.divCoords = [];
+	this.divCoords = [];
 	for (var i = 0; i < numAreas; i++) {
 		var coordVals = [];
-		coordVals.push( (-this.Data.geoCoords[i][0] + maxN) * (1.0 - geoMarginH) / geoScaleH * divH + divMarginH);
-		coordVals.push( (this.Data.geoCoords[i][1] - maxW) * (1.0 - geoMarginW) / geoScaleW * divW + divMarginW);
-		this.Data.divCoords.push(coordVals);
+		coordVals.push( (-this.geoCoords[i][0] + maxN) * (1.0 - geoMarginH) / geoScaleH * divH + divMarginH);
+		coordVals.push( (this.geoCoords[i][1] - maxW) * (1.0 - geoMarginW) / geoScaleW * divW + divMarginW);
+		this.divCoords.push(coordVals);
 	}
 
 	// load map
 
-	// ... dynamically, via OpenLayers
+	// dynamically
+	// ...via OpenLayers
 
+/*
 	// e.g.
 	var olW, olE, olN, olS;
 	if (geoScaleH > geoScaleW) {
@@ -197,33 +200,62 @@ Phylowood.initGeo = function(geoStr) {
 	else {
 		olScaleH = (geoScaleW - geoScaleH);
 	}
+*/	
 	
-	this.Data.olmap = new OpenLayers.Map("divGeo");
-	this.Data.olwms = new OpenLayers.Layer.WMS( "OpenLayers WMS", 
+	
+	// create map
+	this.olmap = new OpenLayers.Map("divGeo", {
+		controls: [
+			new OpenLayers.Control.Navigation(),
+			new OpenLayers.Control.ArgParser(),
+			new OpenLayers.Control.Attribution()
+		]
+	});
+	/*
+	// remove controls
+	var numControl = this.olmap.controls.length;
+	for (var i = 0; i < numControl; i++) {
+		this.olmap.controls[0].deactivate();
+		this.olmap.removeControl(this.olmap.controls[0]);
+	}
+	*/
+	
+	this.olwms = new OpenLayers.Layer.WMS( "OpenLayers WMS", 
                                             "http://labs.metacarta.com/wms/vmap0?", 
                                             {'layers': 'basic'},
                                             {'minExtent': new OpenLayers.Bounds(-1,-1,1,1),
                                              'maxExtent': new OpenLayers.Bounds(maxW,maxS,maxE,maxN),
                                              'minResolution': "auto",
                                              'maxResolution': "auto"});
-	this.Data.olmap.addLayer(this.Data.olwms);
-	this.Data.olmap.zoomToMaxExtent();
-	//OpenLayers.Control.DragPan.
 
-/*
+    this.olmap.addLayer(this.olwms);
+   	//var exportMapControl = new OpenLayers.Control.ExportMap();
+    /*
+
+	this.olmap.addControl(exportMapControl);
+	this.olmap.addControl(new OpenLayers.Control.LayerSwitcher());
+	this.olmap.zoomToExtent(new OpenLayers.Bounds(-11.8296875, 39.54021484375, 10.6703125, 50.79021484375));
+	var olmapCanvas = OpenLayers.Util.getElement("exportedImage");
+	exportMapControl.trigger(olmapCanvas);
+	OpenLayers.Util.getElement("downloadLink").href = canvas.toDataURL();
+	*/
+
+	// render the map at defined zoom
+	this.olmap.zoomToMaxExtent();
+	
+	
 	// ... statically, via createElement and filepath
 	var imageFile = "./phylowood.default.jpg";
-
 	var geoImage = document.createElement("IMG");
 	geoImage.src = imageFile;
 	document.getElementById("divGeo").appendChild(geoImage);
-*/
+	
 
 	/*
 	console.log("Phylowood.initGeo():");
-	console.log(this.Data.geoCoords);
-	console.log(this.Data.divCoords);
-	console.log(this.Data.geoDistances);
+	console.log(this.geoCoords);
+	console.log(this.divCoords);
+	console.log(this.geoDistances);
 	*/
 };
 
@@ -249,15 +281,7 @@ Phylowood.distance = function(x, y) {
 
 
 Phylowood.initTree = function(newickStr) {
-	
-	//this.tree = new thisTree();
-	var nodes = [this.Data.taxa.size];
-	
-	// parse Newick string
-	var readTip = true;
-	var numNodes = 0;
 
-	
 	// parse Newick string
 	var readTaxonName = false;
 	var readBrlen = false;
@@ -298,151 +322,132 @@ Phylowood.initTree = function(newickStr) {
 		if ( c === ';' )
 			break;
 	}
-	console.log(newickTokens);
 	
-	// construct Tree from newickTokens
-	
-	var intNodeIdx = 0;
+	// construct Tree from newickTokens	
+	this.nodes = [];
+	this.root = null;
 	var p = null;
-	var root = null;
-	pIdx = -1;
+
 	readBrlen = false;
 	
 	for (var i = 0; i < newickTokens.length; i++) {
-		//std::cout << (*t) << std::endl;
-		if ( newickTokens[i] === "(" )
-			{
-			if (p === null) {
-			}
-			else {
-			}
-			readBrlen = false;
-		}
-		else if ( newickTokens[i] === ")" ) {
-            if (p.ancestor !== null)
-                
-            else
-                console.log("Phylowood.initTree(): Problem going down tree");
-			readBrlen = false;
-		}
-		else if ( newickTokens[i] === "," ) {
-            if (p.ancestor !== null)
-                p = nodes[p.ancestor];
-            else
-                console.log("Phylowood.initTree(): Problem going down tree");
-			readBrlen = false;
-		}
-		else if ( newickTokens[i] === ":" )
-		{
-			readBrlen = true;
-		}
-		else if ( newickTokens[i] === ";" ) {
-			; // do nothing
-		}
-		else {
-			if (readBrlen == false) {
-               
-			}
-			else {
-				// reading a branch length 
-				var x = parseFloat(newickTokens[i]);
-				if (x < 0.00001)
-					x = 0.00001;
-                p.len = x;
-                treeLength += x;
-				readBrlen = false;
-			}
-		}
-	}
-	
-	/*
-	for (var i = 0; i < newickTokens.length; i++) {
-		//std::cout << (*t) << std::endl;
-		if ( newickTokens[i] === "(" )
-			{
-			// add a new interior node
-			if (p === null) {
-                p = new Phylowood.Node;
-                p.id = intNodeIdx;
-                intNodeIdx++;
-                nodes.push(p);
-                pIdx = nodes.length;
-                root = p;
-			}
-			else {
-				var q = new Phylowood.Node;
-                q.id = intNodeIdx;
-                intNodeIdx++;
-                q.ancestor = p.id;
-                nodes.push(q);
-                nodes[pIdx].descendants.push(q);
-                p = q;
-			}
-			//std::stringstream ss;
-			readBrlen = false;
-		}
-		else if ( newickTokens[i] === ")" ) {
-            if (p.ancestor !== null)
-                p = nodes[p.ancestor];
-            else
-                console.log("Phylowood.initTree(): Problem going down tree");
-			readBrlen = false;
-		}
-		else if ( newickTokens[i] === "," ) {
-            if (p.ancestor !== null)
-                p = nodes[p.ancestor];
-            else
-                console.log("Phylowood.initTree(): Problem going down tree");
-			readBrlen = false;
-		}
-		else if ( newickTokens[i] === ":" )
-		{
-			readBrlen = true;
-		}
-		else if ( newickTokens[i] === ";" ) {
-			; // do nothing
-		}
-		else {
-			if (readBrlen == false) {
-                var tipName = newickTokens[i];
-                var tipIdx = -1;
-                for (var i = 0; i < this.Data.taxa.length; i++) {
-                    if ( tipName == this.Data.taxa[i] ) {
-                        tipIdx = i;
-                        break;
-					}
-				}
-                if (tipIdx === -1)
-                    console.log("Phylowood.initTree(): Could not find taxon " + tipName + " in the list of taxon names");
-                
-				var q = new Phylowood.Node;
-				q.id = tipIdx;
-				q.ancestor = p.id;
-				q.name = this.Data.taxa[tipIdx];
-                nodes.push(q);
-                nodes[p.id].descendants.push(q);
-                p = q;
-			}
-			else {
-				// reading a branch length 
-				var x = parseFloat(newickTokens[i]);
-				if (x < 0.00001)
-					x = 0.00001;
-                p.len = x;
-                treeLength += x;
-				readBrlen = false;
-			}
-		}
-	}
-	*/
-	//console.log(nodes);
-	
-	// create tree structure
-	for (var i = 0; i < nodes.length; i++) {
 		
+		// indicates new node
+		if ( newickTokens[i] === "(" ) {
+
+			if (p === null) {
+				p = new Phylowood.Node;
+				this.nodes.push(p);
+				this.root = p;
+			}
+			else {
+				var q = new Phylowood.Node;
+				q.ancestor = p;
+				this.nodes.push(q);
+				p.descendants.push(q);
+				p = q;
+			}
+			readBrlen = false;
+		}
+		
+		// indicates end of clade
+		else if ( newickTokens[i] === ")" ) {
+            if (p.ancestor !== null) {
+            	p = p.ancestor;
+            }
+            else {
+                console.log("Phylowood.initTree(): Problem going down tree");
+            }
+			readBrlen = false;
+		}
+		
+		// indicates divergence event
+		else if ( newickTokens[i] === "," ) {
+            if (p.ancestor !== null) {
+                p = p.ancestor;
+            }
+            else {
+                console.log("Phylowood.initTree(): Problem going down tree");
+            }
+			readBrlen = false;
+		}
+		
+		// next token is branch length
+		else if ( newickTokens[i] === ":" )
+		{
+			readBrlen = true;
+		}
+		
+		// no tokens (should) remain
+		else if ( newickTokens[i] === ";" ) {
+			; // do nothing
+		}
+		else {
+			// taxon name token
+			if (readBrlen === false) {
+        		var tipName = newickTokens[i];
+        		var tipIdx = -1;
+        		for (var j = 0; j < this.taxa.length; j++) {
+        			if (tipName === this.taxa[j]) {
+        				tipIdx = j;
+        				break;
+        			}
+        		}
+        		if (tipIdx === -1) {
+        			console.log("Phylowood.initTree(): Could not find " + tipName + " in Phylowood.taxa");
+        		}
+        		
+        		// internal node
+        		if (newickTokens[i-1] === ")") {
+        			p.id = tipIdx;
+        			p.name = tipName;
+        		}
+        		
+        		// tip node
+        		else {
+					var q = new Phylowood.Node;
+					q.id = tipIdx;
+					q.ancestor = p;
+					q.name = tipName;
+					this.nodes.push(q);
+					p.descendants.push(q);
+					p = q;
+				}
+			}
+			
+			// branch length token
+			else {
+				// reading a branch length 
+				var x = parseFloat(newickTokens[i]);
+				if (x < 0.00001)
+					x = 0.00001;
+                p.len = x;
+				readBrlen = false;
+			}
+		}
 	}
+
 	
+	// assign absolute times to nodes, defined as:
+	// [t_begin, t_end] = [this.root.time, max(this.nodes[i].time)]
+	var setTime = function(p) {
+		if (p.ancestor !== null)
+			p.time = p.len + p.ancestor.time;
+		for (var i = 0; i < p.descendants.length; i++) {
+			setTime(p.descendants[i], p.time);
+		}
+	}
+	setTime(this.root);
+
 	
+	// determine time-based order of nodes (for animation purposes)
+	this.nodesByTime = [];
+	for (var i = 0; i < this.nodes.length; i++) {
+		this.nodesByTime.push(this.nodes[i]);
+	}
+	this.nodesByTime.sort(function(a,b){return a.time - b.time;});
+	
+
 	// draw tree using jsPhyloSvg
 	var margin = 0.1;
 	var divH = document.getElementById("divPhylo").offsetHeight;
@@ -450,8 +455,7 @@ Phylowood.initTree = function(newickStr) {
 	var marginH = divH * margin / 2;
 	var marginW = divW * margin / 2;
 	
-	console.log(newickStr);
-	this.Data.phylocanvas = new Smits.PhyloCanvas(
+	this.phylocanvas = new Smits.PhyloCanvas(
 		{
 			newick: newickStr
 		},
@@ -459,10 +463,15 @@ Phylowood.initTree = function(newickStr) {
 		divH,
 		divW
 	);
+
+/*
+	console.log(newickStr);
+	console.log(newickTokens);
+	console.log(this.nodes);	
+	console.log(this.nodesByTime);
+*/
 };
 
-Phylowood.Data = function() {
-};
 
 Phylowood.Node = function() {
 	return function(o, parentInstance){
@@ -496,27 +505,119 @@ Phylowood.Node = function() {
 }();
 
 Phylowood.Tree = function() {
-	this.nodes = [];
+	this.this.nodes = [];
 
 };
 
-/*
 
-Phylowood.Data.prototype. = function() {
-    return 'Title: ' + this.title;
-}
+/***
+TESTING
+***/
 
-var Phylowood = Phylowood || {};
 
-var Phylowood.Data  = function {
-    this.tree = null;
-    this.geo = null;
-    this.data = null;
+Phylowood.maptest2 = function() {
+	this.olmap = new OpenLayers.Map("divGeo", {
+		size: new OpenLayers.Size( { w:200, h:200 } ),
+		controls: [
+			new OpenLayers.Control.Navigation(),
+			new OpenLayers.Control.ArgParser(),
+			new OpenLayers.Control.Attribution()
+		]
+	});
+	
+	var numControl = this.olmap.controls.length;
+	for (var i = 0; i < numControl; i++) {
+		this.olmap.controls[0].deactivate();
+		this.olmap.removeControl(this.olmap.controls[0]);
+	}
+	
+	this.olwms = new OpenLayers.Layer.WMS( "OpenLayers WMS", 
+                                            "http://labs.metacarta.com/wms/vmap0?", 
+                                            {'layers': 'basic'},
+                                            {'minExtent': new OpenLayers.Bounds(-1,-1,1,1),
+                                             'maxExtent': new OpenLayers.Bounds(-122.2,38.0,-122.1,38.2),
+                                             //'maxExtent': new OpenLayers.Bounds(-100,-100,100,100),
+                                             'minResolution': "auto",
+                                             'maxResolution': "auto"});
+
+    this.olmap.addLayer(this.olwms);
+    var div = OpenLayers.Util.getElement("divGeo");
+    div.style.width = 600 + "px";
+    div.style.height = 600 + "px";
+    /*
+	var exportMapControl = new OpenLayers.Control.ExportMap();
+	this.olmap.addControl(exportMapControl);
+	this.olmap.addControl(new OpenLayers.Control.LayerSwitcher());
+	this.olmap.zoomToExtent(new OpenLayers.Bounds(-11.8296875, 39.54021484375, 10.6703125, 50.79021484375));
+	var olmapCanvas = OpenLayers.Util.getElement("exportedImage");
+	exportMapControl.trigger(olmapCanvas);
+	OpenLayers.Util.getElement("downloadLink").href = canvas.toDataURL();
+	*/
+
+	// render the map at defined zoom
+	this.olmap.zoomToMaxExtent();
 };
 
+Phylowood.testMap = function() {
 
+	// reformat Phylowood data into this JSON-like format
+	// expects input as ...
+	var d1 = 
+		[
+			{"id": "A", "val": 1.0, "coords": [-121.08, 38.17], "color": "red"},
+			{"id": "A", "val": 1.0, "coords": [-121.18, 38.05], "color": "red"},
+			{"id": "A", "val": 1.0, "coords": [-121.13, 38.11], "color": "red"},
+			{"id": "B", "val": 1.0, "coords": [-122.08, 38.17], "color": "yellow"},
+			{"id": "B", "val": 1.0, "coords": [-122.18, 38.05], "color": "yellow"},
+			{"id": "B", "val": 1.0, "coords": [-122.13, 38.11], "color": "yellow"},
+			{"id": "C", "val": 1.0, "coords": [-123.08, 38.17], "color": "blue"},
+			{"id": "C", "val": 1.0, "coords": [-123.18, 38.05], "color": "blue"},
+			{"id": "C", "val": 1.0, "coords": [-123.13, 38.11], "color": "blue"}
+		];
 
+	// create polymaps object
+	var po = org.polymaps;
+	
+	// Create the map object, add it to #map…
+	var map = po.map()
+		.container(d3.select("#divGeo").append("svg:svg").node())
+		.center({lat: 38.1, lon: -122.15})
+		.zoom(8)
+		//.centerRange([{lat: 38.2, lon: -122.1}, {lat: 38.0, lon: -122.2}])
+		.add(po.interact());
+		
+	map.add(po.image()
+		.url(po.url("http://{S}tile.cloudmade.com"
+		+ "/87d72d27ad3a48939015cdbd06980326" // http://cloudmade.com/register
+		+ "/2/256/{Z}/{X}/{Y}.png")
+		.hosts(["a.", "b.", "c.", ""])));
+		
+	map.add(po.compass()
+    	.pan("none"));
+    
+	var layer = d3.select("#divGeo svg").insert("svg:g", ".compass");
+	
+	function transform(d) {
+    	d = map.locationPoint({lon: d.coords[0], lat: d.coords[1]});
+		return "translate(" + d.x + "," + d.y + ")";
+	}
+	
+	// update marker positions when map moves
+	map.on("move", function() {
+    	layer.selectAll("g").attr("transform", transform);
+    });
+    
+	var marker = layer.selectAll("g")
+		.data(d1)
+		.enter()
+		.append("svg:g")
+		.attr("transform", transform);
+	
+	// add a circle
+	marker.append("svg:circle")
+		.attr("r", function(d) { return d.val * 5.0; })
+		.style("fill", function(d){ return d.color; });
+	
+};
 
-
-
-*/
+Phylowood.testMap();
