@@ -542,7 +542,7 @@ Phylowood.testPolyMaps = function() {
 		.hosts(["a.", "b.", "c.", ""])));
 		
 	map.add(po.compass()
-    	.pan("none"));
+		.pan("none"));
     
 	var layer = d3.select("#divGeo svg").insert("svg:g", ".compass");
 	
@@ -553,7 +553,7 @@ Phylowood.testPolyMaps = function() {
 	
 	// update marker positions when map moves
 	map.on("move", function() {
-    	layer.selectAll("g").attr("transform", transform);
+		layer.selectAll("g").attr("transform", transform);
     });
     
 	var marker = layer.selectAll("g")
@@ -566,6 +566,113 @@ Phylowood.testPolyMaps = function() {
 	marker.append("svg:circle")
 		.attr("r", function(d) { return d.val * 5.0; })
 		.style("fill", function(d){ return d.color; });
+	
+};
+
+Phylowood.testMultiFocus = function() {
+
+	// toy data
+	var states = [
+		{"id":0, "area":0, "val":.3, "color":"red"},
+		{"id":0, "area":2, "val":.7, "color":"red"},
+		{"id":1, "area":0, "val":.4, "color":"yellow"},
+		{"id":1, "area":1, "val":.2, "color":"yellow"},
+		{"id":1, "area":2, "val":.4, "color":"yellow"},
+		{"id":2, "area":1, "val":.5, "color":"blue"},
+		{"id":2, "area":2, "val":.5, "color":"blue"}
+	];
+
+	// create polymaps object
+	var po = org.polymaps;
+	
+	// Create the map object, add it to #map…
+	var map = po.map()
+		.container(d3.select("#divGeo").append("svg:svg").node())
+//		.center({lat: 38.1, lon: -122.15})
+		.center({lat:38,lon:-123})
+		.zoom(10)
+		//.centerRange([{lat: 38.2, lon: -122.1}, {lat: 38.0, lon: -122.2}])
+		.add(po.interact());
+		
+	map.add(po.image()
+		.url(po.url("http://{S}tile.cloudmade.com"
+		+ "/87d72d27ad3a48939015cdbd06980326" // http://cloudmade.com/register
+		+ "/62438/256/{Z}/{X}/{Y}.png")
+		.hosts(["a.", "b.", "c.", ""])));
+		
+	map.add(po.compass()
+		.pan("none"));
+		
+	function transform(d) {
+    	d = map.locationPoint({lon: d.coords[0], lat: d.coords[1]});
+		return "translate(" + d.x + "," + d.y + ")";
+	}
+	
+	// update marker positions when map moves
+	map.on("move", function() {
+		layer.selectAll("g").attr("transform", transform);
+		//console.log(map.locationPoint(coords[0]));
+		// need to update loci when map moves
+		for (var i = 0; i < coords.length; i++) { foci[i] = map.locationPoint(coords[i]); }
+    });
+
+	var layer = d3.select("#divGeo svg").insert("svg:g", ".compass");
+
+	var w = 600,
+		h = 600,
+		fill = d3.scale.category10(),
+		nodes = [],
+		coords = [{lon:-123.08, lat:38.17}, {lon:-123.18, lat:38.05}, {lon:-123.13, lat:38.11}],
+		foci = [coords.length];
+	
+	// convert to div coordinates
+	for (var i = 0; i < coords.length; i++) { foci[i] = map.locationPoint(coords[i]); }
+
+	// define force layout
+	var force = d3.layout.force()
+		.nodes(nodes)
+		.links([])
+		//.linkDistance(1)
+		//.linkStrength(1)
+		.friction(.95)
+		.charge(-5)
+		.gravity(0.0)
+		.size([w, h]);
+	
+	force.on("tick", function(e) {
+	  // Push nodes toward their designated focus.
+	  var k = .1 * e.alpha;
+	  nodes.forEach(function(o, i) {
+		o.y += (foci[o.area].y - o.y) * k;
+		o.x += (foci[o.area].x - o.x) * k;
+	  });
+	
+	  layer.selectAll("circle.node")
+		  .attr("cx", function(d) { return d.x; })
+		  .attr("cy", function(d) { return d.y; });
+	});
+	
+	
+	for (var i = 0; i < states.length; i++) {
+
+		// can assign unique id for branch & area (to do later)
+		nodes.push( states[i] );
+	
+		layer.selectAll("circle.node")
+			.data(nodes)
+		.enter().append("svg:circle")
+			.attr("class", "node")
+			.attr("cx", function(d) { return foci[d.area].x; })
+			.attr("cy", function(d) { return foci[d.area].y; })
+			.attr("r", function(d) { return 10 * Math.pow(d.val,0.5); })
+			.style("fill", function(d) { return fill(d.color); })
+//			.style("stroke", function(d) { return d3.rgb(fill(d.id)).darker(2); })
+			.style("stroke-width", 1.5)
+//			.attr("transform", transform)
+			.call(force.drag);
+	}
+	
+	force.start();
 	
 };
 
