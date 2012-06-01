@@ -581,6 +581,12 @@ Phylowood.testMultiFocus = function() {
 		{"id":2, "area":1, "val":.5, "color":"blue"},
 		{"id":2, "area":2, "val":.5, "color":"blue"}
 	];
+	var w = 600,
+		h = 600,
+		nodes = [],
+		coords = [{lon:-123.08, lat:38.17}, {lon:-123.18, lat:38.05}, {lon:-123.13, lat:38.11}],
+		foci = [coords.length];
+
 
 	// create polymaps object
 	var po = org.polymaps;
@@ -588,10 +594,10 @@ Phylowood.testMultiFocus = function() {
 	// Create the map object, add it to #map…
 	var map = po.map()
 		.container(d3.select("#divGeo").append("svg:svg").node())
-//		.center({lat: 38.1, lon: -122.15})
+		//.center({lat: 38.1, lon: -122.15})
+		//.centerRange([{lat: 38.2, lon: -122.1}, {lat: 38.0, lon: -122.2}])
 		.center({lat:38,lon:-123})
 		.zoom(10)
-		//.centerRange([{lat: 38.2, lon: -122.1}, {lat: 38.0, lon: -122.2}])
 		.add(po.interact());
 		
 	map.add(po.image()
@@ -604,26 +610,34 @@ Phylowood.testMultiFocus = function() {
 		.pan("none"));
 		
 	function transform(d) {
-    	d = map.locationPoint({lon: d.coords[0], lat: d.coords[1]});
+    	d = map.locationPoint({lon: coords[d.area].lon, lat: coords[d.area].lat});
 		return "translate(" + d.x + "," + d.y + ")";
 	}
-	
+
+	for (var i = 0; i < coords.length; i++) { 
+		foci[i] = map.locationPoint(coords[i]);
+	}
+
+
+
 	// update marker positions when map moves
 	map.on("move", function() {
-		layer.selectAll("g").attr("transform", transform);
+		// update nodes
+				// need to update loci when map moves, seems OK
+		for (var i = 0; i < coords.length; i++) { 
+			foci[i] = map.locationPoint(coords[i]);
+		}
+		//console.log(foci)
+		
+		layer.selectAll("circle.node")
+			.attr("transform", transform)
+			.attr("r", function(d) { return Math.pow(2, map.zoom() - 7) * Math.sqrt(d.val); })
+		//layer.selectAll("circle.node").style("fill","red");
 		//console.log(map.locationPoint(coords[0]));
-		// need to update loci when map moves
-		for (var i = 0; i < coords.length; i++) { foci[i] = map.locationPoint(coords[i]); }
-    });
+	});
 
 	var layer = d3.select("#divGeo svg").insert("svg:g", ".compass");
-
-	var w = 600,
-		h = 600,
-		fill = d3.scale.category10(),
-		nodes = [],
-		coords = [{lon:-123.08, lat:38.17}, {lon:-123.18, lat:38.05}, {lon:-123.13, lat:38.11}],
-		foci = [coords.length];
+	
 	
 	// convert to div coordinates
 	for (var i = 0; i < coords.length; i++) { foci[i] = map.locationPoint(coords[i]); }
@@ -634,14 +648,18 @@ Phylowood.testMultiFocus = function() {
 		.links([])
 		//.linkDistance(1)
 		//.linkStrength(1)
-		.friction(.95)
-		.charge(-5)
+		.friction(0.5)
+		.charge(-25)
 		.gravity(0.0)
+		.alpha(100000)
 		.size([w, h]);
 	
+	
+	// we actually want the nodes to come to complete rest after initial clustering
 	force.on("tick", function(e) {
 	  // Push nodes toward their designated focus.
-	  var k = .1 * e.alpha;
+	  var k = e.alpha;// * .1;
+	 
 	  nodes.forEach(function(o, i) {
 		o.y += (foci[o.area].y - o.y) * k;
 		o.x += (foci[o.area].x - o.x) * k;
@@ -653,6 +671,7 @@ Phylowood.testMultiFocus = function() {
 	});
 	
 	
+	// create markers
 	for (var i = 0; i < states.length; i++) {
 
 		// can assign unique id for branch & area (to do later)
@@ -664,15 +683,18 @@ Phylowood.testMultiFocus = function() {
 			.attr("class", "node")
 			.attr("cx", function(d) { return foci[d.area].x; })
 			.attr("cy", function(d) { return foci[d.area].y; })
-			.attr("r", function(d) { return 10 * Math.pow(d.val,0.5); })
-			.style("fill", function(d) { return fill(d.color); })
+			.attr("r", function(d) { return Math.pow(2, map.zoom() - 7) * Math.sqrt(d.val); })
+			.style("fill", function(d) { return d.color; })
 //			.style("stroke", function(d) { return d3.rgb(fill(d.id)).darker(2); })
 			.style("stroke-width", 1.5)
-//			.attr("transform", transform)
+			.attr("transform", transform)
 			.call(force.drag);
+			;
 	}
-	
-	force.start();
+
+	force.start();	
+//	setTimeout("force.stop()",2000);
+
 	
 };
 
