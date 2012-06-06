@@ -39,6 +39,7 @@ INITIALIZE DATA
 
 Phylowood.initialize = function() {
 	this.parseInput(this.infile);
+	this.initPlayer();
 };
 
 Phylowood.parseInput = function(inputStr) {
@@ -454,10 +455,42 @@ Phylowood.Node = function() {
 }();
 
 Phylowood.Tree = function() {
-	this.this.nodes = [];
+	this.nodes = [];
 
 };
 
+Phylowood.initPlayer = function() {
+	this.maxTime = 0;
+	this.curTime = 0;
+	this.minTime = 0;
+	this.paused = true;
+	
+	function playPause() {
+		if (this.paused)
+			this.play();
+		else
+			this.pause();
+	}
+	
+	function play() {
+	}
+	
+	function pause() {
+	}
+	
+	function stop() {
+	}
+	
+	function ffwd() {
+	}
+	
+	function slow() {
+	}
+	
+	// if time allows
+	// function maximizeDisplay() {};
+	// function minimizeDisplay() {};
+};
 
 /***
 TESTING
@@ -571,129 +604,130 @@ Phylowood.testPolyMaps = function() {
 
 Phylowood.testMultiFocus = function() {
 
+	// div size (get dynamically)
+	var h = document.getElementById("divGeo").offsetHeight;
+	var w = document.getElementById("divGeo").offsetWidth;
+
 	// toy data
 	var states = [
-		{"id":0, "area":0, "val":.3, "color":"red"},
-		{"id":0, "area":2, "val":.7, "color":"red"},
-		{"id":1, "area":0, "val":.4, "color":"yellow"},
-		{"id":1, "area":1, "val":.2, "color":"yellow"},
-		{"id":1, "area":2, "val":.4, "color":"yellow"},
-		{"id":2, "area":1, "val":.5, "color":"blue"},
-		{"id":2, "area":2, "val":.5, "color":"blue"}
+	        {"id":0, "area":0, "val":.3, "color":"red"},
+	        {"id":0, "area":2, "val":.7, "color":"red"},
+	        {"id":1, "area":0, "val":.4, "color":"yellow"},
+	        {"id":1, "area":1, "val":.2, "color":"yellow"},
+	        {"id":1, "area":2, "val":.4, "color":"yellow"},
+	        {"id":2, "area":1, "val":.5, "color":"blue"},
+	        {"id":2, "area":2, "val":.5, "color":"blue"},
+   	        {"id":0, "area":0, "val":.3, "color":"red"},
+	        {"id":0, "area":2, "val":.7, "color":"red"},
+	        {"id":1, "area":0, "val":.4, "color":"yellow"},
+	        {"id":1, "area":1, "val":.2, "color":"yellow"},
+	        {"id":1, "area":2, "val":.4, "color":"yellow"},
+	        {"id":2, "area":1, "val":.5, "color":"blue"},
+	        {"id":2, "area":2, "val":.5, "color":"blue"},
+   	        {"id":0, "area":0, "val":.3, "color":"red"},
+	        {"id":0, "area":2, "val":.7, "color":"red"},
+	        {"id":1, "area":0, "val":.4, "color":"yellow"},
+	        {"id":1, "area":1, "val":.2, "color":"yellow"},
+	        {"id":1, "area":2, "val":.4, "color":"yellow"},
+	        {"id":2, "area":1, "val":.5, "color":"blue"},
+	        {"id":2, "area":2, "val":.5, "color":"blue"}
 	];
-	var w = 600,
-		h = 600,
-		nodes = [],
-		coords = [{lon:-123.08, lat:38.17}, {lon:-123.18, lat:38.05}, {lon:-123.13, lat:38.11}],
-		foci = [coords.length];
-
+	var coords = [{lon:-123.08, lat:38.17},
+	              {lon:-123.18, lat:38.05},
+	              {lon:-123.13, lat:38.11}];
+	var foci = [coords.length]; // cluster foci, i.e. areas lat,lons
 
 	// create polymaps object
 	var po = org.polymaps;
 	
-	// Create the map object, add it to #map…
+	// create the map object, add it to #divGeo
 	var map = po.map()
 		.container(d3.select("#divGeo").append("svg:svg").node())
-		//.center({lat: 38.1, lon: -122.15})
-		//.centerRange([{lat: 38.2, lon: -122.1}, {lat: 38.0, lon: -122.2}])
-		.center({lat:38,lon:-123})
+		.center({lat:38,lon:-123}) // 38.1, -122.15
 		.zoom(10)
-		.add(po.interact());
-		
-	map.add(po.image()
-		.url(po.url("http://{S}tile.cloudmade.com"
-		+ "/87d72d27ad3a48939015cdbd06980326" // http://cloudmade.com/register
-		+ "/62438/256/{Z}/{X}/{Y}.png")
-		.hosts(["a.", "b.", "c.", ""])));
-		
-	map.add(po.compass()
-		.pan("none"));
-		
-	function transform(d) {
-    	d = map.locationPoint({lon: coords[d.area].lon, lat: coords[d.area].lat});
-		return "translate(" + d.x + "," + d.y + ")";
-	}
-
-	for (var i = 0; i < coords.length; i++) { 
-		foci[i] = map.locationPoint(coords[i]);
-	}
-
-
-
-	// update marker positions when map moves
-	map.on("move", function() {
-		// update nodes
-				// need to update loci when map moves, seems OK
-		for (var i = 0; i < coords.length; i++) { 
-			foci[i] = map.locationPoint(coords[i]);
-		}
-		//console.log(foci)
-		
-		layer.selectAll("circle.node")
-			.attr("transform", transform)
-			.attr("r", function(d) { return Math.pow(2, map.zoom() - 7) * Math.sqrt(d.val); })
-		//layer.selectAll("circle.node").style("fill","red");
-		//console.log(map.locationPoint(coords[0]));
-	});
-
+		.add(po.interact())
+		.add(po.image()
+		  .url(po.url("http://{S}tile.cloudmade.com"
+		  + "/87d72d27ad3a48939015cdbd06980326" // http://cloudmade.com/register
+		  + "/62438/256/{Z}/{X}/{Y}.png")
+		  .hosts(["a.", "b.", "c.", ""])))
+		.add(po.compass().pan("none"));
 	var layer = d3.select("#divGeo svg").insert("svg:g", ".compass");
-	
-	
-	// convert to div coordinates
-	for (var i = 0; i < coords.length; i++) { foci[i] = map.locationPoint(coords[i]); }
 
-	// define force layout
+	// assign foci xy coordinates from geographical coordinates
+	for (var i = 0; i < coords.length; i++)
+		foci[i] = map.locationPoint(coords[i]);	
+
+	// create force layout
 	var force = d3.layout.force()
-		.nodes(nodes)
+		.nodes(states)
 		.links([])
-		//.linkDistance(1)
-		//.linkStrength(1)
-		.friction(0.5)
-		.charge(-25)
+//		.charge(-25)
 		.gravity(0.0)
+	//	.friction(0.5)
 		.alpha(100000)
-		.size([w, h]);
-	
-	
-	// we actually want the nodes to come to complete rest after initial clustering
-	force.on("tick", function(e) {
-	  // Push nodes toward their designated focus.
-	  var k = e.alpha;// * .1;
-	 
-	  nodes.forEach(function(o, i) {
-		o.y += (foci[o.area].y - o.y) * k;
-		o.x += (foci[o.area].x - o.x) * k;
-	  });
-	
-	  layer.selectAll("circle.node")
-		  .attr("cx", function(d) { return d.x; })
-		  .attr("cy", function(d) { return d.y; });
-	});
-	
-	
-	// create markers
-	for (var i = 0; i < states.length; i++) {
+		.size([w, h])
+		.start()
+		;
 
-		// can assign unique id for branch & area (to do later)
-		nodes.push( states[i] );
-	
-		layer.selectAll("circle.node")
-			.data(nodes)
+	// create svg markers
+	var node = layer.selectAll("circle.node")
+			.data(states)
 		.enter().append("svg:circle")
-			.attr("class", "node")
+			.attr("class","node")
 			.attr("cx", function(d) { return foci[d.area].x; })
 			.attr("cy", function(d) { return foci[d.area].y; })
-			.attr("r", function(d) { return Math.pow(2, map.zoom() - 7) * Math.sqrt(d.val); })
-			.style("fill", function(d) { return d.color; })
-//			.style("stroke", function(d) { return d3.rgb(fill(d.id)).darker(2); })
-			.style("stroke-width", 1.5)
-			.attr("transform", transform)
-			.call(force.drag);
+			.attr("r",  function(d) { return Math.pow(2, map.zoom() - 7) * Math.sqrt(d.val); })
+			.attr("fill", function(d) { return d.color; })
+			.call(force.drag)
 			;
-	}
 
-	force.start();	
-//	setTimeout("force.stop()",2000);
+	// update coordinates when map pans and zooms
+	map.on("move", function() {
+
+		// update force foci positions
+		for (var i = 0; i < coords.length; i++)
+			foci[i] = map.locationPoint(coords[i]);
+		
+		// update force properties with each move
+		//force.gravity(map.zoom()); // higher gravity for lower level zooms
+		var k = 5;
+		force.charge(-Math.pow(2,(k / map.zoom()))).start();
+		
+		// update positions of js states[] objects
+		states.forEach(function(o,i) {
+			o.x = foci[o.area].x;
+			o.y = foci[o.area].y;
+		});
+	
+		// update positions of SVG node[] objects
+		node.attr("cx", function(d) { return foci[d.area].x; })
+			.attr("cy", function(d) { return foci[d.area].y; });
+
+		// update marker radii of SVG node[] objects
+		node.attr("r", function(d) { return Math.pow(2, map.zoom() - 7) * Math.sqrt(d.val); })
+
+	});	
+
+
+	// update node[] each tick
+	force.on("tick", function(e) {
+
+		// set stepsize per tick
+		var k = e.alpha * 0.1;
+
+		// update object values per tick
+		states.forEach(function(o,i) {
+			o.x += (foci[o.area].x - o.x) * k
+			o.y += (foci[o.area].y - o.y) * k
+		});
+
+		// update object attributes per tick
+		layer.selectAll("circle.node")
+        	.attr("cx", function(d) { return d.x; })
+    	 	.attr("cy", function(d) { return d.y; });
+		
+	});
 
 	
 };
