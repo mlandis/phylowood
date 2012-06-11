@@ -45,6 +45,11 @@ Phylowood.initialize = function() {
 Phylowood.parseInput = function(inputStr) {
 
 	// parse inputStr
+	if (inputStr === "") {
+		console.log("WARNING: Phylowood.parseInput(): inputStr === \"\"");
+		return;
+	}
+	
 	var inputTokens = inputStr.split(/\r\n|\r|\n/);
 		
 	var treeStr = "",
@@ -105,10 +110,11 @@ Phylowood.initGeo = function(geoStr) {
 	
 	// parse string for geoCoords
 	this.geoCoords = [];
+	this.maxGeoCoords = [-181.0, -181.0, 181.0, 181.0]; // [N, E, S, W]
 	
 	var geoTokens = geoStr.split("\n");
 	var coordTokens;
-	var maxN = -181.0, maxS = 181.0, maxE = -181.0, maxW = 181.0;
+	//var maxN = -181.0, maxS = 181.0, maxE = -181.0, maxW = 181.0;
 	
 	// input expects "latitude longitude"
 	// maps to [i][0] and [i][1] resp.
@@ -117,19 +123,20 @@ Phylowood.initGeo = function(geoStr) {
 		coordTokens = geoTokens[i].split(" ");
 		if (coordTokens.length == 2) {
 			// store coordinates
-			coordVals.push(parseFloat(coordTokens[0]));
-			coordVals.push(parseFloat(coordTokens[1]));
-			this.geoCoords.push(coordVals);
-			
+//			coordVals.push(parseFloat(coordTokens[0]));
+//			coordVals.push(parseFloat(coordTokens[1]));
+			this.geoCoords.push({"lat":coordTokens[0], "lon":coordTokens[1]});
+//			this.geoCoords.push(coordVals);
+
 			// compute maxima for geographical coordinates
-			if (this.geoCoords[i][0] > maxN)
-				maxN = this.geoCoords[i][0];
-			if (this.geoCoords[i][0] < maxS)
-				maxS = this.geoCoords[i][0];
-			if (this.geoCoords[i][1] > maxE)
-				maxE = this.geoCoords[i][1];
-			if (this.geoCoords[i][1] < maxW)
-				maxW = this.geoCoords[i][1];
+			if (this.geoCoords[i].lat > this.maxGeoCoords[0]) // N
+				this.maxGeoCoords[0] = this.geoCoords[i].lat;
+			if (this.geoCoords[i].lon > this.maxGeoCoords[1]) // E
+				this.maxGeoCoords[1] = this.geoCoords[i].lon;
+			if (this.geoCoords[i].lat < this.maxGeoCoords[2]) // S
+				this.maxGeoCoords[2] = this.geoCoords[i].lat;
+			if (this.geoCoords[i].lon < this.maxGeoCoords[3]) // W
+				this.maxGeoCoords[4] = this.geoCoords[i].lon;
 		}
 	}
 	
@@ -153,6 +160,8 @@ Phylowood.initGeo = function(geoStr) {
 		this.geoDistances.push(distanceVals);
 	}
 	
+	/*
+	
 	// define drawable space for map and coordinates
 	var buffer = 0.1; // geo buffer, so max coordinates are not on border
 	var divH = document.getElementById("divGeo").offsetHeight;
@@ -169,11 +178,10 @@ Phylowood.initGeo = function(geoStr) {
 	
 	
 	// rescale dimensions according to max coordinates.
-	/*
-	var scaleByH = (geoScaleH > geoScaleW ? true : false);
-	if (scaleByH)
-		divW = divW * geoScaleH / geoScaleW;
-	*/
+	//var scaleByH = (geoScaleH > geoScaleW ? true : false);
+	//if (scaleByH)
+	//	divW = divW * geoScaleH / geoScaleW;
+	
 	divH = divH * (1.0 - divMargin);
 	divW = divW * (1.0 - divMargin);
 
@@ -186,7 +194,7 @@ Phylowood.initGeo = function(geoStr) {
 		coordVals.push( (this.geoCoords[i][1] - maxW) * (1.0 - geoMarginW) / geoScaleW * divW + divMarginW);
 		this.divCoords.push(coordVals);
 	}
-
+	
 	// load map
 	// ... dynamically, via OpenLayers
 	// Phylowood.testOpenLayers();
@@ -199,7 +207,9 @@ Phylowood.initGeo = function(geoStr) {
 	var geoImage = document.createElement("IMG");
 	geoImage.src = imageFile;
 	document.getElementById("divGeo").appendChild(geoImage);
-	
+	*/
+
+	Phylowood.testMultiFocus();
 
 	/*
 	console.log("Phylowood.initGeo():");
@@ -213,9 +223,8 @@ Phylowood.distance = function(x, y) {
 	var z = 0.0;
 	if (this.distanceType === "Euclidean") {
 		// fast and easy
-		for (var i = 0; i < x.length; i++) {
-			z += (x[i] - y[i])^2;
-		}
+		z += (x.lat - y.lat)^2;
+		z += (x.lon - y.lon)^2;
 		z = z^0.5;
 	}
 	else if (this.distanceType === "haversine") {
@@ -459,38 +468,302 @@ Phylowood.Tree = function() {
 
 };
 
+
+Phylowood.initMarkers = function() {
+	this.markers = [];
+	var showStart = 40;
+	var showOnly = 20;
+	var showThreshhold = 0.5;
+	
+	var colors;
+	colors = ["red", "orange", "blue", "green", "black"];
+	for (var i = 0; i < showOnly; i++)
+		colors[i] = "hsl(" + Math.random() * 360 + ",100%,50%)";
+	
+//	for (var i = 0; i < this.states.length; i++) {
+	for (var i = showStart; i < showOnly + showStart; i++) {
+		for (var j = 0; j < this.states[i].length; j++) {
+			if (this.states[i][j] > showThreshhold) {
+				this.markers.push({
+					"id": 1,//this.nodes[i].id,
+					"area": j,
+					"val": this.states[i][j],
+					"color": colors[i-showStart]
+				});
+			}
+		}
+	}
+	
+	return this.markers;
+
+/*
+	return [
+	        {"id":0, "area":0, "val":.3, "color":"red"},
+	        {"id":0, "area":2, "val":.7, "color":"red"},
+	        {"id":1, "area":0, "val":.4, "color":"yellow"},
+	        {"id":1, "area":1, "val":.2, "color":"yellow"},
+	        {"id":1, "area":2, "val":.4, "color":"yellow"},
+	        {"id":2, "area":1, "val":.5, "color":"blue"},
+	        {"id":2, "area":2, "val":.5, "color":"blue"},
+   	        {"id":0, "area":0, "val":.3, "color":"red"},
+	        {"id":0, "area":2, "val":.7, "color":"red"},
+	        {"id":1, "area":0, "val":.4, "color":"yellow"},
+	        {"id":1, "area":1, "val":.2, "color":"yellow"},
+	        {"id":1, "area":2, "val":.4, "color":"yellow"},
+	        {"id":2, "area":1, "val":.5, "color":"blue"},
+	        {"id":2, "area":2, "val":.5, "color":"blue"},
+   	        {"id":0, "area":0, "val":.3, "color":"red"},
+	        {"id":0, "area":2, "val":.7, "color":"red"},
+	        {"id":1, "area":0, "val":.4, "color":"yellow"},
+	        {"id":1, "area":1, "val":.2, "color":"yellow"},
+	        {"id":1, "area":2, "val":.4, "color":"yellow"},
+	        {"id":2, "area":1, "val":.5, "color":"blue"},
+	        {"id":2, "area":2, "val":.5, "color":"blue"}
+	];
+*/
+
+};
+
+
+Phylowood.initMap = function() {
+
+	// div size (get dynamically)
+	var h = document.getElementById("divGeo").offsetHeight;
+	var w = document.getElementById("divGeo").offsetWidth;
+
+	// toy data
+	var states = this.initMarkers();
+	var coords = this.geoCoords;
+//				[{lon:-123.08, lat:38.17},
+//	              {lon:-123.18, lat:38.05},
+//	              {lon:-123.13, lat:38.11}];
+	var foci = [coords.length]; // cluster foci, i.e. areas lat,lons
+
+	// create polymaps object
+	var po = org.polymaps;
+	
+	// create the map object, add it to #divGeo
+	var map = po.map()
+		.container(d3.select("#divGeo").append("svg:svg").node())
+		//.center({lat:38,lon:-123}) // 38.1, -122.15
+		.center({lat:38.1,lon:-122.15})
+		.zoom(12)
+		.add(po.interact())
+		.add(po.image()
+		  .url(po.url("http://{S}tile.cloudmade.com"
+		  + "/87d72d27ad3a48939015cdbd06980326" // http://cloudmade.com/register
+		  + "/62438/256/{Z}/{X}/{Y}.png")
+		  .hosts(["a.", "b.", "c.", ""])))
+		.add(po.compass().pan("none"));
+	
+	
+	
+	var layer = d3.select("#divGeo svg").insert("svg:g", ".compass");
+	
+	// assign foci xy coordinates from geographical coordinates
+	for (var i = 0; i < coords.length; i++)
+		foci[i] = map.locationPoint(coords[i]);	
+
+	// create force layout
+	var force = d3.layout.force()
+		.nodes(states)
+		.links([])
+		.charge( -1.5 * map.zoom())
+	//	.charge(-Math.pow(1.5, map.zoom()) + 8*map.zoom())
+		.gravity(0.0)
+		.theta(1.5)
+		.friction(0.5)
+//		.alpha(100000)
+		.size([w, h])
+		;
+		
+	states.forEach(function(d, i) {
+		d.x = foci[d.area].x;
+		d.y = foci[d.area].y;
+	});
+//	force.linkDistance( map.zoom());
+	force.start();
+	
+	// create svg markers
+	var node = layer.selectAll("circle.node")
+			.data(states)
+		.enter().append("svg:circle")
+			.attr("class","node")
+			.attr("cx", function(d) { return foci[d.area].x; })
+			.attr("cy", function(d) { return foci[d.area].y; })
+			.attr("r",  function(d) { return Math.pow(2, map.zoom() - 12) * Math.sqrt(d.val); })
+			.attr("fill", function(d) { return d.color; })
+			.attr("fill-opacity", 0.5)
+			.call(force.drag)
+			;
+
+
+	// freeze markers during pan & zoom
+	d3.select("#divGeo")
+		.on("mousedown", mousedown)
+		.on("mouseup", mouseup);
+		
+	function mousedown() {
+		force.stop();
+	}
+	
+	function mouseup() {
+		//force.resume();
+	}
+
+	// update coordinates when map pans and zooms
+	map.on("move", function() {
+
+	
+	//	force.stop();
+
+		// update force foci positions
+		for (var i = 0; i < coords.length; i++)
+			foci[i] = map.locationPoint(coords[i]);
+		
+		// update force properties with each move
+//		force.charge(-Math.pow(1.5, map.zoom()) + 1.5 * map.zoom())
+		force.charge( -1.5 * map.zoom());
+	
+	
+		// better visualization: have all nodes retain actual positions, instead of refocusing
+		// it seems like areas contract at different zoom levels... weird
+		// update positions of js states[] objects
+		
+		states.forEach(function(o,i) {
+			xy = map.locationPoint({"lon": o.lon, "lat":o.lat});
+			o.x = xy.x;
+			o.y = xy.y; 
+		});
+		
+		node.attr("cx", function(d) { return d.x; })
+			.attr("cy", function(d) { return d.y; });
+
+/*
+		states.forEach(function(o,i) {
+			o.x = foci[o.area].x;
+			o.y = foci[o.area].y;
+		});
+	
+		// update positions of SVG node[] objects
+		node.attr("cx", function(d) { return foci[d.area].x; })
+			.attr("cy", function(d) { return foci[d.area].y; });
+
+*/
+
+		// update marker radii of SVG node[] objects
+		node.attr("r", function(d) { return Math.pow(2, map.zoom() - 12) * Math.sqrt(d.val); })
+
+	//	force.resume();
+
+	});	
+
+
+	// update node[] each tick
+	force.on("tick", function(e) {
+
+
+		// set stepsize per tick
+		var k = e.alpha * 2;
+
+		// update object values per tick
+		states.forEach(function(o,i) {
+			o.x += (foci[o.area].x - o.x) * k
+			o.y += (foci[o.area].y - o.y) * k
+			var latlon = map.pointLocation({"x": o.x, "y": o.y});
+			o.lon = latlon.lon;
+			o.lat = latlon.lat;
+		});
+
+		// update object attributes per tick
+		layer.selectAll("circle.node")
+        	.attr("cx", function(d) { return d.x; })
+    	 	.attr("cy", function(d) { return d.y; });
+		
+	});
+	
+	/*
+	
+	 //   var q = d3.geom.quadtree(nodes),
+	//	q.visit(collide(o));
+	
+	function collide(node) {
+	  var r = node.radius + 16,
+		  nx1 = node.x - r,
+		  nx2 = node.x + r,
+		  ny1 = node.y - r,
+		  ny2 = node.y + r;
+	  return function(quad, x1, y1, x2, y2) {
+		if (quad.point && (quad.point !== node)) {
+		  var x = node.x - quad.point.x,
+			  y = node.y - quad.point.y,
+			  l = Math.sqrt(x * x + y * y),
+			  r = node.radius + quad.point.radius;
+		  if (l < r) {
+			l = (l - r) / l * .5;
+			node.px += x * l;
+			node.py += y * l;
+		  }
+		}
+		return x1 > nx2
+			|| x2 < nx1
+			|| y1 > ny2
+			|| y2 < ny1;
+	  };
+
+	}*/
+};
+
 Phylowood.initPlayer = function() {
-	this.maxTime = 0;
-	this.curTime = 0;
+
+/*
 	this.minTime = 0;
+	this.maxTime = this.minTime - this.nodes[this.nodes.length-1].time;
+	this.curTime = this.minTime;
 	this.paused = true;
-	
-	function playPause() {
-		if (this.paused)
-			this.play();
-		else
-			this.pause();
-	}
-	
-	function play() {
-	}
-	
-	function pause() {
-	}
-	
-	function stop() {
-	}
-	
-	function ffwd() {
-	}
-	
-	function slow() {
-	}
+*/
+	//$(function() {
+		
+	//});
+
+	var maxTime = -125;
+	$( "#slider" ).slider("option","max",0);
+	$( "#slider" ).slider("option","min",maxTime);
+	$( "#slider" ).slider("option","value",maxTime);
+
+	// show current year
+
+	// add tick marks for divergence events
 	
 	// if time allows
 	// function maximizeDisplay() {};
 	// function minimizeDisplay() {};
+
 };
+
+
+Phylowood.playPause = function() {
+	if (this.paused)
+		this.play();
+	else
+		this.pause();
+}
+
+Phylowood.play = function() {
+	this.paused = false;
+	setInterval
+	// while curTime < maxTime, play animation
+}
+
+Phylowood.pause = function() {
+	this.paused = true;
+	
+}
+
+Phylowood.stop = function() {
+	this.curTime = this.minTime;
+	this.paused = true;
+}
 
 /***
 TESTING
@@ -602,134 +875,10 @@ Phylowood.testPolyMaps = function() {
 	
 };
 
-Phylowood.testMultiFocus = function() {
-
-	// div size (get dynamically)
-	var h = document.getElementById("divGeo").offsetHeight;
-	var w = document.getElementById("divGeo").offsetWidth;
-
-	// toy data
-	var states = [
-	        {"id":0, "area":0, "val":.3, "color":"red"},
-	        {"id":0, "area":2, "val":.7, "color":"red"},
-	        {"id":1, "area":0, "val":.4, "color":"yellow"},
-	        {"id":1, "area":1, "val":.2, "color":"yellow"},
-	        {"id":1, "area":2, "val":.4, "color":"yellow"},
-	        {"id":2, "area":1, "val":.5, "color":"blue"},
-	        {"id":2, "area":2, "val":.5, "color":"blue"},
-   	        {"id":0, "area":0, "val":.3, "color":"red"},
-	        {"id":0, "area":2, "val":.7, "color":"red"},
-	        {"id":1, "area":0, "val":.4, "color":"yellow"},
-	        {"id":1, "area":1, "val":.2, "color":"yellow"},
-	        {"id":1, "area":2, "val":.4, "color":"yellow"},
-	        {"id":2, "area":1, "val":.5, "color":"blue"},
-	        {"id":2, "area":2, "val":.5, "color":"blue"},
-   	        {"id":0, "area":0, "val":.3, "color":"red"},
-	        {"id":0, "area":2, "val":.7, "color":"red"},
-	        {"id":1, "area":0, "val":.4, "color":"yellow"},
-	        {"id":1, "area":1, "val":.2, "color":"yellow"},
-	        {"id":1, "area":2, "val":.4, "color":"yellow"},
-	        {"id":2, "area":1, "val":.5, "color":"blue"},
-	        {"id":2, "area":2, "val":.5, "color":"blue"}
-	];
-	var coords = [{lon:-123.08, lat:38.17},
-	              {lon:-123.18, lat:38.05},
-	              {lon:-123.13, lat:38.11}];
-	var foci = [coords.length]; // cluster foci, i.e. areas lat,lons
-
-	// create polymaps object
-	var po = org.polymaps;
-	
-	// create the map object, add it to #divGeo
-	var map = po.map()
-		.container(d3.select("#divGeo").append("svg:svg").node())
-		.center({lat:38,lon:-123}) // 38.1, -122.15
-		.zoom(10)
-		.add(po.interact())
-		.add(po.image()
-		  .url(po.url("http://{S}tile.cloudmade.com"
-		  + "/87d72d27ad3a48939015cdbd06980326" // http://cloudmade.com/register
-		  + "/62438/256/{Z}/{X}/{Y}.png")
-		  .hosts(["a.", "b.", "c.", ""])))
-		.add(po.compass().pan("none"));
-	var layer = d3.select("#divGeo svg").insert("svg:g", ".compass");
-
-	// assign foci xy coordinates from geographical coordinates
-	for (var i = 0; i < coords.length; i++)
-		foci[i] = map.locationPoint(coords[i]);	
-
-	// create force layout
-	var force = d3.layout.force()
-		.nodes(states)
-		.links([])
-//		.charge(-25)
-		.gravity(0.0)
-	//	.friction(0.5)
-		.alpha(100000)
-		.size([w, h])
-		.start()
-		;
-
-	// create svg markers
-	var node = layer.selectAll("circle.node")
-			.data(states)
-		.enter().append("svg:circle")
-			.attr("class","node")
-			.attr("cx", function(d) { return foci[d.area].x; })
-			.attr("cy", function(d) { return foci[d.area].y; })
-			.attr("r",  function(d) { return Math.pow(2, map.zoom() - 7) * Math.sqrt(d.val); })
-			.attr("fill", function(d) { return d.color; })
-			.call(force.drag)
-			;
-
-	// update coordinates when map pans and zooms
-	map.on("move", function() {
-
-		// update force foci positions
-		for (var i = 0; i < coords.length; i++)
-			foci[i] = map.locationPoint(coords[i]);
-		
-		// update force properties with each move
-		//force.gravity(map.zoom()); // higher gravity for lower level zooms
-		var k = 5;
-		force.charge(-Math.pow(2,(k / map.zoom()))).start();
-		
-		// update positions of js states[] objects
-		states.forEach(function(o,i) {
-			o.x = foci[o.area].x;
-			o.y = foci[o.area].y;
-		});
-	
-		// update positions of SVG node[] objects
-		node.attr("cx", function(d) { return foci[d.area].x; })
-			.attr("cy", function(d) { return foci[d.area].y; });
-
-		// update marker radii of SVG node[] objects
-		node.attr("r", function(d) { return Math.pow(2, map.zoom() - 7) * Math.sqrt(d.val); })
-
-	});	
-
-
-	// update node[] each tick
-	force.on("tick", function(e) {
-
-		// set stepsize per tick
-		var k = e.alpha * 0.1;
-
-		// update object values per tick
-		states.forEach(function(o,i) {
-			o.x += (foci[o.area].x - o.x) * k
-			o.y += (foci[o.area].y - o.y) * k
-		});
-
-		// update object attributes per tick
-		layer.selectAll("circle.node")
-        	.attr("cx", function(d) { return d.x; })
-    	 	.attr("cy", function(d) { return d.y; });
-		
-	});
-
-	
+Phylowood.testMultiFocus = function () {
+	this.initMap();
 };
+
+
 
 //Phylowood.testPolyMaps();

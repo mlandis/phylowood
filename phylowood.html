@@ -5,6 +5,7 @@
 <title>phylowood</title>    
 
 <style type='text/css'>
+
 body {
     font-family: sans-serif;
 }
@@ -17,7 +18,56 @@ svg {
 	width:600px;
 	height:600px;
 }
-	</style>
+
+#divSlider > div.player {
+	padding: 10px !important;
+}
+
+#toolbar {
+	padding: 10px 4px;
+}
+
+.compass .back {
+  fill: #eee;
+  fill-opacity: .8;
+}
+
+.compass .fore {
+  stroke: #999;
+  stroke-width: 1.5px;
+}
+
+.compass rect.back.fore {
+  fill: #999;
+  fill-opacity: .3;
+  stroke: #eee;
+  stroke-width: 1px;
+  shape-rendering: crispEdges;
+}
+
+.compass .direction {
+  fill: none;
+}
+
+.compass .chevron {
+  fill: none;
+  stroke: #999;
+  stroke-width: 5px;
+}
+
+.compass .zoom .chevron {
+  stroke-width: 4px;
+}
+
+.compass .active .chevron, .compass .chevron.active {
+  stroke: #fff;
+}
+
+.compass.active .active .direction {
+  fill: #999;
+}
+
+</style>
 
 <script type="text/javascript" src="d3.v2.min.js"></script>
 <script type="text/javascript" src="http://polymaps.org/polymaps.min.js?2.5.0"></script>
@@ -26,49 +76,136 @@ svg {
 <script type="text/javascript" src="processing.js"></script>
 <script type="text/javascript" src="http://openlayers.org/api/OpenLayers.js"></script>
 
-<!-- <script type="text/javascript" src="arcgis_gmaps.js"></script> -->
-<!-- <script type="text/javascript" src="ExportMap.js"></script> -->
-<!-- <script src="processing-1.3.6.min.js"></script> -->
+<script type="text/javascript" src="jquery-1.7.2.js"></script>
+<link rel="stylesheet" href="themes/base/jquery.ui.all.css">
+<script src="ui/jquery.ui.core.js"></script>
+<script src="ui/jquery.ui.widget.js"></script>
+<script src="ui/jquery.ui.mouse.js"></script>
+<script src="ui/jquery.ui.slider.js"></script>
+<script src="ui/jquery.ui.button.js"></script>
 
 </head>
 <!-- HTML LAYOUT -->
 <body>
   <div id="container" style="width:1200px">
+  
+  <!--
   <div id="header" style="background-color:#FF0000;width:1200px;float:left;">
   <h1>phylowood</h1>
-  
+  -->
   <!-- <img alt="phylowood" src="phylowood.png"> -->
   <!-- logo made using http://fontmeme.com/hollywood-font/ -->
+
   </div>
-    <!-- CONTROLS -->
-  <div id="hdrCtrl" style="background-color:#FFA500;width:1200px;float:left;">
-    <h2>Controls</h2>
-  </div>
-  <div id="divCtrl" style="background-color:#FFA500;height:100px;width:1200px;float:left;">
+
+  <div id="divCtrl" style="background-color:#FFA500;height:80px;width:1200px;float:left;">
 	<input type="file" id="files" name="files[]" multiple />
 	<br><input type="button" id="buttonApply" value="Apply" onClick="Phylowood.initialize();" />
-	<br><input type="button" id="buttonAnimate" value="Animate" onClick="Phylowood.animate();" /> 
   </div>
 
-
-  <div id="hdrGeo" style="background-color:#FFD700;width:600px;float:left;">
-    <h2>Geography</h2>
+  <div id="divGeo" style="background-color:#FFD700;height:600px;width:600px;float:left;">
+  </div>
+    
+   <div id="divPhylo" style="background-color:#FFE700;height:600px;width:600px;float:left;">
   </div>
   
-  <div id="hdrPhylo" style="background-color:#FFE700;width:600px;float:left;">
-    <h2>Phylogeny</h2>
+  <div id="divPlay" style="background-color:#FFA500;height:100px;width:600px;float:left;" class="player">
+  <div id="divSlider" style="background-color:#FFA500;width:600px;float:left;"></div><br>
+  <script>
+  $(function() {
+	$( "#divSlider" ).slider();
+  });
+
+  $(function() {
+    $( "#beginning" ).button({
+      text: false,
+	icons: {
+	  primary: "ui-icon-seek-start"
+        }
+      });
+      $( "#rewind" ).button({
+        text: false,
+        icons: {
+				primary: "ui-icon-seek-prev"
+			}
+		});
+		$( "#play" ).button({
+			text: false,
+			icons: {
+				primary: "ui-icon-play"
+			}
+		})
+		.click(function() {
+			var options;
+			if ( $( this ).text() === "play" ) {
+				options = {
+					label: "pause",
+					icons: {
+						primary: "ui-icon-pause"
+					}
+				};
+			} else {
+				options = {
+					label: "play",
+					icons: {
+						primary: "ui-icon-play"
+					}
+				};
+			}
+			$( this ).button( "option", options );
+		});
+		$( "#stop" ).button({
+			text: false,
+			icons: {
+				primary: "ui-icon-stop"
+			}
+		})
+		.click(function() {
+			$( "#play" ).button( "option", {
+				label: "play",
+				icons: {
+					primary: "ui-icon-play"
+				}
+			});
+		});
+		$( "#forward" ).button({
+			text: false,
+			icons: {
+				primary: "ui-icon-seek-next"
+			}
+		});
+		$( "#end" ).button({
+			text: false,
+			icons: {
+				primary: "ui-icon-seek-end"
+			}
+		});
+	});
+
+    </script>
+	<span id="toolbar" class="ui-widget-header ui-corner-all">
+		<button id="beginning">go to beginning</button>
+		<button id="rewind">rewind</button>
+		<button id="play">play</button>
+		<button id="stop">stop</button>
+		<button id="forward">fast forward</button>
+		<button id="end">go to end</button>
+	</span>
+
+	  
   </div>
 
 <!--
-  <canvas id="divGeo" style="background-color:#FFD700;height:600px;width:600px;float:left;" data-processing-sources="phylowood.pde">
-  </canvas>
-  -->
-  <div id="divGeo" style="background-color:#FFD700;height:600px;width:600px;float:left;">
-<!--     <div id="mapGeo"</div> style="height:540px;width:540px;margin: 0 auto;"</div> -->
+  <div id="divFilter" style="background-color:#FFA500;height:200px;width:600px;float:left;">
+
   </div>
-  
-  <div id="divPhylo" style="background-color:#FFE700;height:600px;width:600px;float:left;">
-  </div>
+-->
+
+  <div id="divFilter" style="background-color:#FFA500;height:100px;width:600px;float:left;">
+
+</div>
+
+
 
 </body>
 
