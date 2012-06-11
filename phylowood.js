@@ -594,7 +594,7 @@ Phylowood.initMap = function() {
 			.attr("r",  function(d) { return Math.pow(2, map.zoom() - 12) * Math.sqrt(d.val); })
 			.attr("fill", function(d) { return d.color; })
 			.attr("fill-opacity", 0.5)
-			.call(force.drag)
+		//	.call(force.drag)
 			;
 
 
@@ -624,6 +624,7 @@ Phylowood.initMap = function() {
 		// update force properties with each move
 //		force.charge(-Math.pow(1.5, map.zoom()) + 1.5 * map.zoom())
 		force.charge( -1.5 * map.zoom());
+		force.gravity(0.0);
 	
 	
 		// better visualization: have all nodes retain actual positions, instead of refocusing
