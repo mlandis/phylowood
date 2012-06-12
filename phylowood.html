@@ -23,10 +23,10 @@
 </head>
 <!-- HTML LAYOUT -->
 <body>
-  <div id="container" style="width:1200px">
+  <div id="container">
   
   <!--
-  <div id="header" style="background-color:#FF0000;width:1200px;float:left;">
+  <div id="header">
   <h1>phylowood</h1>
   -->
   <!-- <img alt="phylowood" src="phylowood.png"> -->
@@ -34,20 +34,20 @@
 
   </div>
 
-  <div id="divCtrl" style="background-color:#FFA500;height:80px;width:1200px;float:left;">
+  <div id="divCtrl">
 	<input type="file" id="files" name="files[]" multiple />
 	<br><input type="button" id="buttonApply" value="Apply" onClick="Phylowood.initialize();" />
   </div>
 
-   <div id="divPhylo" style="background-color:#FFE700;height:600px;width:600px;float:left;">
+   <div id="divPhylo">
   </div>
   
-  <div id="divGeo" style="background-color:#FFD700;height:600px;width:600px;float:left;">
+  <div id="divGeo">
   </div>
     
   
-  <div id="divPlay" style="background-color:#FFA500;height:100px;width:600px;float:left;" class="player">
-  <div id="divSlider" style="background-color:#FFA500;width:600px;float:left;"></div><br>
+  <div id="divPlay" class="player">
+  <div id="divSlider"></div><br>
   <script>
   $(function() {
 	$( "#divSlider" ).slider();
@@ -132,13 +132,8 @@
 	  
   </div>
 
-<!--
-  <div id="divFilter" style="background-color:#FFA500;height:200px;width:600px;float:left;">
-
+  <div id="divFilter">
   </div>
--->
-
-  <div id="divFilter" style="background-color:#FFA500;height:100px;width:600px;float:left;">
 
 </div>
 
