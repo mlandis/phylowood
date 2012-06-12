@@ -97,6 +97,9 @@ Phylowood.initStates = function(statesStr) {
 			this.states.push(taxonVals);
 		}
 	}
+
+	this.numNodes = this.states.length;
+	this.numTips = (this.numNodes + 1) / 2;
 	
 	/*
 	console.log("Phylowood.initStates():");
@@ -159,57 +162,8 @@ Phylowood.initGeo = function(geoStr) {
 		}
 		this.geoDistances.push(distanceVals);
 	}
-	
-	/*
-	
-	// define drawable space for map and coordinates
-	var buffer = 0.1; // geo buffer, so max coordinates are not on border
-	var divH = document.getElementById("divGeo").offsetHeight;
-	var divW = document.getElementById("divGeo").offsetWidth;
-	var divMargin = 0.1; // div margin, smaller img
-	var divMarginH = divH * divMargin / 2;
-	var divMarginW = divW * divMargin / 2;
-	
-	var geoMargin = 0.1;
-	var geoScaleH = maxN - maxS;
-	var geoScaleW = maxE - maxW;
-	var geoMarginH = geoScaleH * geoMargin / 2;
-	var geoMarginW = geoScaleW * geoMargin / 2;
-	
-	
-	// rescale dimensions according to max coordinates.
-	//var scaleByH = (geoScaleH > geoScaleW ? true : false);
-	//if (scaleByH)
-	//	divW = divW * geoScaleH / geoScaleW;
-	
-	divH = divH * (1.0 - divMargin);
-	divW = divW * (1.0 - divMargin);
 
-
-	// scale coordinates
-	this.divCoords = [];
-	for (var i = 0; i < numAreas; i++) {
-		var coordVals = [];
-		coordVals.push( (-this.geoCoords[i][0] + maxN) * (1.0 - geoMarginH) / geoScaleH * divH + divMarginH);
-		coordVals.push( (this.geoCoords[i][1] - maxW) * (1.0 - geoMarginW) / geoScaleW * divW + divMarginW);
-		this.divCoords.push(coordVals);
-	}
-	
-	// load map
-	// ... dynamically, via OpenLayers
-	// Phylowood.testOpenLayers();
-	
-	// ... dynamically, via Polymaps
-	// Phylowood.testPolyMaps();
-	
-	// ... statically, via createElement and filepath
-	var imageFile = "./phylowood.default.jpg";
-	var geoImage = document.createElement("IMG");
-	geoImage.src = imageFile;
-	document.getElementById("divGeo").appendChild(geoImage);
-	*/
-
-	Phylowood.testMultiFocus();
+	Phylowood.initMap();
 
 	/*
 	console.log("Phylowood.initGeo():");
@@ -405,7 +359,9 @@ Phylowood.initTree = function(newickStr) {
 		this.nodesByTime.push(this.nodes[i]);
 	}
 	this.nodesByTime.sort(function(a,b){return a.time - b.time;});
-	
+	this.startPhyloTime = -this.nodesByTime[0];
+	this.endPhyloTime = this.nodesByTime[this.numNodes-1];
+	this.initNodeColors();
 
 	// draw tree using jsPhyloSvg
 	var margin = 0.1;
@@ -422,7 +378,9 @@ Phylowood.initTree = function(newickStr) {
 		divH,
 		divW
 	);
-
+	
+	// still need to get some info from this.phylocanvas about branch lengths in pixels
+	// color branch lengths, etc
 /*
 	console.log(newickStr);
 	console.log(newickTokens);
@@ -431,6 +389,43 @@ Phylowood.initTree = function(newickStr) {
 */
 };
 
+Phylowood.initNodeColors = function() {
+	
+	var lStep = 0.5 / (this.nodesByTime[this.numNodes-1].time - this.nodesByTime[0].time);
+	var hStep = 360.0 / (this.numTips - 1);
+
+	var lValue = 0.0;
+	var hValue = 0.0;
+
+	// assign colors uniformly across tips
+	for (var i = 0; i < this.numNodes; i++) {
+		if (this.nodes[i].descendants.length === 0) {
+			console.log(hValue + " " + lValue);
+			lValue = 1.0 - lStep*this.nodes[i].time;
+			this.nodes[i].color = d3.hsl( hValue,1,lValue );//.toString();
+			console.log(this.nodes[i].color);
+			hValue += hStep;
+		}
+	}
+
+	// set internal nodes based on tip colors
+	for (var i = 0; i < this.nodes.length; i++) {
+		if (this.nodes[i].descendants.length > 0) {
+			// get average color of descendants
+			var hTemp = 0.0;
+			for (var j = 0; j < this.nodes[i].descendants.length; j++) {
+				//var x = this.nodes[i].descendants[j].color; console.log(x);
+				hTemp += d3.hsl(this.nodes[i].descendants[j].color).h;
+			}
+			hTemp /= this.nodes[i].descendants.length;
+			lValue = 1.0 - lStep*this.nodes[i].time;
+			// console.log(hTemp + " " + lValue);
+			// haha, very untested, don't know if this works at all
+
+			this.nodes[i].color = d3.hsl( hTemp,1,lValue );//.toString();
+		}
+	}
+}
 
 Phylowood.Node = function() {
 	return function(o, parentInstance){
@@ -446,7 +441,7 @@ Phylowood.Node = function() {
 		this.type = '';
 		this.chart = {};
 		this.img = [];
-		this.color = [0,0,0];
+		this.color = d3.hsl(0,0,0);
 		
 		if(o) Smits.Common.apply(this, o);
 
@@ -471,8 +466,8 @@ Phylowood.Tree = function() {
 
 Phylowood.initMarkers = function() {
 	this.markers = [];
-	var showStart = 40;
-	var showOnly = 20;
+	var showStart = 20;
+	var showOnly = 42;
 	var showThreshhold = 0.5;
 	
 	var colors;
@@ -480,7 +475,6 @@ Phylowood.initMarkers = function() {
 	for (var i = 0; i < showOnly; i++)
 		colors[i] = "hsl(" + Math.random() * 360 + ",100%,50%)";
 	
-//	for (var i = 0; i < this.states.length; i++) {
 	for (var i = showStart; i < showOnly + showStart; i++) {
 		for (var j = 0; j < this.states[i].length; j++) {
 			if (this.states[i][j] > showThreshhold) {
@@ -488,7 +482,8 @@ Phylowood.initMarkers = function() {
 					"id": 1,//this.nodes[i].id,
 					"area": j,
 					"val": this.states[i][j],
-					"color": colors[i-showStart]
+					//"color": colors[i-showStart]
+					"color": "hsl(" + this.nodes[i].color + ")"
 				});
 			}
 		}
@@ -593,6 +588,8 @@ Phylowood.initMap = function() {
 			.attr("cy", function(d) { return foci[d.area].y; })
 			.attr("r",  function(d) { return Math.pow(2, map.zoom() - 12) * Math.sqrt(d.val); })
 			.attr("fill", function(d) { return d.color; })
+			.attr("stroke", "gray")
+			.attr("stroke-width", 1)
 			.attr("fill-opacity", 0.5)
 		//	.call(force.drag)
 			;
@@ -684,8 +681,9 @@ Phylowood.initMap = function() {
 	});
 	
 	/*
+	// collisions instead of overlap? probably too costly
 	
-	 //   var q = d3.geom.quadtree(nodes),
+	//   var q = d3.geom.quadtree(nodes),
 	//	q.visit(collide(o));
 	
 	function collide(node) {
@@ -715,27 +713,31 @@ Phylowood.initMap = function() {
 	}*/
 };
 
+
+
 Phylowood.initPlayer = function() {
 
-/*
-	this.minTime = 0;
-	this.maxTime = this.minTime - this.nodes[this.nodes.length-1].time;
-	this.curTime = this.minTime;
-	this.paused = true;
-*/
-	//$(function() {
-		
-	//});
+	this.ticker = "";
 
-	var maxTime = -125;
-	$( "#slider" ).slider("option","max",0);
-	$( "#slider" ).slider("option","min",maxTime);
-	$( "#slider" ).slider("option","value",maxTime);
+	this.startPhyloTime = -125;
+	this.curPhyloTime = -125;
+	this.endPhyloTime = 0;
+
+	this.startClockTime = 0.0;
+	this.endClockTime = 30000.0; // play for 30 seconds, by default
+	this.curClockTime = 0.0;
+	this.clockTick = 100.0;
+	this.phyloTick = 0.0;
+	this.phyloTick = (this.endPhyloTime - this.curPhyloTime) / this.clockTick;
+
+	this.playSpeed = 1.0;
+	
+	$( "#divSlider" ).slider("option","max",this.endPhyloTime);
+	$( "#divSlider" ).slider("option","min",this.startPhyloTime);
+	$( "#divSlider" ).slider("option","value",this.curPhyloTime);
 
 	// show current year
-
-	// add tick marks for divergence events
-	
+	// add tick marks for divergence events	
 	// if time allows
 	// function maximizeDisplay() {};
 	// function minimizeDisplay() {};
@@ -743,33 +745,83 @@ Phylowood.initPlayer = function() {
 };
 
 
-Phylowood.playPause = function() {
-	if (this.paused)
-		this.play();
-	else
-		this.pause();
+Phylowood.animStart = function() {
+	$( "#divSlider" ).slider("option","value",this.startPhyloTime);
+	this.curPhyloTime = this.startPhyloTime;
+	this.curClockTime = this.startClockTime;
 }
 
-Phylowood.play = function() {
-	this.paused = false;
-	setInterval
-	// while curTime < maxTime, play animation
+Phylowood.animEnd = function() {
+	$( "#divSlider" ).slider("option","value",this.endPhyloTime);
+	this.curPhyloTime = this.endPhyloTime;
+	this.curClockTime = this.endClockTime;
 }
 
-Phylowood.pause = function() {
-	this.paused = true;
+Phylowood.animRewind = function() {
+
+	if (this.playSpeed === 1.0)
+		this.playSpeed = -1.0;
+
+	else if (this.playSpeed < 0.0 && this.playSpeed >= -8.0)
+		this.playSpeed *= 2.0;
+
+	else if (this.playSpeed > 1.0)
+		this.playSpeed /= 2.0;
+}
+
+Phylowood.animFfwd = function() {
+
+	if (this.playSpeed === -1.0)
+		this.playSpeed = 1.0;
+
+	else if (this.playSpeed > 0.0 && this.playSpeed <= 8.0)
+		this.playSpeed *= 2.0;
+
+	else if (this.playSpeed < -1.0)
+		this.playSpeed /= 2.0;
+}
+
+Phylowood.animPause = function() {
+	clearInterval(this.ticker);
+}
+
+Phylowood.animPlay = function() {
+
+	// update display each clockTick
+	this.ticker = setInterval(this.updateDisplay, this.clockTick * this.playSpeed); 
+}
+
+Phylowood.animStop = function() {
+	clearInterval(Phylowood.ticker);
+	this.playSpeed = 1.0;
+	this.animStart();
+}
+
+Phylowood.updateDisplay = function() {
+
+	// update current times
+	Phylowood.curPhyloTime = Phylowood.curPhyloTime + Phylowood.phyloTick * Phylowood.playSpeed;
+	Phylowood.curClockTime = Phylowood.curClockTime + Phylowood.clockTick * Phylowood.playSpeed;
+	console.log("t_c=" + Phylowood.curClockTime + ", t_p=" + Phylowood.curPhyloTime);
+
+	// stop if animation duration met
+	if (Phylowood.curPhyloTime >= Phylowood.endPhyloTime
+	|| Phylowood.curPhyloTime <= Phylowood.startPhyloTime)
+		Phylowood.animStop();
+
+	// update slider position
+	$( "#divSlider" ).slider("option","value", Phylowood.curPhyloTime);
 	
-}
+	// update phylo widget cursor position
+	// will need to draw the slider as long as tree width from jsPhyloSvg	
 
-Phylowood.stop = function() {
-	this.curTime = this.minTime;
-	this.paused = true;
+	// if applicable, all next nodesByTime[] event
+	
 }
 
 /***
 TESTING
 ***/
-
 
 Phylowood.testOpenLayers = function() {
 	this.olmap = new OpenLayers.Map("divGeo", {
@@ -880,6 +932,3 @@ Phylowood.testMultiFocus = function () {
 	this.initMap();
 };
 
-
-
-//Phylowood.testPolyMaps();

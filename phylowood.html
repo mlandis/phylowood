@@ -118,18 +118,25 @@ svg {
   });
 
   $(function() {
-    $( "#beginning" ).button({
-      text: false,
-	icons: {
-	  primary: "ui-icon-seek-start"
-        }
-      });
-      $( "#rewind" ).button({
-        text: false,
-        icons: {
+    
+		$( "#beginning" ).button({
+			text: false,
+			icons: {
+				primary: "ui-icon-seek-start"
+			}
+		}).click(function() {
+			Phylowood.animStart();
+		});
+		
+		$( "#rewind" ).button({
+			text: false,
+			icons: {
 				primary: "ui-icon-seek-prev"
 			}
+		}).click(function() {
+			Phylowood.animRewind();
 		});
+		
 		$( "#play" ).button({
 			text: false,
 			icons: {
@@ -145,6 +152,7 @@ svg {
 						primary: "ui-icon-pause"
 					}
 				};
+				Phylowood.animPlay();
 			} else {
 				options = {
 					label: "play",
@@ -152,9 +160,11 @@ svg {
 						primary: "ui-icon-play"
 					}
 				};
+				Phylowood.animPause();
 			}
 			$( this ).button( "option", options );
 		});
+		
 		$( "#stop" ).button({
 			text: false,
 			icons: {
@@ -168,18 +178,25 @@ svg {
 					primary: "ui-icon-play"
 				}
 			});
+			Phylowood.animStop();
 		});
+			
 		$( "#forward" ).button({
 			text: false,
 			icons: {
 				primary: "ui-icon-seek-next"
 			}
+		}).click(function() {
+			Phylowood.animFfwd();
 		});
+			
 		$( "#end" ).button({
 			text: false,
 			icons: {
 				primary: "ui-icon-seek-end"
 			}
+		}).click(function() {
+			Phylowood.animEnd();
 		});
 	});
 
