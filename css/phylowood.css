@@ -1,0 +1,63 @@
+body {
+    font-family: sans-serif;
+}
+
+svg {
+  display: block;
+}
+
+#container {
+	width:1200px; 
+}
+
+#header {
+	background-color:#FF0000;
+	width:1200px;
+	float:left;
+}
+
+#divCtrl {
+	background-color:#FFA500;
+	height:80px;
+	width:1200px;
+	float:left;
+}
+
+#divPhylo {
+	background-color:#FFE700;
+	height:600px;
+	width:600px;
+	float:left;
+}
+
+#divGeo {
+	background-color:#FFD700;
+	height:600px;
+	width:600px;
+	float:left;
+}
+
+#divPlay {
+	background-color:#FFA500;
+	height:100px;
+	width:600px;
+	float:left;
+}
+
+#divSlider > div.player {
+	padding: 10px !important;
+	background-color:#FFA500;
+	width:600px;
+	float:left;
+}
+
+#divFilter {
+	background-color:#FFA500;
+	height:100px;
+	width:600px;
+	float:left;
+}
+
+#toolbar {
+	padding: 10px 4px;
+}
