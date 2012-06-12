@@ -1,0 +1,20 @@
+body {
+    font-family: sans-serif;
+}
+
+svg {
+  display: block;
+}
+
+#divGeo {
+	width:600px;
+	height:600px;
+}
+
+#divSlider > div.player {
+	padding: 10px !important;
+}
+
+#toolbar {
+	padding: 10px 4px;
+}
