@@ -349,10 +349,23 @@ Phylowood.initTree = function(newickStr) {
 	// assign states to nodes
 	for (var i = 0; i < this.numNodes; i++) {
 		for (var j = 0; j < this.states.length; j++) {
+//			var fractionsFound = false;
 			if (this.nodes[i].name === this.taxa[j]) {
 				this.nodes[i].states = this.states[j];
 				this.nodes[i].id = j;
+/*
+				for (var k = 0; k < this.states[j].length; k++) {
+					if (this.states[j][k] > 0.0 && this.states[j][k] < 1.0) {
+						fractionsFound = true;
+					}
+				}
+*/
 			}
+/*
+			if (fractionsFound === true) {
+				console.log(i,j);
+			}
+*/
 		}
 	}
 
@@ -366,7 +379,6 @@ Phylowood.initTree = function(newickStr) {
 		}
 	}
 	setTime(this.root);
-
 	
 	// determine time-based order of nodes (for animation purposes)
 	this.nodesByTime = [];
@@ -376,7 +388,8 @@ Phylowood.initTree = function(newickStr) {
 	this.nodesByTime.sort(function(a,b){return a.time - b.time;});
 	this.startPhyloTime = this.nodesByTime[0].time;
 	this.endPhyloTime = this.nodesByTime[this.numNodes-1].time;
-	
+
+	// set colors for nodes	
 	this.initNodeColors();
 
 	// draw tree using jsPhyloSvg
@@ -414,13 +427,14 @@ Phylowood.Node = function() {
 		this.time = 0;
 		this.ancestor = null;
 		this.descendants = [];
-//		this.newickLen = 0;
 		this.name = '';
 		this.type = '';
 		this.chart = {};
 		this.img = [];
 		this.color = [0,0,0];
 		this.states = [];
+		//this.tStart = 0.0;
+		//this.tEnd = 0.0;
 		
 		if(o) Smits.Common.apply(this, o);
 
@@ -454,10 +468,8 @@ Phylowood.initNodeColors = function() {
 	// assign colors uniformly across tips
 	for (var i = 0; i < this.numNodes; i++) {
 		if (this.nodes[i].descendants.length === 0) {
-			console.log(hValue + " " + lValue);
 			lValue = 1.0 - lStep*this.nodes[i].time;
 			this.nodes[i].color = [hValue, 1, lValue];
-			console.log(this.nodes[i].color);
 			hValue += hStep;
 		}
 	}
@@ -466,6 +478,7 @@ Phylowood.initNodeColors = function() {
 	//for (var i = 0; i < this.nodes.length; i++) {
 	for (var i = this.numNodes-1; i >= 0; i--) {
 		if (this.nodesByTime[i].descendants.length > 0) {
+
 			// get average color of descendants
 			var hTemp = 0.0;
 			for (var j = 0; j < this.nodesByTime[i].descendants.length; j++) {
@@ -475,8 +488,9 @@ Phylowood.initNodeColors = function() {
 			lValue = 1.0 - lStep*this.nodesByTime[i].time;
 	
 			this.nodesByTime[i].color = [hTemp, 1, lValue];
-			console.log(this.nodesByTime[i].color);
+			
 		}
+		// console.log(this.nodesByTime[i].color);
 	}
 }
 
@@ -487,25 +501,36 @@ Phylowood.initMarkers = function() {
 	var showStart = 0;
 	var showOnly = this.numNodes;
 
-	var showThreshhold = 0.0;
+	var showThreshhold = 0.25;
 	
 /*
 	var colors;
-	colors = ["red", "orange", "blue", "green", "black"];
 	for (var i = 0; i < showOnly; i++)
 		colors[i] = "hsl(" + Math.random() * 360 + ",100%,50%)";
 */
 	
 	for (var i = showStart; i < showOnly + showStart; i++) {
-		for (var j = 0; j < this.states[i].length; j++) {
-			if (this.states[i][j] > showThreshhold) {
-				var c = this.nodes[i].color; // error??
+		var id = this.nodes[i].id;
+		var c = this.nodes[i].color;
+		var tStart = 0.0;
+		if (this.nodes[i].ancestor !== null)
+			tStart = this.nodes[i].ancestor.time;
+		var tEnd = this.nodes[i].time;
+
+		for (var j = 0; j < this.nodes[i].states.length; j++) {
+			if (this.nodes[i].states[j] > showThreshhold) {
+				//if (this.nodes[i].descendants.length === 0) {
+				//	console.log("wtf:" + ","+i +"," + j);
+				//}
+				
 				this.markers.push({
-					"id": this.nodes[i].id,
+					"id": id,
 					"area": j,
 					"val": this.nodes[i].states[j],
-					//"color": colors[i-showStart]
+					"tStart": tStart,
+					"tEnd": tEnd,
 					"color": "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)"
+					//"color": colors[i-showStart]
 				});
 			}
 		}
@@ -742,11 +767,9 @@ Phylowood.initMap = function() {
 
 Phylowood.initPlayer = function() {
 
-	this.ticker = "";
+	this.ticker = ""; // setInterval() object
 
-//	this.startPhyloTime = -125;
 	this.curPhyloTime = this.startPhyloTime;
-//	this.endPhyloTime = 0;
 
 	this.startClockTime = 0.0;
 	this.endClockTime = 30000.0; // play for 30 seconds, by default
@@ -827,10 +850,11 @@ Phylowood.animStop = function() {
 
 Phylowood.updateDisplay = function() {
 
+	//console.log("t_c=" + Phylowood.curClockTime + ", t_p=" + Phylowood.curPhyloTime);
+
 	// update current times
 	Phylowood.curPhyloTime = Phylowood.curPhyloTime + Phylowood.phyloTick * Phylowood.playSpeed;
 	Phylowood.curClockTime = Phylowood.curClockTime + Phylowood.clockTick * Phylowood.playSpeed;
-	console.log("t_c=" + Phylowood.curClockTime + ", t_p=" + Phylowood.curPhyloTime);
 
 	// stop if animation duration met
 	if (Phylowood.curPhyloTime >= Phylowood.endPhyloTime
@@ -840,27 +864,29 @@ Phylowood.updateDisplay = function() {
 	// update slider position
 	$( "#divSlider" ).slider("option","value", Phylowood.curPhyloTime);
 	
-	// update phylo widget cursor position
-	// will need to draw the slider as long as tree width from jsPhyloSvg	
 
-	// if applicable, all next nodesByTime[] event
-	// e.g.
+	// enter() and remove() events according to .curPhyloTime
+	// remove()
 	d3.selectAll("#divGeo circle.node").select(
-		function(d,i) {
-			var n = Phylowood.nodes[d.id];
-			if (n.descendants.length !== 0) {
-				for (j = 0; j < n.descendants.length; j++) {
-					if (n.descendants[j].time <= Phylowood.curPhyloTime) {
-						return this;
-					}
-				}
-			}
-			return null;
+		function(d) {
+			if (d.tStart < Phylowood.curPhyloTime || d.tEnd > Phylowood.curPhyloTime) 
+				return this;
+			else
+				return null;
 		}).remove();
 
-/*
-	d3.select("#divGeo").data(states)
-		.enter().append("svg:circle")
+	// enter()
+	// ...
+	// something like ...
+	/*
+	d3.select("#divGeo svg").selectAll("circle.node")
+			.data(Phylowood.markers).select(
+				function(d) {
+					if (d.tStart >= Phylowood.curPhyloTime && d.tEnd <= Phylowood.curPhyloTime)
+						return this;
+					else
+						return null;
+				}).enter().append("svg:circle")
 			.attr("class","node")
 			.attr("cx", function(d) { return foci[d.area].x; })
 			.attr("cy", function(d) { return foci[d.area].y; })
@@ -869,9 +895,12 @@ Phylowood.updateDisplay = function() {
 			.attr("stroke", "gray")
 			.attr("stroke-width", 1)
 			.attr("fill-opacity", 1)
-		//	.call(force.drag)
 			;
-*/	
+	*/
+
+	// update phylo widget cursor position
+	// will need to draw the slider as long as tree width from jsPhyloSvg	
+	// ...
 	
 }
 
