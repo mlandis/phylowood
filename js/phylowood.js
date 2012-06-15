@@ -503,7 +503,7 @@ Phylowood.initMarkers = function() {
 	var showStart = 0;
 	var showOnly = this.numNodes;
 
-	var showThreshhold = 0.0;
+	this.showThreshhold = 0.5;
 	
 /*
 	var colors;
@@ -522,7 +522,7 @@ Phylowood.initMarkers = function() {
 
 		for (var j = 0; j < this.nodes[i].states.length; j++) {
 			this.Markers = [];
-			if (this.nodes[i].states[j] > showThreshhold) {
+			if (this.nodes[i].states[j] > this.showThreshhold) {
 				//if (this.nodes[i].descendants.length === 0) {
 				//	console.log("wtf:" + ","+i +"," + j);
 				//}
