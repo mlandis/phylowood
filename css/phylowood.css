@@ -25,15 +25,15 @@ svg {
 
 #divPhylo {
 	background-color:#FFE700;
-	height:600px;
-	width:600px;
+	height:500px;
+	width:350px;
 	float:left;
 }
 
 #divGeo {
 	background-color:#FFD700;
-	height:600px;
-	width:600px;
+	height:500px;
+	width:850px;
 	float:left;
 }
 
