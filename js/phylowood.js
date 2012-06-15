@@ -370,12 +370,14 @@ Phylowood.initTree = function(newickStr) {
 	}
 
 	// assign absolute times to nodes, defined as:
-	// [t_begin, t_end] = [this.root.time, max(this.nodes[i].time)]
+	// [t_begin, t_end] = [this.root.timeStart, max(this.nodes[i].timeEnd)]
 	var setTime = function(p) {
-		if (p.ancestor !== null)
-			p.time = p.len + p.ancestor.time;
+		if (p.ancestor !== null) {
+			p.timeEnd = p.len + p.ancestor.timeEnd;
+			p.timeStart = p.ancestor.timeEnd;
+		}
 		for (var i = 0; i < p.descendants.length; i++) {
-			setTime(p.descendants[i], p.time);
+			setTime(p.descendants[i], p.timeEnd);
 		}
 	}
 	setTime(this.root);
@@ -385,9 +387,9 @@ Phylowood.initTree = function(newickStr) {
 	for (var i = 0; i < this.nodes.length; i++) {
 		this.nodesByTime.push(this.nodes[i]);
 	}
-	this.nodesByTime.sort(function(a,b){return a.time - b.time;});
-	this.startPhyloTime = this.nodesByTime[0].time;
-	this.endPhyloTime = this.nodesByTime[this.numNodes-1].time;
+	this.nodesByTime.sort(function(a,b){return a.timeEnd - b.timeEnd;});
+	this.startPhyloTime = this.nodesByTime[0].timeEnd;
+	this.endPhyloTime = this.nodesByTime[this.numNodes-1].timeEnd;
 
 	// set colors for nodes	
 	this.initNodeColors();
@@ -424,7 +426,8 @@ Phylowood.Node = function() {
 		this.id = Smits.Common.nodeIdIncrement += 1; // equals states index
 		this.level = 0;
 		this.len = 0;
-		this.time = 0;
+		this.timeEnd = 0;
+		this.timeStart = 0;
 		this.ancestor = null;
 		this.descendants = [];
 		this.name = '';
@@ -433,8 +436,7 @@ Phylowood.Node = function() {
 		this.img = [];
 		this.color = [0,0,0];
 		this.states = [];
-		//this.tStart = 0.0;
-		//this.tEnd = 0.0;
+		this.animateOn = false;
 		
 		if(o) Smits.Common.apply(this, o);
 
@@ -459,7 +461,7 @@ Phylowood.Tree = function() {
 
 Phylowood.initNodeColors = function() {
 	
-	var lStep = 0.5 / (this.nodesByTime[this.numNodes-1].time - this.nodesByTime[0].time);
+	var lStep = 0.5 / (this.nodesByTime[this.numNodes-1].timeEnd - this.nodesByTime[0].timeEnd);
 	var hStep = 360.0 / (this.numTips - 1);
 
 	var lValue = 0.0;
@@ -468,7 +470,7 @@ Phylowood.initNodeColors = function() {
 	// assign colors uniformly across tips
 	for (var i = 0; i < this.numNodes; i++) {
 		if (this.nodes[i].descendants.length === 0) {
-			lValue = 1.0 - lStep*this.nodes[i].time;
+			lValue = 1.0 - lStep*this.nodes[i].timeEnd;
 			this.nodes[i].color = [hValue, 1, lValue];
 			hValue += hStep;
 		}
@@ -485,7 +487,7 @@ Phylowood.initNodeColors = function() {
 				hTemp += this.nodesByTime[i].descendants[j].color[0];
 			}
 			hTemp /= this.nodesByTime[i].descendants.length;
-			lValue = 1.0 - lStep*this.nodesByTime[i].time;
+			lValue = 1.0 - lStep*this.nodesByTime[i].timeEnd;
 	
 			this.nodesByTime[i].color = [hTemp, 1, lValue];
 			
@@ -501,7 +503,7 @@ Phylowood.initMarkers = function() {
 	var showStart = 0;
 	var showOnly = this.numNodes;
 
-	var showThreshhold = 0.25;
+	this.showThreshhold = 0.5;
 	
 /*
 	var colors;
@@ -512,13 +514,15 @@ Phylowood.initMarkers = function() {
 	for (var i = showStart; i < showOnly + showStart; i++) {
 		var id = this.nodes[i].id;
 		var c = this.nodes[i].color;
-		var tStart = 0.0;
-		if (this.nodes[i].ancestor !== null)
-			tStart = this.nodes[i].ancestor.time;
-		var tEnd = this.nodes[i].time;
+//		var tStart = 0.0;
+//		if (this.nodes[i].ancestor !== null)
+//			tStart = this.nodes[i].ancestor.timeEnd;
+		var tStart = this.nodes[i].timeStart;
+		var tEnd = this.nodes[i].timeEnd;
 
 		for (var j = 0; j < this.nodes[i].states.length; j++) {
-			if (this.nodes[i].states[j] > showThreshhold) {
+			this.Markers = [];
+			if (this.nodes[i].states[j] > this.showThreshhold) {
 				//if (this.nodes[i].descendants.length === 0) {
 				//	console.log("wtf:" + ","+i +"," + j);
 				//}
@@ -527,6 +531,7 @@ Phylowood.initMarkers = function() {
 					"id": id,
 					"area": j,
 					"val": this.nodes[i].states[j],
+					"active": false,
 					"tStart": tStart,
 					"tEnd": tEnd,
 					"color": "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)"
@@ -756,7 +761,7 @@ Phylowood.initMap = function() {
 
 
 		// set stepsize per tick
-		var k = e.alpha * 2;
+		var k = e.alpha * 3;
 
 		// update object values per tick
 		states.forEach(function(o,i) {
@@ -908,16 +913,32 @@ Phylowood.updateDisplay = function() {
 	// update slider position
 	$( "#divSlider" ).slider("option","value", Phylowood.curPhyloTime);
 	
+	// get animation state for all lineages
+	for (var i = 0; i < this.numNodes; i++) {
+		var n = this.nodes[i];
+		if (n.timeStart <= Phylowood.curPhyloTime && n.timeEnd >= Phylowood.curPhyloTime) {
+			n.animateOn = true;
+		}
+		// can probably just use an "else"
+		else if (n.timeStart > Phylowood.curPhyloTime || n.timeEnd < Phylowood.curPhyloTime) {
+			n.animateOn = false;
+		}
+	}
+	
+	// enter() and remove() events according to .curPhyloTime and nodes[].animateOn values
 
-	// enter() and remove() events according to .curPhyloTime
+
 	// remove()
 	d3.selectAll("#divGeo circle.node").select(
 		function(d) {
-			if (d.tStart < Phylowood.curPhyloTime || d.tEnd > Phylowood.curPhyloTime) 
+//			if (d.tStart < Phylowood.curPhyloTime || d.tEnd > Phylowood.curPhyloTime) 
+			if (d.tEnd < Phylowood.curPhyloTime)// || d.tStart > Phylowood.curPhyloTime) 
 				return this;
 			else
 				return null;
 		}).remove();
+
+
 
 	// enter()
 	// ...
