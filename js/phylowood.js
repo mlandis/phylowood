@@ -610,7 +610,7 @@ Phylowood.initMap = function() {
 		.add(po.image()
 		  .url(po.url("http://{S}tile.cloudmade.com"
 		  + "/87d72d27ad3a48939015cdbd06980326" // http://cloudmade.com/register
-		  + "/62438/256/{Z}/{X}/{Y}.png")
+		  + "/998/256/{Z}/{X}/{Y}.png")
 		  .hosts(["a.", "b.", "c.", ""])))
 		.add(po.compass().pan("none"));
 	
