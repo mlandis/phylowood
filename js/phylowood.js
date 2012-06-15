@@ -579,25 +579,37 @@ Phylowood.initMap = function() {
 	var coords = this.geoCoords;
 	var foci = [coords.length]; // cluster foci, i.e. areas lat,lons
 
-	// find center of geoCoords
-	var meanLat = 0;
-	var meanLon = 0;
+	// find center and extent of coords
+	var meanLat = 0,
+		meanLon = 0,
+		minLat = 90,
+		maxLat = -90,
+		minLon = 180,
+		maxLon = -180;
 	for (var i = 0; i < coords.length; i++) {
-		meanLat += parseFloat(coords[i].lat);
-		var lon = parseFloat(coords[i].lon);
+	
+		// latitude
+		var lat = parseFloat(coords[i].lat);
+		meanLat += lat;
+		if (lat < minLat) { minLat = lat; }
+		if (lat > maxLat) { maxLat = lat; }
+	
+		// longitude
+		var lon = parseFloat(coords[i].lon);	
+		if (lon < minLon) { minLon = lon; }
+		if (lon > maxLon) { maxLon = lon; }		
 		// convert to 0 to 360
-		if (lon < 0) {
-			lon = 360 + lon;
-		}
-		meanLon += parseFloat(coords[i].lon);	
+		if (lon < 0) { lon = 360 + lon; }
+		meanLon += lon;	
+		
 	}
 	meanLat /= coords.length;
 	meanLon /= coords.length;
 	// convert back to -180 to 180
 	if (meanLon > 180) {
-		meanLon = meanLong - 360
+		meanLon = meanLon - 360
 	}
-	
+		
 	// create polymaps object
 	var po = org.polymaps;
 	
@@ -613,9 +625,13 @@ Phylowood.initMap = function() {
 		  + "/998/256/{Z}/{X}/{Y}.png")
 		  .hosts(["a.", "b.", "c.", ""])))
 		.add(po.compass().pan("none"));
-	
-	
-	
+		
+	// zoom out to fit all the foci			
+	while (minLat < map.extent()[0].lat) { map.zoomBy(-1); }
+	while (minLon < map.extent()[0].lon) { map.zoomBy(-1); }	
+	while (maxLat > map.extent()[1].lat) { map.zoomBy(-1); }	
+	while (maxLon > map.extent()[1].lon) { map.zoomBy(-1); }		
+		
 	var layer = d3.select("#divGeo svg").insert("svg:g", ".compass");
 	
 	// assign foci xy coordinates from geographical coordinates
@@ -649,7 +665,7 @@ Phylowood.initMap = function() {
 			.attr("class","node")
 			.attr("cx", function(d) { return foci[d.area].x; })
 			.attr("cy", function(d) { return foci[d.area].y; })
-			.attr("r",  function(d) { return Math.pow(2, map.zoom() - 12) * Math.sqrt(d.val); })
+			.attr("r",  function(d) { return 2 * Math.sqrt(d.val); })
 			.attr("fill", function(d) { return d.color; })
 			.attr("stroke", "gray")
 			.attr("stroke-width", 1)
@@ -715,7 +731,7 @@ Phylowood.initMap = function() {
 */
 
 		// update marker radii of SVG node[] objects
-		node.attr("r", function(d) { return Math.pow(2, map.zoom() - 12) * Math.sqrt(d.val); })
+		node.attr("r", function(d) { return 2 * Math.sqrt(d.val); })
 
 	//	force.resume();
 
