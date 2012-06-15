@@ -1463,6 +1463,8 @@ Smits.PhyloCanvas.Render.SVG.prototype = {
 				x2 = positionX = Smits.Common.roundFloat(positionX + (scaleX * node.len), 4);
 				y1 = absoluteY + (node.getMidbranchPosition(firstBranch) * scaleY);
 				y2 = y1;
+				
+				// MJL 061312: also pass in color here
 				svg.draw(new Smits.PhyloCanvas.Render.Line(x1, x2, y1, y2));
 			}
 			
