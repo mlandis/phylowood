@@ -577,19 +577,34 @@ Phylowood.initMap = function() {
 	// toy data
 	var states = this.initMarkers();
 	var coords = this.geoCoords;
-//				[{lon:-123.08, lat:38.17},
-//	              {lon:-123.18, lat:38.05},
-//	              {lon:-123.13, lat:38.11}];
 	var foci = [coords.length]; // cluster foci, i.e. areas lat,lons
 
+	// find center of geoCoords
+	var meanLat = 0;
+	var meanLon = 0;
+	for (var i = 0; i < coords.length; i++) {
+		meanLat += parseFloat(coords[i].lat);
+		var lon = parseFloat(coords[i].lon);
+		// convert to 0 to 360
+		if (lon < 0) {
+			lon = 360 + lon;
+		}
+		meanLon += parseFloat(coords[i].lon);	
+	}
+	meanLat /= coords.length;
+	meanLon /= coords.length;
+	// convert back to -180 to 180
+	if (meanLon > 180) {
+		meanLon = meanLong - 360
+	}
+	
 	// create polymaps object
 	var po = org.polymaps;
 	
 	// create the map object, add it to #divGeo
 	var map = po.map()
 		.container(d3.select("#divGeo").append("svg:svg").node())
-		//.center({lat:38,lon:-123}) // 38.1, -122.15
-		.center({lat:38.1,lon:-122.15})
+		.center({lat:meanLat,lon:meanLon})
 		.zoom(12)
 		.add(po.interact())
 		.add(po.image()
