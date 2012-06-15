@@ -626,11 +626,24 @@ Phylowood.initMap = function() {
 		  .hosts(["a.", "b.", "c.", ""])))
 		.add(po.compass().pan("none"));
 		
-	// zoom out to fit all the foci			
-	while (minLat < map.extent()[0].lat) { map.zoomBy(-1); }
-	while (minLon < map.extent()[0].lon) { map.zoomBy(-1); }	
-	while (maxLat > map.extent()[1].lat) { map.zoomBy(-1); }	
-	while (maxLon > map.extent()[1].lon) { map.zoomBy(-1); }		
+	// zoom out to fit all the foci	
+	// need to center map at {0,0} when zoom is 1 to put entire globe in view
+	while (minLat < map.extent()[0].lat) { 
+		map.zoomBy(-1); 
+		if (map.zoom() == 1) { map.center({lat:0,lon:0}) }
+	}
+	while (minLon < map.extent()[0].lon) { 
+		map.zoomBy(-1); 
+		if (map.zoom() == 1) { map.center({lat:0,lon:0}) }		
+	}	
+	while (maxLat > map.extent()[1].lat) { 
+		map.zoomBy(-1); 
+		if (map.zoom() == 1) { map.center({lat:0,lon:0}) }		
+	}	
+	while (maxLon > map.extent()[1].lon) { 
+		map.zoomBy(-1); 
+		if (map.zoom() == 1) { map.center({lat:0,lon:0}) }		
+	}		
 		
 	var layer = d3.select("#divGeo svg").insert("svg:g", ".compass");
 	
