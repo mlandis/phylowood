@@ -40,24 +40,25 @@ svg {
 #divPlay {
 	background-color:#FFA500;
 	height:100px;
-	width:600px;
+	width:350px;
 	float:left;
+	text-align:center;
 }
 
 #divSlider > div.player {
 	padding: 10px !important;
 	background-color:#FFA500;
-	width:600px;
+	width:350px;
 	float:left;
 }
 
 #divFilter {
 	background-color:#FFA500;
 	height:100px;
-	width:600px;
+	width:850px;
 	float:left;
 }
 
 #toolbar {
-	padding: 10px 4px;
+	padding: 15px 4px;
 }

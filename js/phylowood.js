@@ -81,6 +81,7 @@ Phylowood.parseInput = function(inputStr) {
 	this.initStates(statesStr);
 	this.initGeo(geoStr);
 	this.initTree(treeStr);
+	this.initMarkers();
 	this.initMap();
 };
 
@@ -436,7 +437,6 @@ Phylowood.Node = function() {
 		this.img = [];
 		this.color = [0,0,0];
 		this.states = [];
-		this.animateOn = false;
 		
 		if(o) Smits.Common.apply(this, o);
 
@@ -514,17 +514,14 @@ Phylowood.initMarkers = function() {
 	for (var i = showStart; i < showOnly + showStart; i++) {
 		var id = this.nodes[i].id;
 		var c = this.nodes[i].color;
-//		var tStart = 0.0;
-//		if (this.nodes[i].ancestor !== null)
-//			tStart = this.nodes[i].ancestor.timeEnd;
-		var tStart = this.nodes[i].timeStart;
-		var tEnd = this.nodes[i].timeEnd;
+		var timeStart = this.nodes[i].timeStart;
+		var timeEnd = this.nodes[i].timeEnd;
 
 		for (var j = 0; j < this.nodes[i].states.length; j++) {
 			this.Markers = [];
 			if (this.nodes[i].states[j] > this.showThreshhold) {
 				//if (this.nodes[i].descendants.length === 0) {
-				//	console.log("wtf:" + ","+i +"," + j);
+				//	console.log("states??:" + ","+i +"," + j);
 				//}
 				
 				this.markers.push({
@@ -532,16 +529,18 @@ Phylowood.initMarkers = function() {
 					"area": j,
 					"val": this.nodes[i].states[j],
 					"active": false,
-					"tStart": tStart,
-					"tEnd": tEnd,
-					"color": "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)"
+					"timeStart": timeStart,
+					"timeEnd": timeEnd,
+					"color": "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)",
+					"scheduleErase": false,
+					"scheduleDraw": false
 					//"color": colors[i-showStart]
 				});
 			}
 		}
 	}
 	
-	return this.markers;
+//	return this.markers;
 
 /*
 	// test data
@@ -580,7 +579,7 @@ Phylowood.initMap = function() {
 	var w = document.getElementById("divGeo").offsetWidth;
 
 	// toy data
-	var states = this.initMarkers();
+	var states = this.markers; //this.initMarkers();
 	var coords = this.geoCoords;
 	var foci = [coords.length]; // cluster foci, i.e. areas lat,lons
 
@@ -661,11 +660,11 @@ Phylowood.initMap = function() {
 		.nodes(states)
 		.links([])
 		.charge( -1.5 * map.zoom())
-	//	.charge(-Math.pow(1.5, map.zoom()) + 8*map.zoom())
+		//.charge(-Math.pow(1.5, map.zoom()) + 8*map.zoom())
 		.gravity(0.0)
 		.theta(1.5)
 		.friction(0.5)
-//		.alpha(100000)
+		//.alpha(100000)
 		.size([w, h])
 		;
 		
@@ -673,7 +672,7 @@ Phylowood.initMap = function() {
 		d.x = foci[d.area].x;
 		d.y = foci[d.area].y;
 	});
-//	force.linkDistance( map.zoom());
+
 	force.start();
 	
 	// create svg markers
@@ -688,10 +687,7 @@ Phylowood.initMap = function() {
 			.attr("stroke", "gray")
 			.attr("stroke-width", 1)
 			.attr("fill-opacity", 1)
-		//	.call(force.drag)
 			;
-
-	//d3.selectAll("#divGeo circle.node").select(function(d,i){return d.id < 50 ? this : null; }).remove();
 
 	// freeze markers during pan & zoom
 	d3.select("#divGeo")
@@ -710,19 +706,14 @@ Phylowood.initMap = function() {
 	// update coordinates when map pans and zooms
 	map.on("move", function() {
 
-	
-	//	force.stop();
-
 		// update force foci positions
 		for (var i = 0; i < coords.length; i++)
 			foci[i] = map.locationPoint(coords[i]);
 		
 		// update force properties with each move
-//		force.charge(-Math.pow(1.5, map.zoom()) + 1.5 * map.zoom())
 		force.charge( -1.5 * map.zoom());
 		force.gravity(0.0);
-	
-	
+		
 		// better visualization: have all nodes retain actual positions, instead of refocusing
 		// it seems like areas contract at different zoom levels... weird
 		// update positions of js states[] objects
@@ -733,23 +724,10 @@ Phylowood.initMap = function() {
 			o.y = xy.y; 
 		});
 		
+		// update positions and radii for nodes
 		node.attr("cx", function(d) { return d.x; })
-			.attr("cy", function(d) { return d.y; });
-
-/*
-		states.forEach(function(o,i) {
-			o.x = foci[o.area].x;
-			o.y = foci[o.area].y;
-		});
-	
-		// update positions of SVG node[] objects
-		node.attr("cx", function(d) { return foci[d.area].x; })
-			.attr("cy", function(d) { return foci[d.area].y; });
-
-*/
-
-		// update marker radii of SVG node[] objects
-		node.attr("r", function(d) { return 2 * Math.sqrt(d.val); })
+		    .attr("cy", function(d) { return d.y; })
+		    .attr("r", function(d) { return 2 * Math.sqrt(d.val); }) // change vs. zoom??
 
 	//	force.resume();
 
@@ -758,7 +736,6 @@ Phylowood.initMap = function() {
 
 	// update node[] each tick
 	force.on("tick", function(e) {
-
 
 		// set stepsize per tick
 		var k = e.alpha * 3;
@@ -774,42 +751,10 @@ Phylowood.initMap = function() {
 
 		// update object attributes per tick
 		layer.selectAll("circle.node")
-        	.attr("cx", function(d) { return d.x; })
-    	 	.attr("cy", function(d) { return d.y; });
+		     .attr("cx", function(d) { return d.x; })
+		     .attr("cy", function(d) { return d.y; });
 		
 	});
-	
-	/*
-	// collisions instead of overlap? probably too costly
-	
-	//   var q = d3.geom.quadtree(nodes),
-	//	q.visit(collide(o));
-	
-	function collide(node) {
-	  var r = node.radius + 16,
-		  nx1 = node.x - r,
-		  nx2 = node.x + r,
-		  ny1 = node.y - r,
-		  ny2 = node.y + r;
-	  return function(quad, x1, y1, x2, y2) {
-		if (quad.point && (quad.point !== node)) {
-		  var x = node.x - quad.point.x,
-			  y = node.y - quad.point.y,
-			  l = Math.sqrt(x * x + y * y),
-			  r = node.radius + quad.point.radius;
-		  if (l < r) {
-			l = (l - r) / l * .5;
-			node.px += x * l;
-			node.py += y * l;
-		  }
-		}
-		return x1 > nx2
-			|| x2 < nx1
-			|| y1 > ny2
-			|| y2 < ny1;
-	  };
-
-	}*/
 };
 
 
@@ -847,7 +792,7 @@ Phylowood.animStart = function() {
 	this.curPhyloTime = this.startPhyloTime;
 	this.curClockTime = this.startClockTime;
 
-	d3.select("#divGeo").selectAll("circle.node").remove();
+	//d3.select("#divGeo").selectAll("circle.node").remove();
 }
 
 Phylowood.animEnd = function() {
@@ -914,14 +859,16 @@ Phylowood.updateDisplay = function() {
 	$( "#divSlider" ).slider("option","value", Phylowood.curPhyloTime);
 	
 	// get animation state for all lineages
-	for (var i = 0; i < this.numNodes; i++) {
-		var n = this.nodes[i];
-		if (n.timeStart <= Phylowood.curPhyloTime && n.timeEnd >= Phylowood.curPhyloTime) {
-			n.animateOn = true;
+	for (var i = 0; i < Phylowood.markers.length; i++) {
+		var m = Phylowood.markers[i];
+		if (m.timeStart <= Phylowood.curPhyloTime && m.timeEnd >= Phylowood.curPhyloTime) {
+			if (m.scheduleDraw === false)
+				m.scheduleDraw = true;
 		}
 		// can probably just use an "else"
-		else if (n.timeStart > Phylowood.curPhyloTime || n.timeEnd < Phylowood.curPhyloTime) {
-			n.animateOn = false;
+		else if (m.timeStart > Phylowood.curPhyloTime || m.timeEnd < Phylowood.curPhyloTime) {
+			if (m.scheduleErase === false)
+				m.scheduleErase = true;
 		}
 	}
 	
@@ -931,14 +878,26 @@ Phylowood.updateDisplay = function() {
 	// remove()
 	d3.selectAll("#divGeo circle.node").select(
 		function(d) {
-//			if (d.tStart < Phylowood.curPhyloTime || d.tEnd > Phylowood.curPhyloTime) 
-			if (d.tEnd < Phylowood.curPhyloTime)// || d.tStart > Phylowood.curPhyloTime) 
+			if (d.scheduleErase === true) {
+				d.scheduleErase = false;
 				return this;
-			else
+			}
+			else {
 				return null;
-		}).remove();
+			}
+		}).attr("visibility","hidden");
 
-
+	d3.select("#divGeo svg").selectAll("circle.node")
+		.data(Phylowood.markers).select(
+		function(d) {
+			if (d.scheduleDraw === true) {
+				d.scheduleDraw = false;
+				return this;
+			}
+			else {
+				return null;
+			}
+		}).attr("visibility","visible");
 
 	// enter()
 	// ...
