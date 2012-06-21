@@ -36,7 +36,10 @@
 
   <div id="divCtrl">
 	<input type="file" id="files" name="files[]" multiple />
+	<br><font size="2">HTTP input: </font><input type="text" id="textInputHTTP" value="https://raw.github.com/mlandis/phylowood/master/examples/bayarea.eg.out" name="inputhttp" />
+	<input type="button" id="buttonViewData" onClick="Phylowood.viewInput();" />
 	<br><input type="button" id="buttonApply" value="Apply" onClick="Phylowood.initialize();" />
+	
   </div>
 
    <div id="divPhylo">

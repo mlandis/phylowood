@@ -33,6 +33,15 @@ function handleFileSelect(evt) {
 }
 document.getElementById('files').addEventListener('change', handleFileSelect, false);
 
+Phylowood.readInputFromHTTP = function() {
+
+};
+
+Phylowood.viewInput = function() {
+	// do some pop-up
+	
+};
+
 /***
 INITIALIZE DATA
 ***/
@@ -41,6 +50,12 @@ Phylowood.initialize = function() {
 
 	// clear all divs & SVGElements to avoid double-vision
 	// ...
+
+/*
+	// get input
+	if ($( "#textInputHTTP" ).attr("value") !== "") {
+		this.infile = this.readInputFromHTTP()
+	}
 
 	// then initialize
 	this.parseInput(this.infile);

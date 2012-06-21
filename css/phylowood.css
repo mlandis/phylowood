@@ -62,3 +62,7 @@ svg {
 #toolbar {
 	padding: 15px 4px;
 }
+
+#textInputHTTP {
+    width:250px;
+}
