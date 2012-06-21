@@ -51,7 +51,6 @@ Phylowood.initialize = function() {
 	// clear all divs & SVGElements to avoid double-vision
 	// ...
 
-/*
 	// get input
 	if ($( "#textInputHTTP" ).attr("value") !== "") {
 		this.infile = this.readInputFromHTTP()
