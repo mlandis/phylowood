@@ -84,7 +84,7 @@ Phylowood.initialize = function() {
 Phylowood.parseInput = function() {
 
 	// update inputStr from inputTextArea
-	this.inputStr = $( "#inputTextArea" ).val();
+	this.inputStr = $( "#textareaInput" ).val();
 	if (this.inputStr === "") {
 		console.log("WARNING: Phylowood.parseInput(): inputStr === \"\"");
 		return;
