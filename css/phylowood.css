@@ -67,3 +67,9 @@ svg {
 #textInputHttp {
     width:250px;
 }
+
+#textareaInput {
+    height:500px;
+    width:350px;
+    resize:none;
+}

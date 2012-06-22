@@ -6,7 +6,7 @@ INPUT
 ***/
 
 Phylowood.readInputFromHttp = function() {
-	this.inputHttp = $(" #textInputHttp" ).attr("value");
+	this.inputHttp = $( "#textInputHttp" ).attr("value");
 	$.get(Phylowood.inputHttp, function(response) {
 		//if (Phylowood.inputStr === "")
 		Phylowood.inputStr = response;
@@ -21,6 +21,7 @@ Phylowood.readInputFromHttp = function() {
 Phylowood.loadInput = function() {
 
 	// dump to inputTextArea
+	$("#textareaInput").val(this.inputStr);
 
 };
 
@@ -29,6 +30,28 @@ Phylowood.reset = function() {
 	// this.inputStr = "";
 
 };
+
+
+$( "#selectDemoData" ).change(function() {
+
+	// get current dropdown selection for demo data	
+	var inputDemoOption = this.options[this.selectedIndex];
+	console.log(inputDemoOption);
+
+	// load input into text area
+	if (inputDemoOption.value !== "nothing") {
+		$.get(inputDemoOption.value, function(response) {
+		//if (Phylowood.inputStr === "")
+		Phylowood.inputStr = response;
+		})
+		.success(function() { })
+		.error(function() { })
+		.complete(function() { 
+			Phylowood.loadInput();
+		});
+	}
+});
+
 
 /***
 INITIALIZE DATA
