@@ -2,44 +2,32 @@
 var Phylowood = Phylowood || {};
 
 /***
-FILE HANDLING
+INPUT
 ***/
-// Check for the various File API support.
-if (window.File && window.FileReader && window.FileList && window.Blob) {
-  ; // All the File APIs are supported.
-} else {
-  alert('The File APIs are not fully supported in this browser.');
-}
 
-// Store file contents to Phylowood.infile
-function handleFileSelect(evt) {
-	var f;
-	f = evt.target.files[0];
-	var fr = new FileReader();
+Phylowood.readInputFromHttp = function() {
+	this.inputHttp = $(" #textInputHttp" ).attr("value");
+	$.get(Phylowood.inputHttp, function(response) {
+		//if (Phylowood.inputStr === "")
+		Phylowood.inputStr = response;
+	})
+	.success(function() { })
+	.error(function() { })
+	.complete(function() { 
+		Phylowood.loadInput();
+	});
+};
 
-	fr.onload = function(e) {
-		/*
-		var txtArea = document.createElement('textarea');
-		txtArea.value = this.result;
-		document.getElementById('divGeo').appendChild(txtArea);
-		*/
-		Phylowood.infile = this.result;
-		// console.log("inputFile.result = " + this.result);
-	};
-	fr.onerror = function(e) {
-		//alert("error");
-	};
-	fr.readAsText(f);
-}
-document.getElementById('files').addEventListener('change', handleFileSelect, false);
+Phylowood.loadInput = function() {
 
-Phylowood.readInputFromHTTP = function() {
+	// dump to inputTextArea
 
 };
 
-Phylowood.viewInput = function() {
-	// do some pop-up
-	
+Phylowood.reset = function() {
+	// clears everything
+	// this.inputStr = "";
+
 };
 
 /***
@@ -47,33 +35,40 @@ INITIALIZE DATA
 ***/
 
 Phylowood.initialize = function() {
+	
+	// reset system state
+	this.reset();
 
-	// clear all divs & SVGElements to avoid double-vision
-	// ...
-
-	// get input
-	if ($( "#textInputHTTP" ).attr("value") !== "") {
-		this.infile = this.readInputFromHTTP()
-	}
+	// parse input in inputTextArea
+	this.parseInput();
 
 	// then initialize
-	this.parseInput(this.infile);
+	this.initStates();
+	this.initGeo();
+	this.initTree();
+	this.initMarkers();
+	this.initMap();
 	this.initPlayer();
+	
 };
 
-Phylowood.parseInput = function(inputStr) {
+Phylowood.parseInput = function() {
 
+	// update inputStr from inputTextArea
+	// ...
+	// this.inputStr = $( "#inputTextArea" ).value;
+	
 	// parse inputStr
-	if (inputStr === "") {
+	if (this.inputStr === "") {
 		console.log("WARNING: Phylowood.parseInput(): inputStr === \"\"");
 		return;
 	}
 	
-	var inputTokens = inputStr.split(/\r\n|\r|\n/);
+	var inputTokens = this.inputStr.split(/\r\n|\r|\n/);
 		
-	var treeStr = "",
-		geoStr = "",
-		statesStr = "",
+	this.treeStr = "",
+	this.geoStr = "",
+	this.statesStr = "",
 		parseSelect = "";
 	
 	for (var i = 0; i < inputTokens.length; i++) {
@@ -84,27 +79,21 @@ Phylowood.parseInput = function(inputStr) {
 		else if (inputTokens[i] === "#TREE")
 			parseSelect = "tree";
 		else if (parseSelect === "geo")
-			geoStr += inputTokens[i] + "\n";
+			this.geoStr += inputTokens[i] + "\n";
 		else if (parseSelect === "states")
-			statesStr += inputTokens[i] + "\n";
+			this.statesStr += inputTokens[i] + "\n";
 		else if (parseSelect === "tree")
-			treeStr += inputTokens[i] + "\n";
+			this.treeStr += inputTokens[i] + "\n";
 	}
 	
-	// parse and init inputStr.substr()
-	this.initStates(statesStr);
-	this.initGeo(geoStr);
-	this.initTree(treeStr);
-	this.initMarkers();
-	this.initMap();
 };
 
-Phylowood.initStates = function(statesStr) {
+Phylowood.initStates = function() {
 	
 	this.taxa = [];
 	this.states = [];
 	
-	var statesTokens = statesStr.split("\n");
+	var statesTokens = this.statesStr.split("\n");
 	var taxonTokens;
 	
 	for (var i = 0; i < statesTokens.length; i++) {
@@ -130,13 +119,13 @@ Phylowood.initStates = function(statesStr) {
 	
 };
 
-Phylowood.initGeo = function(geoStr) {
+Phylowood.initGeo = function() {
 	
 	// parse string for geoCoords
 	this.geoCoords = [];
 	this.maxGeoCoords = [-181.0, -181.0, 181.0, 181.0]; // [N, E, S, W]
 	
-	var geoTokens = geoStr.split("\n");
+	var geoTokens = this.geoStr.split("\n");
 	var coordTokens;
 	//var maxN = -181.0, maxS = 181.0, maxE = -181.0, maxW = 181.0;
 	
@@ -214,9 +203,10 @@ Phylowood.distance = function(x, y) {
 };
 
 
-Phylowood.initTree = function(newickStr) {
+Phylowood.initTree = function() {
 
 	// parse Newick string
+	var newickStr = this.treeStr;
 	var readTaxonName = false;
 	var readBrlen = false;
 	var numTaxa = 0;
@@ -941,6 +931,41 @@ Phylowood.updateDisplay = function() {
 	// ...
 	
 }
+
+/***
+DEFUNCT
+***/
+/*
+// Check for the various File API support.
+if (window.File && window.FileReader && window.FileList && window.Blob) {
+  ; // All the File APIs are supported.
+} else {
+  alert('The File APIs are not fully supported in this browser.');
+}
+
+// Store file contents to Phylowood.infile
+function handleFileSelect(evt) {
+//	Phylowood.infile = "";
+	var f;
+	f = evt.target.files[0];
+	var fr = new FileReader();
+
+	fr.onload = function(e) {
+		
+		//var txtArea = document.createElement('textarea');
+		//txtArea.value = this.result;
+		//document.getElementById('divGeo').appendChild(txtArea);
+		
+		Phylowood.inputStr = this.result;
+		// console.log("inputFile.result = " + this.result);
+	};
+	fr.onerror = function(e) {
+		//alert("error");
+	};
+	fr.readAsText(f);
+}
+document.getElementById('files').addEventListener('change', handleFileSelect, false);
+*/
 
 /***
 TESTING

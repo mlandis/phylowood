@@ -11,34 +11,35 @@ svg {
 }
 
 #header {
-	background-color:#FF0000;
+	background-color:#BABABA;
 	width:1200px;
 	float:left;
 }
 
 #divCtrl {
-	background-color:#FFA500;
+	background-color:#BABABA;
+    font-size:small;
 	height:80px;
 	width:1200px;
 	float:left;
 }
 
 #divPhylo {
-	background-color:#FFE700;
+	background-color:#FFFFFF;
 	height:500px;
 	width:350px;
 	float:left;
 }
 
 #divGeo {
-	background-color:#FFD700;
+	background-color:#FFFFFF;
 	height:500px;
 	width:850px;
 	float:left;
 }
 
 #divPlay {
-	background-color:#FFA500;
+	background-color:#BABABA;
 	height:100px;
 	width:350px;
 	float:left;
@@ -47,13 +48,13 @@ svg {
 
 #divSlider > div.player {
 	padding: 10px !important;
-	background-color:#FFA500;
+	background-color:#BABABA;
 	width:350px;
 	float:left;
 }
 
 #divFilter {
-	background-color:#FFA500;
+	background-color:#BABABA;
 	height:100px;
 	width:850px;
 	float:left;
@@ -63,6 +64,6 @@ svg {
 	padding: 15px 4px;
 }
 
-#textInputHTTP {
+#textInputHttp {
     width:250px;
 }
