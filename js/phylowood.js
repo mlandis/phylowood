@@ -26,11 +26,19 @@ Phylowood.loadInput = function() {
 };
 
 Phylowood.reset = function() {
-	// clears everything
-	// this.inputStr = "";
 
+	// clear divGeo of polymaps
+	this.map = null;
+
+	// clear divPhylo of jsPhyloSvg
+	// 	um, .clear() is apparently undefined in the library
+	// 	another reason to draw the tree myself
+	this.phylocanvas = null;
+
+	// restore divPhylo with textarea and default text
+
+	// restore clock state
 };
-
 
 $( "#selectDemoData" ).change(function() {
 
@@ -46,9 +54,7 @@ $( "#selectDemoData" ).change(function() {
 		})
 		.success(function() { })
 		.error(function() { })
-		.complete(function() { 
-			Phylowood.loadInput();
-		});
+		.complete(function() { });
 	}
 });
 
@@ -78,21 +84,20 @@ Phylowood.initialize = function() {
 Phylowood.parseInput = function() {
 
 	// update inputStr from inputTextArea
-	// ...
-	// this.inputStr = $( "#inputTextArea" ).value;
-	
-	// parse inputStr
+	this.inputStr = $( "#inputTextArea" ).val();
 	if (this.inputStr === "") {
 		console.log("WARNING: Phylowood.parseInput(): inputStr === \"\"");
 		return;
 	}
 	
+	// tokenize inputStr
 	var inputTokens = this.inputStr.split(/\r\n|\r|\n/);
 		
-	this.treeStr = "",
-	this.geoStr = "",
-	this.statesStr = "",
-		parseSelect = "";
+	// parse inputTokens
+	this.treeStr = "";
+	this.geoStr = "";
+	this.statesStr = "";
+	var parseSelect = "";
 	
 	for (var i = 0; i < inputTokens.length; i++) {
 		if (inputTokens[i] === "#GEO")
@@ -107,16 +112,20 @@ Phylowood.parseInput = function() {
 			this.statesStr += inputTokens[i] + "\n";
 		else if (parseSelect === "tree")
 			this.treeStr += inputTokens[i] + "\n";
+		else
+			; // do nothing
 	}
 	
 };
 
 Phylowood.initStates = function() {
 	
+	// tokenize statesTokens
+	var statesTokens = this.statesStr.split("\n");
+
+	// store tokens into taxa and states
 	this.taxa = [];
 	this.states = [];
-	
-	var statesTokens = this.statesStr.split("\n");
 	var taxonTokens;
 	
 	for (var i = 0; i < statesTokens.length; i++) {
@@ -143,14 +152,14 @@ Phylowood.initStates = function() {
 };
 
 Phylowood.initGeo = function() {
-	
-	// parse string for geoCoords
+
+	// tokensize geoStr
+	var geoTokens = this.geoStr.split("\n");
+
+	// assign geoTokens to geoCoords	
+	var coordTokens;
 	this.geoCoords = [];
 	this.maxGeoCoords = [-181.0, -181.0, 181.0, 181.0]; // [N, E, S, W]
-	
-	var geoTokens = this.geoStr.split("\n");
-	var coordTokens;
-	//var maxN = -181.0, maxS = 181.0, maxE = -181.0, maxW = 181.0;
 	
 	// input expects "latitude longitude"
 	// maps to [i][0] and [i][1] resp.
@@ -159,10 +168,7 @@ Phylowood.initGeo = function() {
 		coordTokens = geoTokens[i].split(" ");
 		if (coordTokens.length == 2) {
 			// store coordinates
-//			coordVals.push(parseFloat(coordTokens[0]));
-//			coordVals.push(parseFloat(coordTokens[1]));
 			this.geoCoords.push({"lat":coordTokens[0], "lon":coordTokens[1]});
-//			this.geoCoords.push(coordVals);
 
 			// compute maxima for geographical coordinates
 			if (this.geoCoords[i].lat > this.maxGeoCoords[0]) // N
@@ -195,8 +201,6 @@ Phylowood.initGeo = function() {
 		}
 		this.geoDistances.push(distanceVals);
 	}
-
-//	Phylowood.initMap();
 
 	/*
 	console.log("Phylowood.initGeo():");
@@ -377,23 +381,10 @@ Phylowood.initTree = function() {
 	// assign states to nodes
 	for (var i = 0; i < this.numNodes; i++) {
 		for (var j = 0; j < this.states.length; j++) {
-//			var fractionsFound = false;
 			if (this.nodes[i].name === this.taxa[j]) {
 				this.nodes[i].states = this.states[j];
 				this.nodes[i].id = j;
-/*
-				for (var k = 0; k < this.states[j].length; k++) {
-					if (this.states[j][k] > 0.0 && this.states[j][k] < 1.0) {
-						fractionsFound = true;
-					}
-				}
-*/
 			}
-/*
-			if (fractionsFound === true) {
-				console.log(i,j);
-			}
-*/
 		}
 	}
 
@@ -656,7 +647,8 @@ Phylowood.initMap = function() {
 		  + "/998/256/{Z}/{X}/{Y}.png")
 		  .hosts(["a.", "b.", "c.", ""])))
 		.add(po.compass().pan("none"));
-		
+	this.map = map;	
+	
 	// zoom out to fit all the foci	
 	// need to center map at {0,0} when zoom is 1 to put entire globe in view
 	while (minLat < map.extent()[0].lat) { 
