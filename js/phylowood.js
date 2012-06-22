@@ -44,13 +44,11 @@ $( "#selectDemoData" ).change(function() {
 
 	// get current dropdown selection for demo data	
 	var inputDemoOption = this.options[this.selectedIndex];
-	console.log(inputDemoOption);
 
 	// load input into text area
 	if (inputDemoOption.value !== "nothing") {
 		$.get(inputDemoOption.value, function(response) {
-		//if (Phylowood.inputStr === "")
-		Phylowood.inputStr = response;
+			Phylowood.inputStr = response;
 		})
 		.success(function() { })
 		.error(function() { })
