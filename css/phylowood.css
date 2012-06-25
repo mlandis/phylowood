@@ -25,9 +25,10 @@ svg {
 }
 
 #divPhylo {
-	background-color:#FFFFFF;
-	height:500px;
-	width:350px;
+    padding: 10px;
+	background-color:#BABABA;
+	height:480px;
+	width:330px;
 	float:left;
 }
 
@@ -69,7 +70,7 @@ svg {
 }
 
 #textareaInput {
-    height:500px;
-    width:350px;
+    height:480px;
+    width:330px;
     resize:none;
 }

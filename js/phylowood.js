@@ -69,11 +69,15 @@ Phylowood.initialize = function() {
 	// parse input in inputTextArea
 	this.parseInput();
 
-	// then initialize
+	// initialize data
 	this.initStates();
 	this.initGeo();
 	this.initTree();
+	
+	// draw from data
+	this.initNodeColors();
 	this.initMarkers();
+	this.drawTree();
 	this.initMap();
 	this.initPlayer();
 	
@@ -408,27 +412,21 @@ Phylowood.initTree = function() {
 	this.startPhyloTime = this.nodesByTime[0].timeEnd;
 	this.endPhyloTime = this.nodesByTime[this.numNodes-1].timeEnd;
 
-	// set colors for nodes	
-	this.initNodeColors();
-
-	// draw tree using jsPhyloSvg
-	var margin = 0.1;
-	var divH = document.getElementById("divPhylo").offsetHeight;
-	var divW = document.getElementById("divPhylo").offsetWidth;
-	var marginH = divH * margin / 2;
-	var marginW = divW * margin / 2;
+	// postorder traveral nodes (for drawing the tree, F84 pruning, etc.)
+	this.nodesPostorder = [this.numNodes];
+	var poIdx = 0;
+	var downPass = function(p) {
+		if (p.descendants.length > 0) {
+			for (var i = 0; i < p.descendants.length; i++) {
+				downPass(p.descendants[i]);
+			}
+		}
+	//	console.log(poIdx);
+		Phylowood.nodesPostorder[poIdx] = p;
+		poIdx++;
+	}
+	downPass(this.root);
 	
-	this.phylocanvas = new Smits.PhyloCanvas(
-		{
-			newick: newickStr
-		},
-		'divPhylo',
-		divH,
-		divW
-	);
-	
-	// still need to get some info from this.phylocanvas about branch lengths in pixels
-	// color branch lengths, etc
 /*
 	console.log(newickStr);
 	console.log(newickTokens);
@@ -475,10 +473,126 @@ Phylowood.Tree = function() {
 };
 
 
+/***
+DRAW
+***/
+
+Phylowood.drawTree = function() {
+
+	// simply remove for now
+	// ...eventually, tie in to .reset()
+	// ...mask/unmask or delete/recreate
+	$( "#textareaInput" ).remove();
+	
+	var divH = $("#divPhylo").height();
+	var divW = $("#divPhylo").width();
+	var unitsH = divH / (this.numTips - 1);
+	var unitsW = divW / (this.endPhyloTime - this.startPhyloTime);
+	
+	this.treeSvg = d3.select("#divPhylo")
+	                   .append("svg:svg")
+	                   .attr("width",divW)
+	                   .attr("height",divH);
+	
+
+	
+	// format data to JSON
+	this.phyloDrawData = [];
+	
+
+	// generate horizontal branches
+	for (var i = 0; i < this.numNodes; i++) {
+	
+		// compute div coords
+		var p = this.nodesPostorder[i];
+		var c = this.nodesPostorder[i].color; 
+		
+		p.x1phy = p.timeStart * unitsW;
+		p.x2phy = p.timeEnd * unitsW;
+
+		if (p.descendants.length === 0) {
+			p.y1phy = p.id * unitsH;
+			p.y2phy = p.y1phy;
+		}
+		else {
+			p.y1phy = 0.0;
+			for (var j = 0; j < p.descendants.length; j++)
+				p.y1phy += p.descendants[j].y1phy;
+			p.y1phy /= p.descendants.length;
+			p.y2phy = p.y1phy;
+		}
+	
+		// add to lines data structure
+		this.phyloDrawData.push({
+			"id": p.id,
+			"timeStart": p.timeStart,
+			"timeEnd": p.timeEnd,
+			"x1phy": p.x1phy,
+			"x2phy": p.x2phy,
+			"y1phy": p.y1phy,
+			"y2phy": p.y2phy,
+			"color": "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)"
+		});
+	}
+
+	// generate vertical branches (divergence events)
+	for (var i = 0; i < this.numNodes; i++) {
+		
+		// compute div coords
+		var p = this.nodesPostorder[i];
+
+
+		if (p.descendants.length > 0) {
+			var x = p.x2phy;
+			var y1 = divH;
+			var y2 = 0;
+			var c = this.nodesPostorder[i].color; 
+		
+			for (var j = 0; j < p.descendants.length; j++) {
+				q = p.descendants[j];
+				//console.log(j, q.y1phy, q.y2phy);
+			
+				// min
+				if (q.y1phy < y1)
+					y1 = q.y1phy;
+				// max
+				if (q.y1phy > y2)
+					y2 = q.y1phy;
+			}
+			console.log(y1, y2);
+			
+			this.phyloDrawData.push({
+				"id": p.descendants[0].id,
+				"timeStart": p.timeEnd,
+				"timeEnd": p.timeEnd,
+				"x1phy": x,
+				"x2phy": x,
+				"y1phy": y1,
+				"y2phy": y2,
+				"color": "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)"
+			});
+
+		}
+}
+
+
+	this.treeDrawLines = this.treeSvg.selectAll("line")
+					.data(this.phyloDrawData)
+					.enter()
+					.append("svg:line")
+					.attr("x1", function(d) { return d.x1phy; })
+					.attr("x2", function(d) { return d.x2phy; })
+					.attr("y1", function(d) { return d.y1phy; })
+	                .attr("y2", function(d) { return d.y2phy; })
+					.style("stroke", function(d) { return d.color; })
+					.style("stroke-width", 1);
+
+}
+
 Phylowood.initNodeColors = function() {
 	
-	var lStep = 0.5 / (this.nodesByTime[this.numNodes-1].timeEnd - this.nodesByTime[0].timeEnd);
-	var hStep = 360.0 / (this.numTips - 1);
+	var lStep = 0.6 / (this.nodesByTime[this.numNodes-1].timeEnd - this.nodesByTime[0].timeEnd);
+	var hStep = 300.0 / (this.numTips - 1);
 
 	var lValue = 0.0;
 	var hValue = 0.0;
@@ -550,7 +664,6 @@ Phylowood.initMarkers = function() {
 					"color": "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)",
 					"scheduleErase": false,
 					"scheduleDraw": false
-					//"color": colors[i-showStart]
 				});
 			}
 		}
@@ -586,7 +699,6 @@ Phylowood.initMarkers = function() {
 */
 
 };
-
 
 Phylowood.initMap = function() {
 
@@ -774,7 +886,9 @@ Phylowood.initMap = function() {
 	});
 };
 
-
+/***
+CONTROLS
+***/
 
 Phylowood.initPlayer = function() {
 
