@@ -27,6 +27,8 @@ Phylowood.loadInput = function() {
 
 Phylowood.reset = function() {
 
+	alert("Phylowood.reset() disabled.\nFor now, refresh your browser to reset.");
+
 	// clear divGeo of polymaps
 	this.map = null;
 
