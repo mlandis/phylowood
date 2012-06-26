@@ -559,7 +559,6 @@ Phylowood.drawTree = function() {
 				if (q.y1phy > y2)
 					y2 = q.y1phy;
 			}
-			console.log(y1, y2);
 			
 			this.phyloDrawData.push({
 				"id": p.descendants[0].id,
@@ -909,6 +908,25 @@ Phylowood.initPlayer = function() {
 	$( "#divSlider" ).slider("option","min",this.startPhyloTime);
 	$( "#divSlider" ).slider("option","value",this.curPhyloTime);
 
+
+	this.treeSvg.append("svg:line")
+		.attr("id", "phyloSlider")
+		.attr("x1", 0)
+		.attr("x2", 0)
+		.attr("y1", 0)
+		.attr("y2", $( "#divPhylo" ).height())
+		.style("stroke", "black")
+		.style("stroke-width", 2);
+	
+	this.phyloTimeToPxScale = d3.scale.linear()
+								.domain([this.startPhyloTime, this.endPhyloTime])
+								.range([0, $( "#divPhylo" ).width()]);
+								
+	this.phyloToClockTimeScale = d3.scale.linear();
+	this.clockToPhyloTimeScale = d3.scale.linear();
+	
+	
+	
 	// show current year
 	// add tick marks for divergence events	
 	// if time allows
@@ -973,21 +991,46 @@ Phylowood.animStop = function() {
 	this.animStart();
 }
 
+Phylowood.slideSlider = function() {
+
+//	this.animPause();
+	var pos = Phylowood.phyloTimeToPxScale(Phylowood.curPhyloTime);
+	$( "#phyloSlider" ).attr("x1", pos).attr("x2", pos);
+	this.curPhyloTime = $( "#divSlider" ).slider("option","value");
+	this.sliderBusy = true;
+}
+
+Phylowood.changeSlider = function() {
+	
+	if (typeof this.sliderBusy !== "undefined") {
+		var pos = Phylowood.phyloTimeToPxScale(Phylowood.curPhyloTime);
+		$( "#phyloSlider" ).attr("x1", pos).attr("x2", pos);
+	}
+	this.sliderBusy = false;
+}
+
 Phylowood.updateDisplay = function() {
 
 	//console.log("t_c=" + Phylowood.curClockTime + ", t_p=" + Phylowood.curPhyloTime);
 
 	// update current times
-	Phylowood.curPhyloTime = Phylowood.curPhyloTime + Phylowood.phyloTick * Phylowood.playSpeed;
-	Phylowood.curClockTime = Phylowood.curClockTime + Phylowood.clockTick * Phylowood.playSpeed;
-
+	if (Phylowood.sliderBusy === false) {
+		Phylowood.curPhyloTime = Phylowood.curPhyloTime + Phylowood.phyloTick * Phylowood.playSpeed;
+		Phylowood.curClockTime = Phylowood.curClockTime + Phylowood.clockTick * Phylowood.playSpeed;
+	}
+	
 	// stop if animation duration met
 	if (Phylowood.curPhyloTime >= Phylowood.endPhyloTime
 	|| Phylowood.curPhyloTime <= Phylowood.startPhyloTime)
 		Phylowood.animEnd();
 
 	// update slider position
-	$( "#divSlider" ).slider("option","value", Phylowood.curPhyloTime);
+	if (Phylowood.sliderBusy === false) {
+		var pos = Phylowood.phyloTimeToPxScale(Phylowood.curPhyloTime);
+		$( "#phyloSlider" ).attr("x1", pos).attr("x2", pos);
+		$( "#divSlider" ).slider("option","value", Phylowood.curPhyloTime);
+		
+	}
 	
 	// get animation state for all lineages
 	for (var i = 0; i < Phylowood.markers.length; i++) {
@@ -1004,8 +1047,6 @@ Phylowood.updateDisplay = function() {
 	}
 	
 	// enter() and remove() events according to .curPhyloTime and nodes[].animateOn values
-
-
 	// remove()
 	d3.selectAll("#divGeo circle.node").select(
 		function(d) {
@@ -1029,33 +1070,6 @@ Phylowood.updateDisplay = function() {
 				return null;
 			}
 		}).attr("visibility","visible");
-
-	// enter()
-	// ...
-	// something like ...
-	/*
-	d3.select("#divGeo svg").selectAll("circle.node")
-			.data(Phylowood.markers).select(
-				function(d) {
-					if (d.tStart >= Phylowood.curPhyloTime && d.tEnd <= Phylowood.curPhyloTime)
-						return this;
-					else
-						return null;
-				}).enter().append("svg:circle")
-			.attr("class","node")
-			.attr("cx", function(d) { return foci[d.area].x; })
-			.attr("cy", function(d) { return foci[d.area].y; })
-			.attr("r",  function(d) { return Math.pow(2, map.zoom() - 12) * Math.sqrt(d.val); })
-			.attr("fill", function(d) { return d.color; })
-			.attr("stroke", "gray")
-			.attr("stroke-width", 1)
-			.attr("fill-opacity", 1)
-			;
-	*/
-
-	// update phylo widget cursor position
-	// will need to draw the slider as long as tree width from jsPhyloSvg	
-	// ...
 	
 }
 

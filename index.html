@@ -66,7 +66,10 @@
   <div id="divSlider"></div><br>
   <script>
   $(function() {
-	$( "#divSlider" ).slider();
+	$( "#divSlider" ).slider({
+		slide: function(event, ui) { Phylowood.slideSlider(); },
+		change: function(event, ui) { Phylowood.changeSlider(); }
+	});
   });
 
   $(function() {
