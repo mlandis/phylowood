@@ -66,7 +66,7 @@ INITIALIZE DATA
 Phylowood.initialize = function() {
 	
 	// reset system state
-	this.reset();
+	//this.reset();
 
 	// parse input in inputTextArea
 	this.parseInput();
