@@ -17,6 +17,9 @@ svg {
 }
 
 #divCtrl {
+	position: absolute;
+	top:0px;
+	left:0px;
 	background-color:#BABABA;
     font-size:small;
 	height:80px;
@@ -25,6 +28,9 @@ svg {
 }
 
 #divPhylo {
+	position: absolute;
+	top:80px;
+	left:0px;
     padding: 10px;
 	background-color:#BABABA;
 	height:480px;
@@ -33,6 +39,9 @@ svg {
 }
 
 #divGeo {
+	position: absolute;
+	top:80px;
+	left:350px;
 	background-color:#FFFFFF;
 	height:500px;
 	width:850px;
@@ -40,6 +49,9 @@ svg {
 }
 
 #divPlay {
+	position: absolute;
+	top:580px;
+	left:0px;
 	background-color:#BABABA;
 	height:100px;
 	width:350px;
@@ -60,6 +72,9 @@ svg {
 
 
 #divFilter {
+	position:absolute;
+	top:580px;
+	left:350px;
 	background-color:#BABABA;
 	height:100px;
 	width:850px;
