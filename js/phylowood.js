@@ -443,8 +443,8 @@ Phylowood.Node = function() {
 		this.id = Smits.Common.nodeIdIncrement += 1; // equals states index
 		this.level = 0;
 		this.len = 0;
+		this.timeStart = 0;		
 		this.timeEnd = 0;
-		this.timeStart = 0;
 		this.ancestor = null;
 		this.descendants = [];
 		this.name = '';
@@ -453,6 +453,7 @@ Phylowood.Node = function() {
 		this.img = [];
 		this.color = [0,0,0];
 		this.states = [];
+		this.coord = 0;
 		
 		if(o) Smits.Common.apply(this, o);
 
@@ -486,108 +487,106 @@ Phylowood.drawTree = function() {
 	// ...mask/unmask or delete/recreate
 	$( "#textareaInput" ).remove();
 	
-	var divH = $("#divPhylo").height();
-	var divW = $("#divPhylo").width();
-	var unitsH = divH / (this.numTips - 1);
-	var unitsW = divW / (this.endPhyloTime - this.startPhyloTime);
-	
+	var divH = $("#divPhylo").height(),
+		divW = $("#divPhylo").width(),
+		unitsH = divH / (this.numTips - 1),
+		unitsW = divW / (this.endPhyloTime - this.startPhyloTime);
+		
 	this.treeSvg = d3.select("#divPhylo")
 	                   .append("svg:svg")
 	                   .attr("width",divW)
 	                   .attr("height",divH);
-	
-
-	
+		
 	// format data to JSON
 	this.phyloDrawData = [];
 	
-
-	// generate horizontal branches
+	// first pass, assigning tips to positions 0, 1, 2, ... 
+	var count = 0;
 	for (var i = 0; i < this.numNodes; i++) {
 	
-		// compute div coords
+		// grab node
 		var p = this.nodesPostorder[i];
-		var c = this.nodesPostorder[i].color; 
 		
-		p.x1phy = p.timeStart * unitsW;
-		p.x2phy = p.timeEnd * unitsW;
-
+		// check if tip and assign if yes
 		if (p.descendants.length === 0) {
-			p.y1phy = p.id * unitsH;
-			p.y2phy = p.y1phy;
-		}
-		else {
-			p.y1phy = 0.0;
-			for (var j = 0; j < p.descendants.length; j++)
-				p.y1phy += p.descendants[j].y1phy;
-			p.y1phy /= p.descendants.length;
-			p.y2phy = p.y1phy;
+			p.coord = count;
+			count++;
 		}
 	
-		// add to lines data structure
-		this.phyloDrawData.push({
-			"id": p.id,
-			"timeStart": p.timeStart,
-			"timeEnd": p.timeEnd,
-			"x1phy": p.x1phy,
-			"x2phy": p.x2phy,
-			"y1phy": p.y1phy,
-			"y2phy": p.y2phy,
-			"color": "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)"
-		});
 	}
-
-	// generate vertical branches (divergence events)
+	
+	// second pass, setting coord based on child nodes
 	for (var i = 0; i < this.numNodes; i++) {
 		
-		// compute div coords
-		var p = this.nodesPostorder[i];
-
-
-		if (p.descendants.length > 0) {
-			var x = p.x2phy;
-			var y1 = divH;
-			var y2 = 0;
-			var c = this.nodesPostorder[i].color; 
+		// grab node
+		var p = this.nodesPostorder[i];	
 		
-			for (var j = 0; j < p.descendants.length; j++) {
-				q = p.descendants[j];
-				//console.log(j, q.y1phy, q.y2phy);
+		// parent node is average of child nodes
+		if (p.descendants.length > 0) {
+			p.coord = 0.0;
+			for (var j = 0; j < p.descendants.length; j++)
+				p.coord += p.descendants[j].coord;
+			p.coord /= p.descendants.length;
+		}
+		
+	}
+	
+	// third pass, setting branch attributes
+	for (var i = 0; i < this.numNodes; i++) {
+		
+		// grab node and parent node
+		var p = this.nodesPostorder[i],
+			pp = p.ancestor;
+		
+		// if parent exists, draw branch
+		if (pp != null) {
+
+			var c = p.color,
+				pc = pp.color,		
+				xStart = p.timeStart * unitsW,
+				xEnd = p.timeEnd * unitsW,
+				yStart = pp.coord * unitsH,
+				yEnd = p.coord * unitsH;
 			
-				// min
-				if (q.y1phy < y1)
-					y1 = q.y1phy;
-				// max
-				if (q.y1phy > y2)
-					y2 = q.y1phy;
-			}
-			
+			// add horizontal lines
 			this.phyloDrawData.push({
-				"id": p.descendants[0].id,
-				"timeStart": p.timeEnd,
+				"id": p.id,
+				"timeStart": p.timeStart,
 				"timeEnd": p.timeEnd,
-				"x1phy": x,
-				"x2phy": x,
-				"y1phy": y1,
-				"y2phy": y2,
+				"x1phy": xStart,
+				"x2phy": xEnd,
+				"y1phy": yEnd,
+				"y2phy": yEnd,
 				"color": "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)"
 			});
-
+			
+			// add vertical lines
+			this.phyloDrawData.push({
+				"id": pp.id,
+				"timeStart": p.timeEnd,
+				"timeEnd": p.timeEnd,
+				"x1phy": xStart,
+				"x2phy": xStart,
+				"y1phy": yStart,
+				"y2phy": yEnd,
+				"color": "hsl(" + pc[0] + "," + 100*pc[1] + "%," + 100*pc[2] + "%)"
+				});
+	
 		}
-}
-
-
+				
+	}
+	
 	this.treeDrawLines = this.treeSvg.selectAll("line")
-					.data(this.phyloDrawData)
-					.enter()
-					.append("svg:line")
-					.attr("x1", function(d) { return d.x1phy; })
-					.attr("x2", function(d) { return d.x2phy; })
-					.attr("y1", function(d) { return d.y1phy; })
-	                .attr("y2", function(d) { return d.y2phy; })
-					.style("stroke", function(d) { return d.color; })
-					.style("stroke-width", 1);
-
+				.data(this.phyloDrawData)
+				.enter()
+				.append("svg:line")
+				.attr("x1", function(d) { return d.x1phy; })
+				.attr("x2", function(d) { return d.x2phy; })
+				.attr("y1", function(d) { return d.y1phy; })
+				.attr("y2", function(d) { return d.y2phy; })
+				.style("stroke", function(d) { return d.color; })
+				.style("stroke-width", 1);
+		
 }
 
 Phylowood.initNodeColors = function() {

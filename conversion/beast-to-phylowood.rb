@@ -40,14 +40,23 @@ tree.scan(/(\d+)\[\&([A-Z0-9a-z\,\.\-\{\}\_\%\=]+)\]/) {|s|
 	}	
 	
 	# Normalize each node's distribution to sum to 1 (input sums to length of branch leading to node)
-	total = 0
-	h.each { |loc, value| 
-		total += value
-	}
+#	total = 0
+#	h.each { |loc, value| 
+#		total += value
+#	}
+
+	# Find highest state is posterior and set to 1, set other states to 0
+	max = h.values.max
 	
 	# Sort locations for output
 	h.sort.map { |loc, value| 
-		print ' %.4f' % (value / total)
+#		print ' %.4f' % (value / total)
+		if value < max
+			value = 0
+		else
+			value = 1
+		end
+		print ' %.1f' % value
 	}
 	print "\n"
 }
