@@ -634,7 +634,7 @@ Phylowood.initMarkers = function() {
 	var showStart = 0;
 	var showOnly = this.numNodes;
 
-	this.showThreshhold = 0.5;
+	this.showThreshhold = 0.1;
 	
 /*
 	var colors;
