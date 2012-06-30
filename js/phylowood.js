@@ -539,7 +539,7 @@ Phylowood.drawTree = function() {
 			pp = p.ancestor;
 		
 		// if parent exists, draw branch
-		if (pp != null) {
+		if (pp !== null) {
 
 			var c = p.color,
 				pc = pp.color,		
@@ -548,6 +548,11 @@ Phylowood.drawTree = function() {
 				yStart = pp.coord * unitsH,
 				yEnd = p.coord * unitsH;
 			
+			// offset the root so it does not overlap with phyloSlider
+			if (pp.ancestor === null) {
+				xStart += 2;
+			}
+
 			// add horizontal lines
 			this.phyloDrawData.push({
 				"id": p.id,
@@ -754,7 +759,8 @@ Phylowood.initMap = function() {
 		.add(po.image()
 		  .url(po.url("http://{S}tile.cloudmade.com"
 		  + "/87d72d27ad3a48939015cdbd06980326" // http://cloudmade.com/register
-		  + "/44979/256/{Z}/{X}/{Y}.png")
+		  + "/999/256/{Z}/{X}/{Y}.png")
+		//  + "/44979/256/{Z}/{X}/{Y}.png")
 // 		  + "/998/256/{Z}/{X}/{Y}.png")
 		  .hosts(["a.", "b.", "c.", ""])))
 		.add(po.compass().pan("none"));
@@ -777,7 +783,9 @@ Phylowood.initMap = function() {
 	while (maxLon > map.extent()[1].lon) { 
 		map.zoomBy(-1); 
 		if (map.zoom() <= 2) { map.center({lat:20,lon:20}) }		
-	}		
+	}
+
+	this.bestZoom = map.zoom();	
 		
 	var layer = d3.select("#divGeo svg").insert("svg:g", ".compass");
 	
@@ -812,7 +820,8 @@ Phylowood.initMap = function() {
 			.attr("class","node")
 			.attr("cx", function(d) { return foci[d.area].x; })
 			.attr("cy", function(d) { return foci[d.area].y; })
-			.attr("r",  function(d) { return 3 * Math.sqrt(d.val); })
+//			.attr("r",  function(d) { return 3 * Math.sqrt(d.val); })
+			.attr("r",  function(d) { return Math.pow( map.zoom() / Phylowood.bestZoom, 2) * d.val * 4; })
 			.attr("fill", function(d) { return d.color; })
 			.attr("stroke", "black")
 			.attr("stroke-width", 1)
@@ -858,7 +867,7 @@ Phylowood.initMap = function() {
 		// update positions and radii for nodes
 		node.attr("cx", function(d) { return d.x; })
 		    .attr("cy", function(d) { return d.y; })
-		    .attr("r", function(d) { return 3 * Math.sqrt(d.val); }) // change vs. zoom??
+		    .attr("r", function(d) { return  Math.pow( map.zoom() / Phylowood.bestZoom, 2) * d.val * 4; }) // change vs. zoom??
 
 	//	force.resume();
 
@@ -919,7 +928,9 @@ Phylowood.initPlayer = function() {
 		.attr("y1", 0)
 		.attr("y2", $( "#divPhylo" ).height())
 		.style("stroke", "black")
-		.style("stroke-width", 2);
+		.style("stroke-width", 2)
+		.style("stroke-dasharray", 2, 10);
+
 	
 	this.phyloTimeToPxScale = d3.scale.linear()
 								.domain([this.startPhyloTime, this.endPhyloTime])
