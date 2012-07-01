@@ -524,13 +524,10 @@ DRAW
 
 Phylowood.unmaskHeritageForBranch = function(d) {
 
-	console.log("click!");
-	console.log(d);
-
 	// unmask heritage of branch				
 	this.treeSvg.selectAll("line").select(
 		function(b) {
-			console.log(b);
+			//console.log(b);
 		
 			for (var i = 0; i < d.heritage.length; i++) {
 				if (b.id === d.heritage[i]) {
@@ -540,24 +537,33 @@ Phylowood.unmaskHeritageForBranch = function(d) {
 			}
 		}
 	).style("stroke-opacity", 1.0);	
+
+	// unmask heritage of branch for makers
+	d3.selectAll("#divGeo circle.node").select(
+		function(m) {
+		
+			for (var i = 0; i < d.heritage.length; i++) {
+				if (m.id === d.heritage[i]) {
+					m.maskHeritage = false;
+					return this;
+				}
+			}
+
+		}
+	);//.attr("visibility","visible");
+	Phylowood.updateMarkers();
 }
 
 Phylowood.maskHeritageForBranch = function(d) {
-	
-	console.log("dblclick!");
-	console.log(d);
 
 	// mask heritage of branch
 	this.treeSvg.selectAll("line").select(
 		function(b) {
-			console.log(b);
-			
+
 			var found = false;
 			for (var i = 0; i < d.heritage.length; i++) {
-				if (b.id === d.heritage[i]) {
+				if (b.id === d.heritage[i])
 					found = true;
-					b.maskHeritage = false;
-				}
 			}
 			if (found) {
 				b.maskHeritage = true;
@@ -566,7 +572,27 @@ Phylowood.maskHeritageForBranch = function(d) {
 			else
 				return null;
 		}
-	).style("stroke-opacity", 0.2);	
+	).style("stroke-opacity", 0.2);
+
+	// mask heritage of branch's markers
+	d3.selectAll("#divGeo circle.node").select(
+		function(m) {
+			
+			var found = false;
+			for (var i = 0; i < d.heritage.length; i++) {
+				if (m.id === d.heritage[i]) {
+					found = true;
+				}
+			}
+			if (found) {
+				m.maskHeritage = true;
+				return this;
+			}
+			else
+				return null;
+		}
+	);//.style("visibility", "hidden");
+	Phylowood.updateMarkers();
 }
 
 Phylowood.drawTree = function() {
@@ -776,7 +802,7 @@ Phylowood.initMarkers = function() {
 					"color": "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)",
 					"scheduleErase": false,
 					"scheduleDraw": false,
-					"mask": false
+					"maskHeritage": false
 				});
 			}
 		}
@@ -1276,28 +1302,38 @@ Phylowood.updateDisplay = function() {
 		
 	//}
 
+	Phylowood.updateMarkers();
+
+
 	
+	// enter() and remove() events according to .curPhyloTime and nodes[].animateOn values
+	// remove()
+	
+}
+
+Phylowood.updateMarkers = function() {
+
 	// get animation state for all lineages
 	for (var i = 0; i < Phylowood.markers.length; i++) {
 		var m = Phylowood.markers[i];
-		if (m.timeStart == 0.0 && m.timeEnd == 0.0 && Phylowood.curPhyloTime == 0.0) {
-	//		if (m.scheduleDraw == false)
-				m.scheduleDraw = true;
+
+		// branch active, general case
+		if (m.timeStart < Phylowood.curPhyloTime && m.timeEnd >= Phylowood.curPhyloTime && m.maskHeritage === false) {
+			m.scheduleDraw = true;
 		}
-		else if (m.timeStart < Phylowood.curPhyloTime && m.timeEnd >= Phylowood.curPhyloTime) {
-	//		if (m.scheduleDraw === false)
-				m.scheduleDraw = true;
+		// branch active, border cases
+		else if (m.timeStart == 0.0 && m.timeEnd == 0.0 && Phylowood.curPhyloTime == 0.0 && m.maskHeritage === false) {
+			m.scheduleDraw = true;
 		}
-		// can probably just use an "else"
-		else if (m.timeStart >= Phylowood.curPhyloTime || m.timeEnd < Phylowood.curPhyloTime) {
-	//		if (m.scheduleErase === false)
-				m.scheduleErase = true;
+		// branch not active
+		else if (m.timeStart >= Phylowood.curPhyloTime || m.timeEnd < Phylowood.curPhyloTime || m.maskHeritage === true) {
+			m.scheduleErase = true;
 		}
 	}
 
 	d3.selectAll("#divGeo circle.node").select(
 		function(d) {
-			if (d.scheduleErase === true || d.mask === true) {
+			if (d.scheduleErase === true) {
 				d.scheduleErase = false;
 				return this;
 			}
@@ -1309,7 +1345,7 @@ Phylowood.updateDisplay = function() {
 	d3.select("#divGeo svg").selectAll("circle.node")
 		.data(Phylowood.markers).select(
 		function(d) {
-			if (d.scheduleDraw === true && d.mask === false) {
+			if (d.scheduleDraw === true) {
 				d.scheduleDraw = false;
 				return this;
 			}
@@ -1317,14 +1353,7 @@ Phylowood.updateDisplay = function() {
 				return null;
 			}
 		}).attr("visibility","visible");
-
-
-	
-	// enter() and remove() events according to .curPhyloTime and nodes[].animateOn values
-	// remove()
-	
 }
-
 /***
 DEFUNCT
 ***/
