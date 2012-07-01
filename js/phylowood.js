@@ -481,7 +481,7 @@ Phylowood.initTree = function() {
 Phylowood.Node = function() {
 	return function(o, parentInstance){
 		// initiate object
-		this.id = Smits.Common.nodeIdIncrement += 1; // equals states index
+		this.id = 0; 
 		this.level = 0;
 		this.len = 0;
 		this.timeStart = 0;		
@@ -497,8 +497,6 @@ Phylowood.Node = function() {
 		this.coord = 0;
 		this.heritage = [];
 		
-		if(o) Smits.Common.apply(this, o);
-
 		/* Cache Calculations */
 		this._countAllChildren = false;
 		this._countImmediateChildren = false;
