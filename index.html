@@ -10,8 +10,6 @@
 
 	<script type="text/javascript" src="js/d3.v2.min.js"></script>
 	<script type="text/javascript" src="js/polymaps.min.js"></script>
-	<script type="text/javascript" src="js/jsphylosvg.phylowood.js"></script>
-	<script type="text/javascript" src="js/raphael-min.js"></script>
 	
 	<script type="text/javascript" src="js/jquery-1.7.2.min.js"></script>
 	<script type="text/javascript" src="js/jquery.ui.core.js"></script>
@@ -25,13 +23,9 @@
 <body>
   <div id="container">
   
-  <!--
   <div id="header">
-  <h1>phylowood</h1>
-  -->
-  <!-- <img alt="phylowood" src="phylowood.png"> -->
-  <!-- logo made using http://fontmeme.com/hollywood-font/ -->
-
+	<img alt="phylowood" src="phylowood.png" width=300>
+	<!-- logo made using http://fontmeme.com/hollywood-font/ -->
   </div>
 
   <div id="divCtrl">
@@ -40,15 +34,14 @@
 	<br>
 	 -->
 	<!-- <img alt="phylowood" src="create.png"><br> -->
-	<input type="button" id="buttonApply" value="Apply" onClick="Phylowood.initialize();" />
-	<input type="button" id="buttonReset" value="Reset" onClick="Phylowood.reset();" />
-	<select id="selectDemoData">
+	<input type="button" id="buttonApply" value="Load" onClick="Phylowood.initialize();" />
+	<!--<input type="button" id="buttonReset" value="Reset" onClick="Phylowood.reset();" />-->
+	<select id="selectDemoData" onChange="Phylowood.loadInput();">
 	<option value="nothing" selected="selected">select demo</option>
 	<option value="examples/5tip.eg.out">5tip</option>
 	<option value="examples/bayarea.eg.out">32tip</option>
 	<option value="examples/flu.phw">flu</option>
 	</select>
-	<input type="button" id="buttonViewData" value="Load" onClick="Phylowood.loadInput();" />
 
   </div>
 
@@ -195,8 +188,6 @@ just click or double-click a lineage.
   </div>
 
 </div>
-
-
 
 </body>
 

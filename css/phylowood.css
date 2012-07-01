@@ -1,26 +1,35 @@
 body {
+	background-color:#717679;
     font-family: sans-serif;
+	min-width:100%;
+	max-width:100%;	
+	margin-left: auto; 
+	margin-right: auto;     
 }
 
 svg {
-  display: block;
+	display: block;
 }
 
 #container {
+	margin-left: auto; 
+	margin-right: auto;
 	width:1200px; 
+	position: relative;
 }
 
 #header {
-	background-color:#BABABA;
+	position: absolute;
+	background-color:#717679;
+	top:5px;
 	width:1200px;
 	float:left;
 }
 
 #divCtrl {
 	position: absolute;
-	top:0px;
-	left:0px;
-	background-color:#BABABA;
+	top:15px;
+	left:1050px;
     font-size:small;
 	height:80px;
 	width:1200px;
@@ -32,7 +41,7 @@ svg {
 	top:80px;
 	left:0px;
     padding: 10px;
-	background-color:#BABABA;
+	background-color:#818689;
 	height:480px;
 	width:330px;
 	float:left;
@@ -42,7 +51,7 @@ svg {
 	position: absolute;
 	top:80px;
 	left:350px;
-	background-color:#FFFFFF;
+	background-color:#818689;
 	height:500px;
 	width:850px;
 	float:left;
@@ -52,7 +61,7 @@ svg {
 	position: absolute;
 	top:580px;
 	left:0px;
-	background-color:#BABABA;
+	background-color:#818689;
 	height:100px;
 	width:350px;
 	float:left;
@@ -61,7 +70,7 @@ svg {
 
 #divSlider {
 	margin: 0px 10px;
-	background-color:#BABABA;
+	background-color:#818689;
 	width:330px;
 	text-align:center;
 }
@@ -75,7 +84,7 @@ svg {
 	position:absolute;
 	top:580px;
 	left:350px;
-	background-color:#BABABA;
+	background-color:#818689;
 	height:100px;
 	width:850px;
 	float:left;
