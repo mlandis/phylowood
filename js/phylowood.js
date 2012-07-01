@@ -980,13 +980,10 @@ Phylowood.initMap = function() {
 	// update coordinates when map pans and zooms
 	map.on("move", function() {
 
-		// update force foci positions
-		for (var i = 0; i < coords.length; i++)
-			foci[i] = map.locationPoint(coords[i]);
-		
+		force.stop();
 		// update force properties with each move
-		force.charge( -1.5 * map.zoom());
-		force.gravity(0.0);
+		//force.charge( -1.5 * map.zoom());
+		//force.gravity(0.0);
 		
 		// better visualization: have all nodes retain actual positions, instead of refocusing
 		// it seems like areas contract at different zoom levels... weird
@@ -1003,6 +1000,11 @@ Phylowood.initMap = function() {
 		    .attr("cy", function(d) { return d.y; })
 		    .attr("r", function(d) { return  Math.pow( map.zoom() / Phylowood.bestZoom, 2) * d.val * 4; }) // change vs. zoom??
 
+
+		// update force foci positions
+		for (var i = 0; i < coords.length; i++)
+			foci[i] = map.locationPoint(coords[i]);
+		
 	//	force.resume();
 
 	});	
@@ -1012,7 +1014,7 @@ Phylowood.initMap = function() {
 	force.on("tick", function(e) {
 
 		// set stepsize per tick
-		var k = e.alpha * 3;
+		var k = e.alpha * 5;
 
 		// update object values per tick
 		states.forEach(function(o,i) {
@@ -1199,7 +1201,7 @@ Phylowood.startDisplay = function() {
 	for (var i = 0; i < Phylowood.markers.length; i++) {
 		var m = Phylowood.markers[i];
 		if (m.timeStart == 0.0 && m.timeEnd == 0.0) {
-			if (m.scheduleDraw === false)
+			if (m.scheduleDraw === false && m.maskHeritage === false)
 				m.scheduleDraw = true;
 		}
 		// can probably just use an "else"
@@ -1242,7 +1244,7 @@ Phylowood.endDisplay = function() {
 	for (var i = 0; i < Phylowood.markers.length; i++) {
 		var m = Phylowood.markers[i];
 		if (m.timeEnd == Phylowood.endPhyloTime) {
-			if (m.scheduleDraw === false)
+			if (m.scheduleDraw === false && m.maskHeritage === false)
 				m.scheduleDraw = true;
 		}
 		// can probably just use an "else"
