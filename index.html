@@ -34,15 +34,14 @@
 	<br>
 	 -->
 	<!-- <img alt="phylowood" src="create.png"><br> -->
-	<input type="button" id="buttonApply" value="Apply" onClick="Phylowood.initialize();" />
-	<input type="button" id="buttonReset" value="Reset" onClick="Phylowood.reset();" />
-	<select id="selectDemoData">
+	<input type="button" id="buttonApply" value="Load" onClick="Phylowood.initialize();" />
+	<!--<input type="button" id="buttonReset" value="Reset" onClick="Phylowood.reset();" />-->
+	<select id="selectDemoData" onChange="Phylowood.loadInput();">
 	<option value="nothing" selected="selected">select demo</option>
 	<option value="examples/5tip.eg.out">5tip</option>
 	<option value="examples/bayarea.eg.out">32tip</option>
 	<option value="examples/flu.phw">flu</option>
 	</select>
-	<input type="button" id="buttonViewData" value="Load" onClick="Phylowood.loadInput();" />
 
   </div>
 

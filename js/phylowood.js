@@ -20,8 +20,8 @@ Phylowood.readInputFromHttp = function() {
 
 Phylowood.loadInput = function() {
 
-	// dump to inputTextArea
-	$("#textareaInput").val(this.inputStr);
+	var inputFile = $("#selectDemoData option:selected").val();	
+	$('#textareaInput').load(inputFile);
 
 };
 
