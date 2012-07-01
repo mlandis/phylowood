@@ -957,7 +957,7 @@ Phylowood.initMap = function() {
 //			.attr("r",  function(d) { return 3 * Math.sqrt(d.val); })
 			.attr("r",  function(d) { return Math.pow( map.zoom() / Phylowood.bestZoom, 2) * d.val * 4; })
 			.attr("fill", function(d) { return d.color; })
-			.attr("stroke", "black")
+		//	.attr("stroke", "white")
 			.attr("stroke-width", 1)
 			.attr("fill-opacity", 1)
 			.attr("visibility","hidden")
@@ -1056,7 +1056,8 @@ Phylowood.initPlayer = function() {
 		.slider("option","step", .1)
 		.slider({ animate: true });
 
-	this.treeSvg.append("svg:slider")
+	this.treeSvg.append("svg:line")
+		.data([{"id": -1}])
 		.attr("id", "phyloSlider")
 		.attr("x1", 0)
 		.attr("x2", 0)
@@ -1064,7 +1065,8 @@ Phylowood.initPlayer = function() {
 		.attr("y2", $( "#divPhylo" ).height())
 		.style("stroke", "black")
 		.style("stroke-width", 2)
-		.style("stroke-dasharray", 2, 10);
+		.style("stroke-dasharray", 2, 10)
+		.style("stroke-opacity", .5);
 
 	
 	this.phyloTimeToPxScale = d3.scale.linear()
