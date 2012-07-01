@@ -417,6 +417,7 @@ Phylowood.initTree = function() {
 	// postorder traveral nodes (for drawing the tree, F84 pruning, etc.)
 	this.nodesPostorder = [this.numNodes];
 	var poIdx = 0;
+
 	var downPass = function(p) {
 		if (p.descendants.length > 0) {
 			for (var i = 0; i < p.descendants.length; i++) {
@@ -427,8 +428,48 @@ Phylowood.initTree = function() {
 		Phylowood.nodesPostorder[poIdx] = p;
 		poIdx++;
 	}
+
 	downPass(this.root);
-	
+
+
+	var setHeritageDownPass = function(q, h) {
+
+		// add this node to the heritage
+		h.push(q.id);
+		
+		if (q.descendants.length > 0) {
+			// have all immediate descendants do the same
+			for (var i = 0; i < q.descendants.length; i++) {
+				setHeritageDownPass(q.descendants[i], h);
+			}
+		}
+	}
+
+	var setHeritage = function(p, h) {
+		
+		var q = p,
+		    r = null;
+
+		// find lineage towards root
+		if (p.ancestor !== null) {
+			r = p;
+			while (	r.ancestor !== null) {
+				r = r.ancestor;
+				p.heritage.push(r.id);
+			}
+		}
+		
+		// find clade towards tip
+		setHeritageDownPass(p, p.heritage);		
+
+	}
+	for (var i = 0; i < this.numNodes; i++)
+	{
+		var p = this.nodesPostorder[i];
+		setHeritage(p);
+	}	
+
+
 /*
 	console.log(newickStr);
 	console.log(newickTokens);
@@ -454,6 +495,7 @@ Phylowood.Node = function() {
 		this.color = [0,0,0];
 		this.states = [];
 		this.coord = 0;
+		this.heritage = [];
 		
 		if(o) Smits.Common.apply(this, o);
 
@@ -479,6 +521,53 @@ Phylowood.Tree = function() {
 /***
 DRAW
 ***/
+
+Phylowood.unmaskHeritageForBranch = function(d) {
+
+	console.log("click!");
+	console.log(d);
+
+	// unmask heritage of branch				
+	this.treeSvg.selectAll("line").select(
+		function(b) {
+			console.log(b);
+		
+			for (var i = 0; i < d.heritage.length; i++) {
+				if (b.id === d.heritage[i]) {
+					b.maskHeritage = false;
+					return this;
+				}
+			}
+		}
+	).style("stroke-opacity", 1.0);	
+}
+
+Phylowood.maskHeritageForBranch = function(d) {
+	
+	console.log("dblclick!");
+	console.log(d);
+
+	// mask heritage of branch
+	this.treeSvg.selectAll("line").select(
+		function(b) {
+			console.log(b);
+			
+			var found = false;
+			for (var i = 0; i < d.heritage.length; i++) {
+				if (b.id === d.heritage[i]) {
+					found = true;
+					b.maskHeritage = false;
+				}
+			}
+			if (found) {
+				b.maskHeritage = true;
+				return this;
+			}
+			else
+				return null;
+		}
+	).style("stroke-opacity", 0.2);	
+}
 
 Phylowood.drawTree = function() {
 
@@ -546,12 +635,18 @@ Phylowood.drawTree = function() {
 				xStart = p.timeStart * unitsW,
 				xEnd = p.timeEnd * unitsW,
 				yStart = pp.coord * unitsH,
-				yEnd = p.coord * unitsH;
-			
-			// offset the root so it does not overlap with phyloSlider
+				yEnd = p.coord * unitsH,
+				heritage = p.heritage;
+
+
+			// offset the borders by linewidth
 			if (pp.ancestor === null) {
 				xStart += 2;
 			}
+			if (yEnd == divH) yEnd -= 2;
+			if (yStart == divH) yStart -=2;
+			if (yStart == 0.0) yStart += 2;
+			if (yEnd == 0.0) yEnd +=2;
 
 			// add horizontal lines
 			this.phyloDrawData.push({
@@ -562,21 +657,25 @@ Phylowood.drawTree = function() {
 				"x2phy": xEnd,
 				"y1phy": yEnd,
 				"y2phy": yEnd,
-				"color": "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)"
+				"color": "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)",
+				"heritage": heritage,
+				"mask": false
 			});
 			
 			// add vertical lines
 			this.phyloDrawData.push({
-				"id": pp.id,
+				"id": p.id,
 				"timeStart": p.timeEnd,
 				"timeEnd": p.timeEnd,
 				"x1phy": xStart,
 				"x2phy": xStart,
 				"y1phy": yStart,
 				"y2phy": yEnd,
-				"color": "hsl(" + pc[0] + "," + 100*pc[1] + "%," + 100*pc[2] + "%)"
+				"color": "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)",
+				"heritage": heritage,
+				"maskHeritage": false
 				});
-	
+				
 		}
 				
 	}
@@ -590,9 +689,17 @@ Phylowood.drawTree = function() {
 				.attr("y1", function(d) { return d.y1phy; })
 				.attr("y2", function(d) { return d.y2phy; })
 				.style("stroke", function(d) { return d.color; })
-				.style("stroke-width", 1);
+				.style("stroke-width", 2.5)
+				.on("click", function(d) {
+					Phylowood.unmaskHeritageForBranch(d);
+				})
+				.on("dblclick", function(d) {
+					Phylowood.maskHeritageForBranch(d);
+				});
 		
 }
+
+
 
 Phylowood.initNodeColors = function() {
 	
@@ -668,7 +775,8 @@ Phylowood.initMarkers = function() {
 					"timeEnd": timeEnd,
 					"color": "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)",
 					"scheduleErase": false,
-					"scheduleDraw": false
+					"scheduleDraw": false,
+					"mask": false
 				});
 			}
 		}
@@ -916,12 +1024,13 @@ Phylowood.initPlayer = function() {
 
 	this.playSpeed = 1.0;
 	
-	$( "#divSlider" ).slider("option","max",this.endPhyloTime);
-	$( "#divSlider" ).slider("option","min",this.startPhyloTime);
-	$( "#divSlider" ).slider("option","value",this.curPhyloTime);
+	$( "#divSlider" ).slider("option","max",this.endPhyloTime)
+		.slider("option","min",this.startPhyloTime)
+		.slider("option","value",this.curPhyloTime)
+		.slider("option","step", .1)
+		.slider({ animate: true });
 
-
-	this.treeSvg.append("svg:line")
+	this.treeSvg.append("svg:slider")
 		.attr("id", "phyloSlider")
 		.attr("x1", 0)
 		.attr("x2", 0)
@@ -933,8 +1042,8 @@ Phylowood.initPlayer = function() {
 
 	
 	this.phyloTimeToPxScale = d3.scale.linear()
-								.domain([this.startPhyloTime, this.endPhyloTime])
-								.range([0, $( "#divPhylo" ).width()]);
+					.domain([this.startPhyloTime, this.endPhyloTime])
+					.range([0, $( "#divPhylo" ).width()]);
 								
 	this.phyloToClockTimeScale = d3.scale.linear();
 	this.clockToPhyloTimeScale = d3.scale.linear();
@@ -1014,8 +1123,10 @@ Phylowood.animPause = function() {
 
 Phylowood.animPlay = function() {
 
-	// update display each clockTick
-	this.ticker = setInterval(this.updateDisplay, this.clockTick * this.playSpeed); 
+	if (typeof this.playSpeed !== "undefined") {
+		// update display each clockTick
+		this.ticker = setInterval(this.updateDisplay, this.clockTick * this.playSpeed); 
+	}
 }
 
 Phylowood.animStop = function() {
@@ -1164,30 +1275,29 @@ Phylowood.updateDisplay = function() {
 		$( "#divSlider" ).slider("option","value", Phylowood.curPhyloTime);
 		
 	//}
+
 	
 	// get animation state for all lineages
 	for (var i = 0; i < Phylowood.markers.length; i++) {
 		var m = Phylowood.markers[i];
 		if (m.timeStart == 0.0 && m.timeEnd == 0.0 && Phylowood.curPhyloTime == 0.0) {
-			if (m.scheduleDraw == false)
+	//		if (m.scheduleDraw == false)
 				m.scheduleDraw = true;
 		}
 		else if (m.timeStart < Phylowood.curPhyloTime && m.timeEnd >= Phylowood.curPhyloTime) {
-			if (m.scheduleDraw === false)
+	//		if (m.scheduleDraw === false)
 				m.scheduleDraw = true;
 		}
 		// can probably just use an "else"
 		else if (m.timeStart >= Phylowood.curPhyloTime || m.timeEnd < Phylowood.curPhyloTime) {
-			if (m.scheduleErase === false)
+	//		if (m.scheduleErase === false)
 				m.scheduleErase = true;
 		}
 	}
-	
-	// enter() and remove() events according to .curPhyloTime and nodes[].animateOn values
-	// remove()
+
 	d3.selectAll("#divGeo circle.node").select(
 		function(d) {
-			if (d.scheduleErase === true) {
+			if (d.scheduleErase === true || d.mask === true) {
 				d.scheduleErase = false;
 				return this;
 			}
@@ -1199,7 +1309,7 @@ Phylowood.updateDisplay = function() {
 	d3.select("#divGeo svg").selectAll("circle.node")
 		.data(Phylowood.markers).select(
 		function(d) {
-			if (d.scheduleDraw === true) {
+			if (d.scheduleDraw === true && d.mask === false) {
 				d.scheduleDraw = false;
 				return this;
 			}
@@ -1207,6 +1317,11 @@ Phylowood.updateDisplay = function() {
 				return null;
 			}
 		}).attr("visibility","visible");
+
+
+	
+	// enter() and remove() events according to .curPhyloTime and nodes[].animateOn values
+	// remove()
 	
 }
 

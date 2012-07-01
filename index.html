@@ -68,6 +68,7 @@ Click apply to read in your data.</textarea>
   <script>
   $(function() {
 	$( "#divSlider" ).slider({
+		//option: {"step": 10},
 		slide: function(event, ui) { Phylowood.slideSlider(); },
 		change: function(event, ui) { Phylowood.changeSlider(); }
 	});
