@@ -20,8 +20,8 @@ Phylowood.readInputFromHttp = function() {
 
 Phylowood.loadInput = function() {
 
-	// dump to inputTextArea
-	$("#textareaInput").val(this.inputStr);
+	var inputFile = $("#selectDemoData option:selected").val();	
+	$('#textareaInput').load(inputFile);
 
 };
 
@@ -481,7 +481,7 @@ Phylowood.initTree = function() {
 Phylowood.Node = function() {
 	return function(o, parentInstance){
 		// initiate object
-		this.id = Smits.Common.nodeIdIncrement += 1; // equals states index
+		this.id = 0; 
 		this.level = 0;
 		this.len = 0;
 		this.timeStart = 0;		
@@ -497,8 +497,6 @@ Phylowood.Node = function() {
 		this.coord = 0;
 		this.heritage = [];
 		
-		if(o) Smits.Common.apply(this, o);
-
 		/* Cache Calculations */
 		this._countAllChildren = false;
 		this._countImmediateChildren = false;
@@ -1068,12 +1066,20 @@ Phylowood.initPlayer = function() {
 		.style("stroke", "black")
 		.style("stroke-width", 2)
 		.style("stroke-dasharray", 2, 10)
-		.style("stroke-opacity", .5);
-
+		.style("stroke-opacity", .5)
+		.call(d3.behavior.drag()
+    		.on("drag", function(d) {     			
+    			Phylowood.drag(d3.event.dx)
+    		}) );
+    		
 	
 	this.phyloTimeToPxScale = d3.scale.linear()
 					.domain([this.startPhyloTime, this.endPhyloTime])
 					.range([0, $( "#divPhylo" ).width()]);
+					
+	this.pxToPhyloTimeScale = d3.scale.linear()
+					.domain([0, $( "#divPhylo" ).width()])
+					.range([this.startPhyloTime, this.endPhyloTime]);					
 								
 	this.phyloToClockTimeScale = d3.scale.linear();
 	this.clockToPhyloTimeScale = d3.scale.linear();
@@ -1088,6 +1094,13 @@ Phylowood.initPlayer = function() {
 	// function minimizeDisplay() {};
 
 };
+
+// drag time by delta x pixels
+Phylowood.drag = function(dx) {
+	this.curPhyloTime += Phylowood.pxToPhyloTimeScale(dx); 
+	this.sliderBusy = true;
+	this.updateDisplay();
+}
 
 
 Phylowood.animStart = function() {
@@ -1305,7 +1318,7 @@ Phylowood.updateDisplay = function() {
 		$( "#divSlider" ).slider("option","value", Phylowood.curPhyloTime);
 		
 	//}
-
+	
 	Phylowood.updateMarkers();
 
 
