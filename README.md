@@ -22,5 +22,5 @@ Control time with the media buttons
 
 Let's call a lineage, its ancestors, and its descendants the lineages' continuum.
 
-You can mask or unmask continua;
+You can mask or unmask continua:
 just click or double-click a lineage.
