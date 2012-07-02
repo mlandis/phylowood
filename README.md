@@ -1,8 +1,7 @@
 Phylowood: Browser-based Interactive Animations of Ancestral Dispersal and Diversity Patterns
 =======================================================================================
 
-Phylowood
-github.com/mlandis/phylowood
+http://github.com/mlandis/phylowood
 
 
 ## To get started:
