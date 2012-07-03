@@ -982,8 +982,6 @@ Phylowood.initMap = function() {
 		map.zoomBy(-1); 
 		if (map.zoom() <= 2) { map.center({lat:20,lon:20}) }		
 	}
-	console.log(meanLat,meanLon);
-	console.log(minLat, maxLat, minLon, maxLon);
 
 	this.bestZoom = map.zoom();	
 		
