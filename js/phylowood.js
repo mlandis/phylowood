@@ -886,11 +886,11 @@ Phylowood.initMap = function() {
 	var map = po.map()
 		.container(d3.select("#divGeo").append("svg:svg").node())
 		.center({lat:meanLat,lon:meanLon})
-		.zoom(12)
+		.zoom(15)
 		.add(po.interact())
 		.add(po.image()
 		  .url(po.url("http://{S}tile.cloudmade.com"
-		  + "/87d72d27ad3a48939015cdbd06980326" // http://cloudmade.com/register
+		  + "/5b7ebc9342d84da7b27ca499a238df9d" // http://cloudmade.com/register
 		  + "/999/256/{Z}/{X}/{Y}.png")
 		//  + "/44979/256/{Z}/{X}/{Y}.png")
 // 		  + "/998/256/{Z}/{X}/{Y}.png")
@@ -898,6 +898,8 @@ Phylowood.initMap = function() {
 		.add(po.compass().pan("none"));
 	this.map = map;	
 	
+	
+
 	// zoom out to fit all the foci	
 	// need to center map at {0,0} when zoom is 1 to put entire globe in view
 	while (minLat < map.extent()[0].lat) { 
@@ -916,6 +918,8 @@ Phylowood.initMap = function() {
 		map.zoomBy(-1); 
 		if (map.zoom() <= 2) { map.center({lat:20,lon:20}) }		
 	}
+	console.log(meanLat,meanLon);
+	console.log(minLat, maxLat, minLon, maxLon);
 
 	this.bestZoom = map.zoom();	
 		
