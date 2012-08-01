@@ -72,6 +72,7 @@ Phylowood.initialize = function() {
 	this.parseInput();
 
 	// initialize data
+    this.initSettings();
 	this.initStates();
 	this.initGeo();
 	this.initTree();
@@ -81,23 +82,26 @@ Phylowood.initialize = function() {
 	this.drawTree();
 	this.drawMap();
 	
+    // ...manual override of settings
+	this.drawStyle = "force";
+    this.modelType = "phylogeography";
+    this.areaType = "continuous";
+    
+    
+    
 	// draw data by style
-	var drawStyle = "force";
-	
-	if (drawStyle === "pie") {
-		this.initMarkersPie();
-		this.drawMarkersPie();
-	}
-	else if (drawStyle === "pack") {
-		this.initMarkersPack(); // data layout
-		this.drawMarkersPack();
-	}
-	else if (drawStyle === "force") {
-		this.initMarkers();
-		this.drawMarkersForce();
-		this.initPlayer();
-	}
-	
+    this.initMarkers();
+//    this.interpolateMarkers();
+
+    if (this.drawStyle === "force"
+        && this.modelType === "phylogeography"
+        && this.areaType == "continuous")
+    {
+//        this.drawMarkersForce();
+        ;
+    }
+
+//    this.initPlayer();
 };
 
 Phylowood.parseInput = function() {
@@ -119,12 +123,16 @@ Phylowood.parseInput = function() {
 	var parseSelect = "";
 	
 	for (var i = 0; i < inputTokens.length; i++) {
-		if (inputTokens[i] === "#GEO")
+        if (inputTokens[i] === "#SETTINGS")
+            parseSelect = "settings";
+		else if (inputTokens[i] === "#GEO")
 			parseSelect = "geo";
 		else if (inputTokens[i] === "#STATES")
 			parseSelect = "states";
 		else if (inputTokens[i] === "#TREE")
 			parseSelect = "tree";
+        else if (parseSelect === "settings")
+            this.settingsStr += inputTokens[i] + "\n";
 		else if (parseSelect === "geo")
 			this.geoStr += inputTokens[i] + "\n";
 		else if (parseSelect === "states")
@@ -135,6 +143,26 @@ Phylowood.parseInput = function() {
 			; // do nothing
 	}
 	
+};
+
+Phylowood.initSettings = function() {
+    
+    // tokenize settingsTokens
+    var settingsTokens;
+    if (typeof this.settingsStr !== "undefined") {
+        settingsTokens = this.settingsStr.split("\n");
+
+        // assign phylowood settings
+        for (var i = 0; i < settingsTokens.length; i++) {
+            var s = settingsTokens[i].split(" ");
+            if (s[0] === "drawstyle")
+                Phylowood.drawStyle = s[1];
+            else if (s[0] === "modeltype")
+                Phylowood.modelType = s[1];
+            else if (s[0] === "areatype")
+                Phylowood.modelType = s[1];
+        }
+    }
 };
 
 Phylowood.initStates = function() {
@@ -431,7 +459,9 @@ Phylowood.initTree = function() {
 	for (var i = 0; i < this.nodes.length; i++) {
 		this.nodesByTime.push(this.nodes[i]);
 	}
-	this.nodesByTime.sort(function(a,b){return a.timeEnd - b.timeEnd;});
+	this.nodesByTime
+                    .sort(function(a,b){return a.timeEnd - b.timeEnd;})
+                    .sort(function(a,b){return a.timeStart - b.timeStart;});
 
     // reset times with the "false" branch at the root
     this.rootEnd = 0.05 * this.nodesByTime[this.numNodes-1].timeEnd;
@@ -459,7 +489,7 @@ Phylowood.initTree = function() {
 	downPass(this.root);
 
 
-	var setHeritageDownPass = function(q, h) {
+	var setContinuumDownPass = function(q, h) {
 
 		// add this node to the heritage
 		h.push(q.id);
@@ -467,12 +497,12 @@ Phylowood.initTree = function() {
 		if (q.descendants.length > 0) {
 			// have all immediate descendants do the same
 			for (var i = 0; i < q.descendants.length; i++) {
-				setHeritageDownPass(q.descendants[i], h);
+				setContinuumDownPass(q.descendants[i], h);
 			}
 		}
 	}
 
-	var setHeritage = function(p, h) {
+	var setContinuum = function(p, h) {
 		
 		var q = p,
 		    r = null;
@@ -487,13 +517,13 @@ Phylowood.initTree = function() {
 		}
 		
 		// find clade towards tip
-		setHeritageDownPass(p, p.heritage);		
+		setContinuumDownPass(p, p.heritage);		
 
 	}
 	for (var i = 0; i < this.numNodes; i++)
 	{
 		var p = this.nodesPostorder[i];
-		setHeritage(p);
+		setContinuum(p);
 	}	
 
 	// console.log(newickStr); console.log(newickTokens); console.log(this.nodes); console.log(this.nodesByTime);
@@ -543,7 +573,7 @@ DRAW
 ***/
 
 
-Phylowood.unmaskHeritageForBranch = function(d) {
+Phylowood.unmaskContinuumForBranch = function(d) {
 
 	// unmask heritage of branch				
 	this.treeSvg.selectAll("line").select(
@@ -552,20 +582,20 @@ Phylowood.unmaskHeritageForBranch = function(d) {
 		
 			for (var i = 0; i < d.heritage.length; i++) {
 				if (b.id === d.heritage[i]) {
-					b.maskHeritage = false;
+					b.maskContinuum = false;
 					return this;
 				}
 			}
 		}
 	).style("stroke-opacity", 1.0);	
 
-	// unmask heritage of branch for makers
-	d3.selectAll("#divGeo circle.node").select(
+	// unmask heritage of branch for markers
+	d3.selectAll("#divGeo .marker").select(
 		function(m) {
 		
 			for (var i = 0; i < d.heritage.length; i++) {
 				if (m.id === d.heritage[i]) {
-					m.maskHeritage = false;
+					m.maskContinuum = false;
 					return this;
 				}
 			}
@@ -575,7 +605,7 @@ Phylowood.unmaskHeritageForBranch = function(d) {
 	Phylowood.updateMarkers();
 }
 
-Phylowood.maskHeritageForBranch = function(d) {
+Phylowood.maskContinuumForBranch = function(d) {
 
 	// mask heritage of branch
 	this.treeSvg.selectAll("line").select(
@@ -587,7 +617,7 @@ Phylowood.maskHeritageForBranch = function(d) {
 					found = true;
 			}
 			if (found) {
-				b.maskHeritage = true;
+				b.maskContinuum = true;
 				return this;
 			}
 			else
@@ -596,7 +626,7 @@ Phylowood.maskHeritageForBranch = function(d) {
 	).style("stroke-opacity", 0.2);
 
 	// mask heritage of branch's markers
-	d3.selectAll("#divGeo circle.node").select(
+	d3.selectAll("#divGeo .marker").select(
 		function(m) {
 			
 			var found = false;
@@ -606,7 +636,7 @@ Phylowood.maskHeritageForBranch = function(d) {
 				}
 			}
 			if (found) {
-				m.maskHeritage = true;
+				m.maskContinuum = true;
 				return this;
 			}
 			else
@@ -617,7 +647,7 @@ Phylowood.maskHeritageForBranch = function(d) {
 }
 
 
-Phylowood.highlightHeritageForBranch = function(d) {
+Phylowood.highlightContinuumForBranch = function(d) {
 
 	// mask branches not part of heritage
 	this.treeSvg.selectAll("line").select(
@@ -636,7 +666,7 @@ Phylowood.highlightHeritageForBranch = function(d) {
 	).style("stroke-opacity", 0.2);
 
 	// mask heritage of branch's markers
-	d3.selectAll("#divGeo circle.node").select(
+	d3.selectAll("#divGeo .marker").select(
 		function(m) {
 			
 			var ancestral = false;
@@ -659,15 +689,15 @@ Phylowood.restoreMask = function() {
 	// unmask all branches 
 	this.treeSvg.selectAll("line").select(
 		function(b) {
-			if (b.maskHeritage === false)
+			if (b.maskContinuum === false)
 				return this;
 		}
 	).style("stroke-opacity", 1.0);
 
 	// unmask all markers
-	d3.selectAll("#divGeo circle.node").select(
+	d3.selectAll("#divGeo .marker").select(
 		function(m) {
-			if (m.maskHeritage === false)
+			if (m.maskContinuum === false)
 				return this;
 		}
 	).style("fill-opacity", 1.0);
@@ -760,7 +790,7 @@ Phylowood.drawTree = function() {
 				"y1phy": yEnd,
 				"y2phy": yEnd,
 				"color": "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)",
-				"maskHeritage": false,
+				"maskContinuum": false,
 				"heritage": heritage
 			});
 			
@@ -778,7 +808,7 @@ Phylowood.drawTree = function() {
 					"y1phy": yStart,
 					"y2phy": yEnd,
 					"color": "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)",
-					"maskHeritage": false,
+					"maskContinuum": false,
 					"heritage": heritage
 					});
 			}
@@ -798,16 +828,16 @@ Phylowood.drawTree = function() {
 				.style("stroke", function(d) { return d.color; })
 				.style("stroke-width", 2.5)
 				.on("mouseover", function(d) {
-					Phylowood.highlightHeritageForBranch(d);
+					Phylowood.highlightContinuumForBranch(d);
 				})
 				.on("mouseout", function(d) {
 					Phylowood.restoreMask();
 				})
 				.on("click", function(d) {
-					Phylowood.unmaskHeritageForBranch(d);
+					Phylowood.unmaskContinuumForBranch(d);
 				})
 				.on("dblclick", function(d) {
-					Phylowood.maskHeritageForBranch(d);
+					Phylowood.maskContinuumForBranch(d);
 				});
 		
 }
@@ -851,52 +881,17 @@ Phylowood.initNodeColors = function() {
 }
 
 Phylowood.initMarkers = function() {
+
+    // markers data structure for generic drawType
 	this.markers = [];
-//	var showStart = 20;
-//	var showOnly = 20;
-	var showStart = 0;
-	var showOnly = this.numNodes;
-
-	this.showThreshhold = 0.01;
-		
-	for (var i = showStart; i < showOnly + showStart; i++) {
-		var id = this.nodes[i].id;
-		var c = this.nodes[i].color;
-		var timeStart = this.nodes[i].timeStart;
-		var timeEnd = this.nodes[i].timeEnd;
-
-		for (var j = 0; j < this.nodes[i].states.length; j++) {
-			if (this.nodes[i].states[j] > this.showThreshhold) {
-				this.markers.push({
-					"id": id,
-					"area": j,
-					"val": this.nodes[i].states[j],
-					"active": false,
-					"timeStart": timeStart,
-					"timeEnd": timeEnd,
-					"color": "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)",
-					"scheduleErase": false,
-					"scheduleDraw": false,
-					"maskHeritage": false
-				});
-			}
-		}
-	}
-};
-
-Phylowood.initMarkersPie = function() {
-	this.markersPie = [];
 	var showStart = 0;
 	var showOnly = this.numNodes;
 	Phylowood.showThreshhold = 0.05;
 	
-	// for each time
-//	for (var i = 0; i < this.nodesByTime.length; i++)
-
 	// for each divergence event in the tree, plus the root)
 	for (var i = 0; i < (this.numNodes - this.numTips + 1); i++)
 	{
-		this.markersPie[i] = [];
+		this.markers[i] = [];
 		
 		// time lineage i exists
 		t_i_0 = this.nodesByTime[i].timeStart;
@@ -906,7 +901,161 @@ Phylowood.initMarkersPie = function() {
 		// for each area
 		for (var j = 0; j < this.nodesByTime[i].states.length; j++)
 		{
-			this.markersPie[i][j] = [];
+			this.markers[i][j] = [];
+			var val_f = []; // tipwards lineage state
+            var val_0 = []; // rootwards lineage state
+			var color = [];
+			var ancestor = [];
+	
+			// for each lineage
+			for (var k = 0; k < this.nodesByTime.length; k++)
+			{
+
+                var v_0 = 0.0,
+                    v_f = 0.0;
+
+				// time lineage k exists
+                var kCoexists = false;
+				t_k_0 = this.nodesByTime[k].timeStart;
+				t_k_f = this.nodesByTime[k].timeEnd;
+
+				if ((t_i_0 === t_k_0 && t_i_f === t_k_f) ||
+                    (t_i_f > t_k_0 && t_i_f <= t_k_f))
+				    kCoexists = true;
+
+				// posterior probability
+                if (kCoexists === true)
+                {
+			    	v_f = this.nodesByTime[k].states[j];
+                    if (v_f < Phylowood.showThreshhold)
+                        v_f = 0.0;
+
+                    // get the ancestor (or itself if it is the root)
+                    var ancestor = this.nodesByTime[k].ancestor || this.nodesByTime[k];
+                    v_0 = ancestor.states[j];
+                    if (v_0 < Phylowood.showThreshhold)
+                        v_0 = 0.0;
+                }
+				
+                //console.log(t_i_0,t_i_f,t_k_0,t_k_f,v);				
+
+				// add to vals
+				val_f[k] = v_f;
+                val_0[k] = v_0;
+				var c = this.nodesByTime[k].color;
+				color[k] = "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)";
+				//ancestor[k] = (this.nodesByTime[k].ancestor !== null ? this.nodesByTime[k].ancestor.id : -1);
+
+
+			}
+			// add the JSON data
+			//console.log(i, j, val)
+			var ts = this.nodesByTime[i].timeStart;
+			var te = this.nodesByTime[i].timeEnd;
+			
+			this.markers[i][j] = {
+				"area": j,
+                "lat": Phylowood.geoCoords[j].lat,
+                "lon": Phylowood.geoCoords[j].lon,
+				"valF": val_f,
+                "val0": val_0,
+                "sumValF": eval(val_f.join("+")),
+                "sumVal0": eval(val_0.join("+")),
+				"active": false,
+				"timeStart": ts,
+				"timeEnd": te,
+				"color": color,
+				//"ancestor": ancestor,
+				"scheduleErase": false,
+				"scheduleDraw": false,
+				"maskContinuum": false
+			};
+		}
+	}
+};
+
+Phylowood.interpolateMarkers = function() {
+    if (this.modelType === "phylogeography")
+    {
+        if (this.areaType === "continuous")
+        {
+            //
+        }
+        else if (this.areaType === "discrete")
+        {
+            // do nothing
+            ;
+        }
+    }
+    else if (this.modelType === "biogeography")
+    {
+        if (this.areaType === "discrete")
+        {
+
+        }
+    }
+};
+
+Phylowood.initMarkersForce = function() {
+	this.markers = [];
+//	var showStart = 20;
+//	var showOnly = 20;
+	var showStart = 0;
+	var showOnly = this.numNodes;
+
+	this.showThreshhold = 0.01;
+		
+    // for each divergence event
+	for (var i = showStart; i < showOnly + showStart; i++) {
+		var id = this.nodes[i].id;
+		var c = this.nodes[i].color;
+		var timeStart = this.nodes[i].timeStart;
+		var timeEnd = this.nodes[i].timeEnd;
+        var ancestor = this.nodes[i].ancestor;
+
+        // for each area
+		for (var j = 0; j < this.nodes[i].states.length; j++) {
+
+            // for each lineage
+			if (this.nodes[i].states[j] > this.showThreshhold) {
+				this.markers.push({
+					"id": id,
+                    "ancestor": ancestor,
+					"area": j,
+					"val": this.nodes[i].states[j],
+					"active": false,
+					"timeStart": timeStart,
+					"timeEnd": timeEnd,
+					"color": "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)",
+					"scheduleErase": false,
+					"scheduleDraw": false,
+					"maskContinuum": false
+				});
+			}
+		}
+	}
+};
+
+Phylowood.initMarkersPie = function() {
+	this.markers = [];
+	var showStart = 0;
+	var showOnly = this.numNodes;
+	Phylowood.showThreshhold = 0.05;
+	
+	// for each divergence event in the tree, plus the root)
+	for (var i = 0; i < (this.numNodes - this.numTips + 1); i++)
+	{
+		this.markers[i] = [];
+		
+		// time lineage i exists
+		t_i_0 = this.nodesByTime[i].timeStart;
+		t_i_f = this.nodesByTime[i].timeEnd;
+		//console.log(this.nodesByTime[i].id, t_i_0, t_i_f);
+
+		// for each area
+		for (var j = 0; j < this.nodesByTime[i].states.length; j++)
+		{
+			this.markers[i][j] = [];
 			var val = [];
 			var color = [];
 			var ancestor = [];
@@ -953,7 +1102,7 @@ Phylowood.initMarkersPie = function() {
 			var ts = this.nodesByTime[i].timeStart;
 			var te = this.nodesByTime[i].timeEnd;
 			
-			this.markersPie[i][j] = {
+			this.markers[i][j] = {
 				"area": j,
                 "lat": Phylowood.geoCoords[j].lat,
                 "lon": Phylowood.geoCoords[j].lon,
@@ -966,14 +1115,14 @@ Phylowood.initMarkersPie = function() {
 				"ancestor": ancestor,
 				"scheduleErase": false,
 				"scheduleDraw": false,
-				"maskHeritage": false
+				"maskContinuum": false
 			};
 		}
 	}
 };
 
 Phylowood.initMarkersPack = function() {
-	this.markersPack = [];
+	this.markers = [];
 	var showStart = 0;
 	var showOnly = this.numNodes;
 	this.showThreshhold = 0.05;
@@ -984,7 +1133,7 @@ Phylowood.initMarkersPack = function() {
 	// for each divergence event in the tree, plus the root)
 	for (var i = 0; i < (this.numNodes - this.numTips + 1); i++)
 	{
-		this.markersPack[i] = [];
+		this.markers[i] = [];
 		
 		// time lineage i exists
 		t_i_0 = this.nodesByTime[i].timeStart;
@@ -994,7 +1143,7 @@ Phylowood.initMarkersPack = function() {
 		// for each area
 		for (var j = 0; j < this.nodesByTime[i].states.length; j++)
 		{
-			this.markersPack[i][j] = [];
+			this.markers[i][j] = [];
 			var val = [];
 			var color = [];
 			var ancestor = [];
@@ -1039,7 +1188,7 @@ Phylowood.initMarkersPack = function() {
 			var ts = this.nodesByTime[i].timeStart;
 			var te = this.nodesByTime[i].timeEnd;
 			
-			this.markersPack[i][j] = {
+			this.markers[i][j] = {
 				"area": j,
 				"val": val,
                 "sumVal": eval(val.join("+")),
@@ -1051,7 +1200,7 @@ Phylowood.initMarkersPack = function() {
 				"descendants": descendants,
 				"scheduleErase": false,
 				"scheduleDraw": false,
-				"maskHeritage": false
+				"maskContinuum": false
 			};
 		}
 	}
@@ -1151,12 +1300,10 @@ Phylowood.drawMarkersForce = function() {
 	var h = document.getElementById("divGeo").offsetHeight;
 	var w = document.getElementById("divGeo").offsetWidth;
 
-
 	// geo data
 	var states = this.markers; //this.initMarkers();
 	var coords = this.geoCoords;
 	var foci = [coords.length]; // cluster foci, i.e. areas lat,lons
-	
 	
 	// assign foci xy coordinates from geographical coordinates
 	for (var i = 0; i < coords.length; i++)
@@ -1166,8 +1313,10 @@ Phylowood.drawMarkersForce = function() {
 	this.force = d3.layout.force()
 		.nodes(states)
 		.links([])
-	//	.charge( function(d) { return -Math.pow(Math.pow( map.zoom() / Phylowood.bestZoom, 2) * d.val * 3, 2.0) / 8; } )
-		.charge( function(d) { return -Math.pow(Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 2) * d.val * 4, 2.2); } )
+	//	.charge( function(d) { return -Math.pow(Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 2) * d.val * 3, 2.0) / 8; } )
+		.charge( function(d) {
+            return -Math.pow(Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 2) * d.val * 4, 2.2);
+        })
 		.gravity(0.0)
 		.theta(1.5)
 		.friction(0.9)
@@ -1184,17 +1333,16 @@ Phylowood.drawMarkersForce = function() {
 	
 	// create svg markers
 	var layer = d3.select("#divGeo svg")
-	var node = layer.selectAll("circle.node")
+	var node = layer.selectAll("circle.marker")
 			.data(states)
 		.enter().append("svg:circle")
-			.attr("class","node")
+			.attr("class","marker")
 			.attr("cx", function(d) { return foci[d.area].x; })
 			.attr("cy", function(d) { return foci[d.area].y; })
-//			.attr("r",  function(d) { return 3 * Math.sqrt(d.val); })
-			.attr("r",  function(d) { return Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 3) * d.val * 2; })
-		//	.attr("r", function(d) { return d.val * 2; })
+			.attr("r",  function(d) {
+                return Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * d.val * 3;
+            })
 			.attr("fill", function(d) { return d.color; })
-		//	.attr("stroke", "white")
 			.attr("stroke-width", 1)
 			.attr("fill-opacity", 1)
 			.attr("visibility","hidden")
@@ -1217,17 +1365,16 @@ Phylowood.drawMarkersForce = function() {
 	// update coordinates when map pans and zooms
 	this.map.on("move", function() {
 
-		Phylowood.force.stop();
 		// update force properties with each move
-		//force.charge( -1.5 * map.zoom());
-		//force.gravity(0.0);
-		//Phylowood.force.charge( function(d) { return -Math.pow(Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 2) * d.val * 4, 2.2); } )
-	//	Phylowood.force.charge( function(d) { return -20; } );
-		// better visualization: have all nodes retain actual positions, instead of refocusing
+        // Phylowood.force.charge( function(d) { return -Math.pow(Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 2) * d.val * 4, 2.2); } )
+
+        // better visualization: have all nodes retain actual positions, instead of refocusing
 		// it seems like areas contract at different zoom levels... weird
 		// update positions of js states[] objects
-		
-		states.forEach(function(o,i) {
+		Phylowood.force.stop();
+	
+		// get new map-to-pixel coordinates for all states
+        states.forEach(function(o,i) {
 			xy = Phylowood.map.locationPoint({"lon": o.lon, "lat":o.lat});
 			o.x = xy.x;
 			o.y = xy.y; 
@@ -1236,14 +1383,16 @@ Phylowood.drawMarkersForce = function() {
 		// update positions and radii for nodes
 		node.attr("cx", function(d) { return d.x; })
 		    .attr("cy", function(d) { return d.y; })
-		    .attr("r", function(d) { return  Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 3) * d.val * 2; }) // change vs. zoom??
+		    .attr("r", function(d) {
+                return  Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * d.val * 3;
+            });
 
 
 		// update force foci positions
 		for (var i = 0; i < coords.length; i++)
 			foci[i] = Phylowood.map.locationPoint(coords[i]);
 		
-	//	force.resume();
+	    // force.resume();
 
 	});	
 
@@ -1264,7 +1413,7 @@ Phylowood.drawMarkersForce = function() {
 		});
 
 		// update object attributes per tick
-		layer.selectAll("circle.node")
+		layer.selectAll(".marker")
 		     .attr("cx", function(d) { return d.x; })
 		     .attr("cy", function(d) { return d.y; });
 		
@@ -1332,15 +1481,15 @@ Phylowood.drawMarkersPie = function() {
 		Phylowood.paths = paths;
     }
 	
-	var numPies = Phylowood.markersPie[0].length;
-	//var numTimes = Phylowood.markersPie.length;
+	var numPies = Phylowood.markers[0].length;
+	//var numTimes = Phylowood.markers.length;
     var numTimes = 3;
 	var t = 2;
 	for (; t < numTimes; t++)
 	{
 	    for (i = 0; i < numPies; i++)
 	    {
-            bakepie("pie" + i, Phylowood.markersPie[t][i], foci[i].x, foci[i].y, 5);
+            bakepie("pie" + i, Phylowood.markers[t][i], foci[i].x, foci[i].y, 5);
     	}
 	}
     
@@ -1391,10 +1540,10 @@ Phylowood.drawMarkersPack = function() {
 		foci[i] = Phylowood.map.locationPoint(Phylowood.geoCoords[i]);	
 	
 	var t = 0;
-	var numPacks = Phylowood.markersPack[0].length;
+	var numPacks = Phylowood.markers[0].length;
 	for (i = 0; i < numPacks; i++)
 	{
-		var data = Phylowood.markersPack[t][i];
+		var data = Phylowood.markers[t][i];
 		var r = data.val.join("+"); // 
     	makePack("pack" + i, data, foci[i].x, foci[i].y, data.val.join("+") * 20);
     }	
@@ -1487,7 +1636,7 @@ Phylowood.animStart = function() {
 	$( "#divSlider" ).slider("option","value",this.startPhyloTime);
 
 	this.startDisplay();
-	//d3.select("#divGeo").selectAll("circle.node").remove();
+	//d3.select("#divGeo").selectAll(".marker").remove();
 }
 
 Phylowood.animEnd = function() {
@@ -1584,7 +1733,7 @@ Phylowood.startDisplay = function() {
 	for (var i = 0; i < Phylowood.markers.length; i++) {
 		var m = Phylowood.markers[i];
 		if (m.timeStart == 0.0 && m.timeEnd == 0.0) {
-			if (m.scheduleDraw === false && m.maskHeritage == false)
+			if (m.scheduleDraw === false && m.maskContinuum == false)
 				m.scheduleDraw = true;
 		}
 		// can probably just use an "else"
@@ -1596,7 +1745,7 @@ Phylowood.startDisplay = function() {
 	
 	// enter() and remove() events according to .curPhyloTime and nodes[].animateOn values
 	// remove()
-	d3.selectAll("#divGeo circle.node").select(
+	d3.selectAll("#divGeo .marker").select(
 		function(d) {
 			if (d.scheduleErase === true) {
 				d.scheduleErase = false;
@@ -1607,7 +1756,7 @@ Phylowood.startDisplay = function() {
 			}
 		}).attr("visibility","hidden");
 
-	d3.select("#divGeo svg").selectAll("circle.node")
+	d3.select("#divGeo svg").selectAll(".marker")
 		.data(Phylowood.markers).select(
 		function(d) {
 			if (d.scheduleDraw === true) {
@@ -1627,7 +1776,7 @@ Phylowood.endDisplay = function() {
 	for (var i = 0; i < Phylowood.markers.length; i++) {
 		var m = Phylowood.markers[i];
 		if (m.timeEnd == Phylowood.endPhyloTime) {
-			if (m.scheduleDraw === false && m.maskHeritage == false)
+			if (m.scheduleDraw === false && m.maskContinuum == false)
 				m.scheduleDraw = true;
 		}
 		// can probably just use an "else"
@@ -1639,7 +1788,7 @@ Phylowood.endDisplay = function() {
 	
 	// enter() and remove() events according to .curPhyloTime and nodes[].animateOn values
 	// remove()
-	d3.selectAll("#divGeo circle.node").select(
+	d3.selectAll("#divGeo .marker").select(
 		function(d) {
 			if (d.scheduleErase === true) {
 				d.scheduleErase = false;
@@ -1650,7 +1799,7 @@ Phylowood.endDisplay = function() {
 			}
 		}).attr("visibility","hidden");
 
-	d3.select("#divGeo svg").selectAll("circle.node")
+	d3.select("#divGeo svg").selectAll(".marker")
 		.data(Phylowood.markers).select(
 		function(d) {
 			if (d.scheduleDraw === true) {
@@ -1690,8 +1839,6 @@ Phylowood.updateDisplay = function() {
 	//}
 	
 	Phylowood.updateMarkers();
-
-
 	
 	// enter() and remove() events according to .curPhyloTime and nodes[].animateOn values
 	// remove()
@@ -1705,20 +1852,28 @@ Phylowood.updateMarkers = function() {
 		var m = Phylowood.markers[i];
 
 		// branch active, general case
-		if (m.timeStart < Phylowood.curPhyloTime && m.timeEnd >= Phylowood.curPhyloTime && m.maskHeritage == false) {
+		if (m.timeStart < Phylowood.curPhyloTime
+            && m.timeEnd >= Phylowood.curPhyloTime
+            && m.maskContinuum == false) {
 			m.scheduleDraw = true;
 		}
 		// branch active, border cases
-		else if (m.timeStart == 0.0 && m.timeEnd == 0.0 && Phylowood.curPhyloTime == 0.0 && m.maskHeritage == false) {
+        // 080112 MJL: may not be necessary now that we have a small root branch
+		else if (m.timeStart == 0.0
+                && m.timeEnd == 0.0
+                && Phylowood.curPhyloTime == 0.0
+                && m.maskContinuum == false) {
 			m.scheduleDraw = true;
 		}
 		// branch not active
-		else if (m.timeStart >= Phylowood.curPhyloTime || m.timeEnd < Phylowood.curPhyloTime || m.maskHeritage == true) {
+		else if (m.timeStart >= Phylowood.curPhyloTime
+                || m.timeEnd < Phylowood.curPhyloTime
+                || m.maskContinuum == true) {
 			m.scheduleErase = true;
 		}
 	}
 
-	d3.selectAll("#divGeo circle.node").select(
+	d3.selectAll("#divGeo .marker").select(
 		function(d) {
 			if (d.scheduleErase === true) {
 				d.scheduleErase = false;
@@ -1729,7 +1884,7 @@ Phylowood.updateMarkers = function() {
 			}
 		}).attr("visibility","hidden");
 
-	d3.select("#divGeo svg").selectAll("circle.node")
+	d3.select("#divGeo svg").selectAll(".marker")
 		.data(Phylowood.markers).select(
 		function(d) {
 			if (d.scheduleDraw === true) {
@@ -1741,40 +1896,7 @@ Phylowood.updateMarkers = function() {
 			}
 		}).attr("visibility","visible");
 }
-/***
-DEFUNCT
-***/
-/*
-// Check for the various File API support.
-if (window.File && window.FileReader && window.FileList && window.Blob) {
-  ; // All the File APIs are supported.
-} else {
-  alert('The File APIs are not fully supported in this browser.');
-}
 
-// Store file contents to Phylowood.infile
-function handleFileSelect(evt) {
-//	Phylowood.infile = "";
-	var f;
-	f = evt.target.files[0];
-	var fr = new FileReader();
-
-	fr.onload = function(e) {
-		
-		//var txtArea = document.createElement('textarea');
-		//txtArea.value = this.result;
-		//document.getElementById('divGeo').appendChild(txtArea);
-		
-		Phylowood.inputStr = this.result;
-		// console.log("inputFile.result = " + this.result);
-	};
-	fr.onerror = function(e) {
-		//alert("error");
-	};
-	fr.readAsText(f);
-}
-document.getElementById('files').addEventListener('change', handleFileSelect, false);
-*/
 
 /***
 TESTING
