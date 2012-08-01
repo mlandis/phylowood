@@ -78,10 +78,25 @@ Phylowood.initialize = function() {
 	
 	// draw from data
 	this.initNodeColors();
-	this.initMarkers();
 	this.drawTree();
-	this.initMap();
-	this.initPlayer();
+	this.drawMap();
+	
+	// draw data by style
+	var drawStyle = "force";
+	
+	if (drawStyle === "pie") {
+		this.initMarkersPie();
+		this.drawMarkersPie();
+	}
+	else if (drawStyle === "pack") {
+		this.initMarkersPack(); // data layout
+		this.drawMarkersPack();
+	}
+	else if (drawStyle === "force") {
+		this.initMarkers();
+		this.drawMarkersForce();
+		this.initPlayer();
+	}
 	
 };
 
@@ -147,11 +162,7 @@ Phylowood.initStates = function() {
 	this.numNodes = this.states.length;
 	this.numTips = (this.numNodes + 1) / 2;
 	
-	/*
-	console.log("Phylowood.initStates():");
-	console.log(this.taxa);
-	console.log(this.states);
-	*/
+	// console.log("Phylowood.initStates():"); console.log(this.taxa); console.log(this.states);
 	
 };
 
@@ -187,6 +198,7 @@ Phylowood.initGeo = function() {
 	}
 	
 	var numAreas = this.geoCoords.length;
+	this.numAreas = numAreas;
 	
 	// construct distance matrix geoDistances
 	this.distanceType = "Euclidean";
@@ -392,9 +404,16 @@ Phylowood.initTree = function() {
 		}
 	}
 
+    // this is used to add a "false" branch to the root for phylo controls
+    this.rootEnd = 0.0;
+
 	// assign absolute times to nodes, defined as:
 	// [t_begin, t_end] = [this.root.timeStart, max(this.nodes[i].timeEnd)]
 	var setTime = function(p) {
+		if (p.ancestor === null) {
+			p.timeStart = 0.0;
+			p.timeEnd = Phylowood.rootEnd;
+		}
 		if (p.ancestor !== null) {
 			p.timeEnd = p.len + p.ancestor.timeEnd;
 			p.timeStart = p.ancestor.timeEnd;
@@ -403,6 +422,8 @@ Phylowood.initTree = function() {
 			setTime(p.descendants[i], p.timeEnd);
 		}
 	}
+
+    // initialize times to get tree height
 	setTime(this.root);
 	
 	// determine time-based order of nodes (for animation purposes)
@@ -411,7 +432,13 @@ Phylowood.initTree = function() {
 		this.nodesByTime.push(this.nodes[i]);
 	}
 	this.nodesByTime.sort(function(a,b){return a.timeEnd - b.timeEnd;});
-	this.startPhyloTime = this.nodesByTime[0].timeEnd;
+
+    // reset times with the "false" branch at the root
+    this.rootEnd = 0.05 * this.nodesByTime[this.numNodes-1].timeEnd;
+    setTime(this.root);
+
+    // get phylo start and end times (treeheight + offset)
+	this.startPhyloTime = this.nodesByTime[0].timeStart;
 	this.endPhyloTime = this.nodesByTime[this.numNodes-1].timeEnd;
 
 	// postorder traveral nodes (for drawing the tree, F84 pruning, etc.)
@@ -469,13 +496,8 @@ Phylowood.initTree = function() {
 		setHeritage(p);
 	}	
 
+	// console.log(newickStr); console.log(newickTokens); console.log(this.nodes); console.log(this.nodesByTime);
 
-/*
-	console.log(newickStr);
-	console.log(newickTokens);
-	console.log(this.nodes);	
-	console.log(this.nodesByTime);
-*/
 };
 
 Phylowood.Node = function() {
@@ -710,21 +732,19 @@ Phylowood.drawTree = function() {
 			pp = p.ancestor;
 		
 		// if parent exists, draw branch
-		if (pp !== null) {
+		//if (pp !== null) {
 
 			var c = p.color,
-				pc = pp.color,		
+			//	pc = pp.color,		
 				xStart = p.timeStart * unitsW,
 				xEnd = p.timeEnd * unitsW,
-				yStart = pp.coord * unitsH,
+//				yStart = pp.coord * unitsH,
 				yEnd = p.coord * unitsH,
 				heritage = p.heritage;
 
 
 			// offset the borders by linewidth
-			if (pp.ancestor === null) {
-				xStart += 2;
-			}
+//			if (p.ancestor === null)	xStart += 2;
 			if (yEnd == divH) yEnd -= 2;
 			if (yStart == divH) yStart -=2;
 			if (yStart == 0.0) yStart += 2;
@@ -744,21 +764,26 @@ Phylowood.drawTree = function() {
 				"heritage": heritage
 			});
 			
-			// add vertical lines
-			this.phyloDrawData.push({
-				"id": p.id,
-				"timeStart": p.timeEnd,
-				"timeEnd": p.timeEnd,
-				"x1phy": xStart,
-				"x2phy": xStart,
-				"y1phy": yStart,
-				"y2phy": yEnd,
-				"color": "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)",
-				"maskHeritage": false,
-				"heritage": heritage
-				});
+			if (pp !== null) {
+				var pc = pp.color,
+					yStart = pp.coord * unitsH;
+			
+				// add vertical lines
+				this.phyloDrawData.push({
+					"id": p.id,
+					"timeStart": p.timeEnd,
+					"timeEnd": p.timeEnd,
+					"x1phy": xStart,
+					"x2phy": xStart,
+					"y1phy": yStart,
+					"y2phy": yEnd,
+					"color": "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)",
+					"maskHeritage": false,
+					"heritage": heritage
+					});
+			}
 				
-		}
+	//	}
 				
 	}
 	
@@ -807,7 +832,6 @@ Phylowood.initNodeColors = function() {
 	}
 
 	// set internal nodes based on tip colors
-	//for (var i = 0; i < this.nodes.length; i++) {
 	for (var i = this.numNodes-1; i >= 0; i--) {
 		if (this.nodesByTime[i].descendants.length > 0) {
 
@@ -833,14 +857,8 @@ Phylowood.initMarkers = function() {
 	var showStart = 0;
 	var showOnly = this.numNodes;
 
-	this.showThreshhold = 0.1;
-	
-/*
-	var colors;
-	for (var i = 0; i < showOnly; i++)
-		colors[i] = "hsl(" + Math.random() * 360 + ",100%,50%)";
-*/
-	
+	this.showThreshhold = 0.01;
+		
 	for (var i = showStart; i < showOnly + showStart; i++) {
 		var id = this.nodes[i].id;
 		var c = this.nodes[i].color;
@@ -848,12 +866,7 @@ Phylowood.initMarkers = function() {
 		var timeEnd = this.nodes[i].timeEnd;
 
 		for (var j = 0; j < this.nodes[i].states.length; j++) {
-			this.Markers = [];
 			if (this.nodes[i].states[j] > this.showThreshhold) {
-				//if (this.nodes[i].descendants.length === 0) {
-				//	console.log("states??:" + ","+i +"," + j);
-				//}
-				
 				this.markers.push({
 					"id": id,
 					"area": j,
@@ -869,39 +882,182 @@ Phylowood.initMarkers = function() {
 			}
 		}
 	}
-	
-//	return this.markers;
-
-/*
-	// test data
-	return [
-	        {"id":0, "area":0, "val":.3, "color":"red"},
-	        {"id":0, "area":2, "val":.7, "color":"red"},
-	        {"id":1, "area":0, "val":.4, "color":"yellow"},
-	        {"id":1, "area":1, "val":.2, "color":"yellow"},
-	        {"id":1, "area":2, "val":.4, "color":"yellow"},
-	        {"id":2, "area":1, "val":.5, "color":"blue"},
-	        {"id":2, "area":2, "val":.5, "color":"blue"},
-   	        {"id":0, "area":0, "val":.3, "color":"red"},
-	        {"id":0, "area":2, "val":.7, "color":"red"},
-	        {"id":1, "area":0, "val":.4, "color":"yellow"},
-	        {"id":1, "area":1, "val":.2, "color":"yellow"},
-	        {"id":1, "area":2, "val":.4, "color":"yellow"},
-	        {"id":2, "area":1, "val":.5, "color":"blue"},
-	        {"id":2, "area":2, "val":.5, "color":"blue"},
-   	        {"id":0, "area":0, "val":.3, "color":"red"},
-	        {"id":0, "area":2, "val":.7, "color":"red"},
-	        {"id":1, "area":0, "val":.4, "color":"yellow"},
-	        {"id":1, "area":1, "val":.2, "color":"yellow"},
-	        {"id":1, "area":2, "val":.4, "color":"yellow"},
-	        {"id":2, "area":1, "val":.5, "color":"blue"},
-	        {"id":2, "area":2, "val":.5, "color":"blue"}
-	];
-*/
-
 };
 
-Phylowood.initMap = function() {
+Phylowood.initMarkersPie = function() {
+	this.markersPie = [];
+	var showStart = 0;
+	var showOnly = this.numNodes;
+	Phylowood.showThreshhold = 0.05;
+	
+	// for each time
+//	for (var i = 0; i < this.nodesByTime.length; i++)
+
+	// for each divergence event in the tree, plus the root)
+	for (var i = 0; i < (this.numNodes - this.numTips + 1); i++)
+	{
+		this.markersPie[i] = [];
+		
+		// time lineage i exists
+		t_i_0 = this.nodesByTime[i].timeStart;
+		t_i_f = this.nodesByTime[i].timeEnd;
+		//console.log(this.nodesByTime[i].id, t_i_0, t_i_f);
+
+		// for each area
+		for (var j = 0; j < this.nodesByTime[i].states.length; j++)
+		{
+			this.markersPie[i][j] = [];
+			var val = [];
+			var color = [];
+			var ancestor = [];
+	
+			// for each lineage
+			for (var k = 0; k < this.nodesByTime.length; k++)
+			{
+
+
+				// time lineage k exists
+				t_k_0 = this.nodesByTime[k].timeStart;
+				t_k_f = this.nodesByTime[k].timeEnd;
+				
+				// posterior probability
+				var v = this.nodesByTime[k].states[j];
+				
+				//console.log(t_i_0,t_i_f,t_k_0,t_k_f,v);				
+				// if the pp is less than threshhold
+				if (v === 0.0)
+					;
+				else if (v < Phylowood.showThreshhold)
+					v = 0.0;
+				// do nothing if lineages coexist
+				else if (t_i_0 === t_k_0 && t_i_f === t_k_f)
+					;
+				else if (t_i_f > t_k_0 && t_i_f <= t_k_f)
+					;
+				// ... but, if lineages i and k do not coexist temporally
+				else
+					v = 0.0;
+				// consider making v an interpolated value over branch length
+				// ...
+
+				//console.log(v);
+
+				// add to vals
+				val[k] = v;
+				var c = this.nodesByTime[k].color;
+				color[k] = "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)";
+				ancestor[k] = (this.nodesByTime[k].ancestor !== null ? this.nodesByTime[k].ancestor.id : -1);
+			}
+			// add the JSON data
+			//console.log(i, j, val)
+			var ts = this.nodesByTime[i].timeStart;
+			var te = this.nodesByTime[i].timeEnd;
+			
+			this.markersPie[i][j] = {
+				"area": j,
+                "lat": Phylowood.geoCoords[j].lat,
+                "lon": Phylowood.geoCoords[j].lon,
+				"val": val,
+                "sumVal": eval(val.join("+")),
+				"active": false,
+				"timeStart": ts,
+				"timeEnd": te,
+				"color": color,
+				"ancestor": ancestor,
+				"scheduleErase": false,
+				"scheduleDraw": false,
+				"maskHeritage": false
+			};
+		}
+	}
+};
+
+Phylowood.initMarkersPack = function() {
+	this.markersPack = [];
+	var showStart = 0;
+	var showOnly = this.numNodes;
+	this.showThreshhold = 0.05;
+	
+	// for each time
+//	for (var i = 0; i < this.nodesByTime.length; i++)
+
+	// for each divergence event in the tree, plus the root)
+	for (var i = 0; i < (this.numNodes - this.numTips + 1); i++)
+	{
+		this.markersPack[i] = [];
+		
+		// time lineage i exists
+		t_i_0 = this.nodesByTime[i].timeStart;
+		t_i_f = this.nodesByTime[i].timeEnd;
+		//console.log(this.nodesByTime[i].id, t_i_0, t_i_f);
+
+		// for each area
+		for (var j = 0; j < this.nodesByTime[i].states.length; j++)
+		{
+			this.markersPack[i][j] = [];
+			var val = [];
+			var color = [];
+			var ancestor = [];
+			var descendants = [];
+	
+			// for each lineage
+			for (var k = 0; k < this.nodesByTime.length; k++)
+			{
+				// time lineage k exists
+				t_k_0 = this.nodesByTime[k].timeStart;
+				t_k_f = this.nodesByTime[k].timeEnd;
+				//console.log(this.nodesByTime[k].id, t_k_0, t_k_f);
+				
+				// posterior probability
+				var v = this.nodesByTime[k].states[j];
+				
+				// if the pp is less than threshhold
+				if (v < this.showThreshhold)
+					v = 0.0;
+				// lineage i always coexists with itself
+				else if (i === k)
+					; 
+				// ... but, if lineages i and k do not coexist temporally
+				else if (t_i_0 >= t_k_f || t_i_f <= t_k_0)
+					v = 0.0;
+				// consider making v an interpolated value over branch length
+				// ...
+				
+				// WARNING: overwrite v for testing
+				v = 1.0;
+
+				// add to vals
+				val[k] = v;
+				var c = this.nodesByTime[k].color;
+				color[k] = "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)";
+				ancestor[k] = this.nodesByTime.ancestor;
+				descendants[k] = this.nodesByTime.descendants[k];
+				
+			}
+			// add the JSON data
+			//console.log(i, j, val)
+			var ts = this.nodesByTime[i].timeStart;
+			var te = this.nodesByTime[i].timeEnd;
+			
+			this.markersPack[i][j] = {
+				"area": j,
+				"val": val,
+                "sumVal": eval(val.join("+")),
+				"active": false,
+				"timeStart": ts,
+				"timeEnd": te,
+				"color": color,
+				"ancestor": ancestor,
+				"descendants": descendants,
+				"scheduleErase": false,
+				"scheduleDraw": false,
+				"maskHeritage": false
+			};
+		}
+	}
+};
+
+Phylowood.drawMap = function() {
 
 	// div size (get dynamically)
 	var h = document.getElementById("divGeo").offsetHeight;
@@ -945,6 +1101,7 @@ Phylowood.initMap = function() {
 		
 	// create polymaps object
 	var po = org.polymaps;
+	this.po = po;
 	
 	// create the map object, add it to #divGeo
 	var map = po.map()
@@ -956,50 +1113,64 @@ Phylowood.initMap = function() {
 		  .url(po.url("http://{S}tile.cloudmade.com"
 		  + "/5b7ebc9342d84da7b27ca499a238df9d" // http://cloudmade.com/register
 		  + "/999/256/{Z}/{X}/{Y}.png")
-		//  + "/44979/256/{Z}/{X}/{Y}.png")
+//		  + "/44979/256/{Z}/{X}/{Y}.png")
 // 		  + "/998/256/{Z}/{X}/{Y}.png")
 		  .hosts(["a.", "b.", "c.", ""])))
 		.add(po.compass().pan("none"));
-	this.map = map;	
-	
+	this.map = map;
 	
 
 	// zoom out to fit all the foci	
 	// need to center map at {0,0} when zoom is 1 to put entire globe in view
+    var autoZoomSize = 0.1;
 	while (minLat < map.extent()[0].lat) { 
-		map.zoomBy(-1); 
+		map.zoomBy(-autoZoomSize); 
 		if (map.zoom() <= 2) { map.center({lat:20,lon:20}) }
 	}
 	while (minLon < map.extent()[0].lon) { 
-		map.zoomBy(-1); 
+		map.zoomBy(-autoZoomSize); 
 		if (map.zoom() <= 2) { map.center({lat:20,lon:20}) }		
 	}	
 	while (maxLat > map.extent()[1].lat) { 
-		map.zoomBy(-1); 
+		map.zoomBy(-autoZoomSize); 
 		if (map.zoom() <= 2) { map.center({lat:20,lon:20}) }		
 	}	
 	while (maxLon > map.extent()[1].lon) { 
-		map.zoomBy(-1); 
+		map.zoomBy(-autoZoomSize); 
 		if (map.zoom() <= 2) { map.center({lat:20,lon:20}) }		
 	}
 
 	this.bestZoom = map.zoom();	
 		
 	var layer = d3.select("#divGeo svg").insert("svg:g", ".compass");
+};
+
+Phylowood.drawMarkersForce = function() {
+
+	// div size (get dynamically)
+	var h = document.getElementById("divGeo").offsetHeight;
+	var w = document.getElementById("divGeo").offsetWidth;
+
+
+	// geo data
+	var states = this.markers; //this.initMarkers();
+	var coords = this.geoCoords;
+	var foci = [coords.length]; // cluster foci, i.e. areas lat,lons
+	
 	
 	// assign foci xy coordinates from geographical coordinates
 	for (var i = 0; i < coords.length; i++)
-		foci[i] = map.locationPoint(coords[i]);	
+		foci[i] = this.map.locationPoint(coords[i]);	
 
 	// create force layout
-	var force = d3.layout.force()
+	this.force = d3.layout.force()
 		.nodes(states)
 		.links([])
-		.charge( -1.5 * map.zoom())
-		//.charge(-Math.pow(1.5, map.zoom()) + 8*map.zoom())
+	//	.charge( function(d) { return -Math.pow(Math.pow( map.zoom() / Phylowood.bestZoom, 2) * d.val * 3, 2.0) / 8; } )
+		.charge( function(d) { return -Math.pow(Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 2) * d.val * 4, 2.2); } )
 		.gravity(0.0)
 		.theta(1.5)
-		.friction(0.5)
+		.friction(0.9)
 		//.alpha(100000)
 		.size([w, h])
 		;
@@ -1009,9 +1180,10 @@ Phylowood.initMap = function() {
 		d.y = foci[d.area].y;
 	});
 
-	force.start();
+	this.force.start();
 	
 	// create svg markers
+	var layer = d3.select("#divGeo svg")
 	var node = layer.selectAll("circle.node")
 			.data(states)
 		.enter().append("svg:circle")
@@ -1019,7 +1191,8 @@ Phylowood.initMap = function() {
 			.attr("cx", function(d) { return foci[d.area].x; })
 			.attr("cy", function(d) { return foci[d.area].y; })
 //			.attr("r",  function(d) { return 3 * Math.sqrt(d.val); })
-			.attr("r",  function(d) { return Math.pow( map.zoom() / Phylowood.bestZoom, 2) * d.val * 4; })
+			.attr("r",  function(d) { return Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 3) * d.val * 2; })
+		//	.attr("r", function(d) { return d.val * 2; })
 			.attr("fill", function(d) { return d.color; })
 		//	.attr("stroke", "white")
 			.attr("stroke-width", 1)
@@ -1033,7 +1206,7 @@ Phylowood.initMap = function() {
 		.on("mouseup", mouseup);
 		
 	function mousedown() {
-		force.stop();
+		Phylowood.force.stop();
 	}
 	
 	function mouseup() {
@@ -1042,19 +1215,20 @@ Phylowood.initMap = function() {
 	}
 
 	// update coordinates when map pans and zooms
-	map.on("move", function() {
+	this.map.on("move", function() {
 
-		force.stop();
+		Phylowood.force.stop();
 		// update force properties with each move
 		//force.charge( -1.5 * map.zoom());
 		//force.gravity(0.0);
-		
+		//Phylowood.force.charge( function(d) { return -Math.pow(Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 2) * d.val * 4, 2.2); } )
+	//	Phylowood.force.charge( function(d) { return -20; } );
 		// better visualization: have all nodes retain actual positions, instead of refocusing
 		// it seems like areas contract at different zoom levels... weird
 		// update positions of js states[] objects
 		
 		states.forEach(function(o,i) {
-			xy = map.locationPoint({"lon": o.lon, "lat":o.lat});
+			xy = Phylowood.map.locationPoint({"lon": o.lon, "lat":o.lat});
 			o.x = xy.x;
 			o.y = xy.y; 
 		});
@@ -1062,12 +1236,12 @@ Phylowood.initMap = function() {
 		// update positions and radii for nodes
 		node.attr("cx", function(d) { return d.x; })
 		    .attr("cy", function(d) { return d.y; })
-		    .attr("r", function(d) { return  Math.pow( map.zoom() / Phylowood.bestZoom, 2) * d.val * 4; }) // change vs. zoom??
+		    .attr("r", function(d) { return  Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 3) * d.val * 2; }) // change vs. zoom??
 
 
 		// update force foci positions
 		for (var i = 0; i < coords.length; i++)
-			foci[i] = map.locationPoint(coords[i]);
+			foci[i] = Phylowood.map.locationPoint(coords[i]);
 		
 	//	force.resume();
 
@@ -1075,7 +1249,7 @@ Phylowood.initMap = function() {
 
 
 	// update node[] each tick
-	force.on("tick", function(e) {
+	this.force.on("tick", function(e) {
 
 		// set stepsize per tick
 		var k = e.alpha * 5;
@@ -1084,7 +1258,7 @@ Phylowood.initMap = function() {
 		states.forEach(function(o,i) {
 			o.x += (foci[o.area].x - o.x) * k
 			o.y += (foci[o.area].y - o.y) * k
-			var latlon = map.pointLocation({"x": o.x, "y": o.y});
+			var latlon = Phylowood.map.pointLocation({"x": o.x, "y": o.y});
 			o.lon = latlon.lon;
 			o.lat = latlon.lat;
 		});
@@ -1095,7 +1269,137 @@ Phylowood.initMap = function() {
 		     .attr("cy", function(d) { return d.y; });
 		
 	});
+	
 };
+
+Phylowood.drawMarkersPie = function() {
+
+	// div size (get dynamically)
+	var h = document.getElementById("divGeo").offsetHeight;
+	var w = document.getElementById("divGeo").offsetWidth;
+		
+	// assign foci xy coordinates from geographical coordinates
+	var foci = []; // cluster foci, i.e. areas lat,lons
+	for (var i = 0; i < Phylowood.geoCoords.length; i++)
+		foci[i] = Phylowood.map.locationPoint(Phylowood.geoCoords[i]);	
+
+	// draw each pie
+	function bakepie(classname, data, x, y, r)
+	{
+		var arc = d3.svg.arc()
+		    .startAngle(function(d) { return d.startAngle; } )
+	        .endAngle(function(d) { return d.endAngle; } )
+	        .innerRadius(function(d,i) { 
+			    if (data.val[i] === 0.0) return r;
+			    else return Math.pow(1.0 - data.val[i], 2) * r; 
+		    })
+	        .outerRadius(r);
+
+		var pie = d3.select("#divGeo svg")
+            .append("svg:g")
+                .data([data.val.map(Math.ceil)]) // works 
+                // need to use the d3.fn() that reindexes data
+                // if I use .sort(), then .data is indexed differently
+                /*
+                .data([data.ancestor.sort(function(a,b) {
+            		z = 0;
+					if (a.ancestor === b.ancestor) z++;
+				//	if (a.ancestor === b.id) z++;
+					return z;
+                })].map(function(d,i){
+					return Math.ceil(data.val[i]);
+                }))*/
+                .attr("class", classname);
+
+		var donut = d3.layout.pie();
+
+		var arcs = pie.selectAll("g.arc")
+            .data(donut)
+          .enter().append("svg:g")
+            .attr("class", "arc")
+            .attr("transform", "translate(" + x + "," + y + ")");
+
+        var paths = arcs.append("svg:path")
+            .attr("fill", function(d, i) { return data.color[i]; })
+            .attr("d", arc)
+            .attr("class", "marker")
+		    //.attr("d", function() { return  arc; });
+
+   		Phylowood.donut = donut;
+		Phylowood.arc = arc;
+		Phylowood.pie = pie;
+		Phylowood.arcs = arcs;
+		Phylowood.paths = paths;
+    }
+	
+	var numPies = Phylowood.markersPie[0].length;
+	//var numTimes = Phylowood.markersPie.length;
+    var numTimes = 3;
+	var t = 2;
+	for (; t < numTimes; t++)
+	{
+	    for (i = 0; i < numPies; i++)
+	    {
+            bakepie("pie" + i, Phylowood.markersPie[t][i], foci[i].x, foci[i].y, 5);
+    	}
+	}
+    
+    // update coordinates when map pans and zooms
+	this.map.on("move", function() {
+
+		var na = Phylowood.numAreas;
+		var p = d3.selectAll("#divGeo svg path")[0];
+
+		// update force foci positions
+		for (var i = 0; i < Phylowood.numAreas; i++) {
+			foci[i] = Phylowood.map.locationPoint(Phylowood.geoCoords[i]);
+			
+			for (var j = 0; j < Phylowood.numNodes; j++) {
+				p[i * na + j].attr("transform", "translate(" + foci[i].x + "," + foci[i].y + ")");
+			}
+		}
+
+		
+		// attempted to assign each path its corresponding area
+		// 	this could be used to translate the path to a new location
+
+		// also, need to rescale the innerradius/outerradius w/r/t map.zoom()
+		// 	I think this may require redrawing the paths, since the paths
+		// 	are relatively complicated strings...
+
+/*
+		d3.selectAll("#divGeo svg path")
+			.attr("transform", function(d,i) {
+				console.log(d.area);
+				//return "translate(" + foci[d.area].x + "," + foci[d.area].y + ")";
+				return "translate(" + foci[d.area].x + "," + foci[d.area].y + ")";
+			});
+*/
+	});	    
+};
+
+	
+Phylowood.drawMarkersPack = function() {
+	
+	// div size (get dynamically)
+	var h = document.getElementById("divGeo").offsetHeight;
+	var w = document.getElementById("divGeo").offsetWidth;
+		
+	// assign foci xy coordinates from geographical coordinates
+	var foci = []; // cluster foci, i.e. areas lat,lons
+	for (var i = 0; i < Phylowood.geoCoords.length; i++)
+		foci[i] = Phylowood.map.locationPoint(Phylowood.geoCoords[i]);	
+	
+	var t = 0;
+	var numPacks = Phylowood.markersPack[0].length;
+	for (i = 0; i < numPacks; i++)
+	{
+		var data = Phylowood.markersPack[t][i];
+		var r = data.val.join("+"); // 
+    	makePack("pack" + i, data, foci[i].x, foci[i].y, data.val.join("+") * 20);
+    }	
+};
+
 
 /***
 CONTROLS
