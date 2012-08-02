@@ -71,7 +71,7 @@ Phylowood.initialize = function() {
 	// parse input in inputTextArea
 	this.parseInput();
 
-	// initialize data
+	// initialize raw data
     this.initSettings();
 	this.initStates();
 	this.initGeo();
@@ -85,19 +85,18 @@ Phylowood.initialize = function() {
     // ...manual override of settings
 	this.drawStyle = "force";
     this.modelType = "phylogeography";
-    this.areaType = "continuous";
-    
-    
+    this.areaType = "discrete";
     
 	// draw data by style
-    this.initMarkers();
-//    this.interpolateMarkers();
+    //this.initMarkers();
+
+    // initialize animation data
+    this.initAnimationData();
 
     if (this.drawStyle === "force"
         && this.modelType === "phylogeography"
         && this.areaType == "continuous")
     {
-//        this.drawMarkersForce();
         ;
     }
 
@@ -465,13 +464,32 @@ Phylowood.initTree = function() {
 
     // reset times with the "false" branch at the root
     this.rootEnd = 0.05 * this.nodesByTime[this.numNodes-1].timeEnd;
+    this.root.len = this.rootEnd;
     setTime(this.root);
 
     // get phylo start and end times (treeheight + offset)
 	this.startPhyloTime = this.nodesByTime[0].timeStart;
 	this.endPhyloTime = this.nodesByTime[this.numNodes-1].timeEnd;
 
-	// postorder traveral nodes (for drawing the tree, F84 pruning, etc.)
+    // assign treeLength
+    this.treeLength = 0.0;
+    for (var i = 0 ; i < this.numNodes; i++)
+        this.treeLength += this.nodes[i].len;
+
+    // assign treeHeight
+    this.treeHeight = this.endPhyloTime - this.startPhyloTime;
+
+    // assign clock and phylo time units
+	this.curPhyloTime = this.startPhyloTime;
+	this.startClockTime = 0.0;
+	this.endClockTime = 30000.0; // animation lasts 30s
+	this.curClockTime = 0.0;
+	this.clockTick = 100.0; // update per .1s
+	this.phyloTick = 0.0;
+	this.phyloTick = (this.endPhyloTime - this.curPhyloTime) * (this.clockTick / this.endClockTime);
+    this.numClockTicks = Math.ceil(this.endClockTime / this.clockTick) + 1;
+
+	// array of nodes by postorder traversal (for drawing the tree, F84 pruning, etc.)
 	this.nodesPostorder = [this.numNodes];
 	var poIdx = 0;
 
@@ -488,6 +506,10 @@ Phylowood.initTree = function() {
 
 	downPass(this.root);
 
+    // array of nodes by id
+    this.nodesById = [];
+    for (var i = 0; i < this.numNodes; i++)
+        this.nodesById[this.nodes[i].id] = this.nodes[i];
 
 	var setContinuumDownPass = function(q, h) {
 
@@ -880,120 +902,92 @@ Phylowood.initNodeColors = function() {
 	}
 }
 
-Phylowood.initMarkers = function() {
+Phylowood.initAnimationData = function() {
 
-    // markers data structure for generic drawType
-	this.markers = [];
-	var showStart = 0;
-	var showOnly = this.numNodes;
-	Phylowood.showThreshhold = 0.05;
-	
-	// for each divergence event in the tree, plus the root)
-	for (var i = 0; i < (this.numNodes - this.numTips + 1); i++)
-	{
-		this.markers[i] = [];
-		
-		// time lineage i exists
-		t_i_0 = this.nodesByTime[i].timeStart;
-		t_i_f = this.nodesByTime[i].timeEnd;
-		//console.log(this.nodesByTime[i].id, t_i_0, t_i_f);
+    // used to mask very small values 
+	this.showThreshhold = 0.05;
 
-		// for each area
-		for (var j = 0; j < this.nodesByTime[i].states.length; j++)
-		{
-			this.markers[i][j] = [];
-			var val_f = []; // tipwards lineage state
-            var val_0 = []; // rootwards lineage state
-			var color = [];
-			var ancestor = [];
-	
-			// for each lineage
-			for (var k = 0; k < this.nodesByTime.length; k++)
-			{
-
-                var v_0 = 0.0,
-                    v_f = 0.0;
-
-				// time lineage k exists
-                var kCoexists = false;
-				t_k_0 = this.nodesByTime[k].timeStart;
-				t_k_f = this.nodesByTime[k].timeEnd;
-
-				if ((t_i_0 === t_k_0 && t_i_f === t_k_f) ||
-                    (t_i_f > t_k_0 && t_i_f <= t_k_f))
-				    kCoexists = true;
-
-				// posterior probability
-                if (kCoexists === true)
-                {
-			    	v_f = this.nodesByTime[k].states[j];
-                    if (v_f < Phylowood.showThreshhold)
-                        v_f = 0.0;
-
-                    // get the ancestor (or itself if it is the root)
-                    var ancestor = this.nodesByTime[k].ancestor || this.nodesByTime[k];
-                    v_0 = ancestor.states[j];
-                    if (v_0 < Phylowood.showThreshhold)
-                        v_0 = 0.0;
-                }
-				
-                //console.log(t_i_0,t_i_f,t_k_0,t_k_f,v);				
-
-				// add to vals
-				val_f[k] = v_f;
-                val_0[k] = v_0;
-				var c = this.nodesByTime[k].color;
-				color[k] = "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)";
-				//ancestor[k] = (this.nodesByTime[k].ancestor !== null ? this.nodesByTime[k].ancestor.id : -1);
-
-
-			}
-			// add the JSON data
-			//console.log(i, j, val)
-			var ts = this.nodesByTime[i].timeStart;
-			var te = this.nodesByTime[i].timeEnd;
-			
-			this.markers[i][j] = {
-				"area": j,
-                "lat": Phylowood.geoCoords[j].lat,
-                "lon": Phylowood.geoCoords[j].lon,
-				"valF": val_f,
-                "val0": val_0,
-                "sumValF": eval(val_f.join("+")),
-                "sumVal0": eval(val_0.join("+")),
-				"active": false,
-				"timeStart": ts,
-				"timeEnd": te,
-				"color": color,
-				//"ancestor": ancestor,
-				"scheduleErase": false,
-				"scheduleDraw": false,
-				"maskContinuum": false
-			};
-		}
-	}
-};
-
-Phylowood.interpolateMarkers = function() {
-    if (this.modelType === "phylogeography")
+    // animation data structure for generic drawType
+	this.animationData = [];
+    for (var i = 0; i < this.numNodes; i++)
     {
-        if (this.areaType === "continuous")
+        this.animationData[i] = [];
+        for (var j = 0; j < this.numAreas; j++)
         {
-            //
-        }
-        else if (this.areaType === "discrete")
-        {
-            // do nothing
-            ;
+            this.animationData[i][j] = [];
         }
     }
-    else if (this.modelType === "biogeography")
-    {
+
+	// for each lineage, postorder
+	for (var i = 0; i < this.numNodes; i++)
+	{
+        // get the node and its ancestor (or if it is the root, itself)
+        var p = this.nodesPostorder[i];
+        var q = p.ancestor || p;
+        // console.log(p.id,q.id);
+        
+		// time lineage i exists
+        var tClockStart = (p.timeStart / this.treeHeight) * this.endClockTime;
+        var tClockEnd = (p.timeEnd / this.treeHeight) * this.endClockTime;
+        var tClockDuration = tClockEnd - tClockStart;
+        var startClockIdx = Math.ceil(tClockStart / this.clockTick);
+        var endClockIdx = Math.ceil(tClockEnd / this.clockTick);
+        var numClockIdx = endClockIdx - startClockIdx + 1;
+
+        // lineage values
+        var c = p.color;
+		var color = "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)";
+
+        // discrete areas: values change, coordinates constant
         if (this.areaType === "discrete")
         {
+            // for each area
+		    for (var j = 0; j < this.numAreas; j++)
+		    {
+            
+                v = q.states[j];
+                vTick = (p.states[j] - v) / numClockIdx;
 
+
+                // for each tick in [startClockIdx,endClockIdx] 
+                for (var k = 0; k < this.numClockTicks; k++)
+                {
+                    var val = 0.0;
+                    var active = false;
+                   
+                    if (k >= startClockIdx && k <= endClockIdx)
+                    {
+                        active = true;
+
+                        if (v > this.showThreshhold) {
+                            val = v;
+                            //console.log(i,j,k,v);
+                        }
+                    }
+
+                    this.animationData[i][j][k] = {
+                        "val": val, 
+                        "lat": this.geoCoords[j].lat,
+                        "lon": this.geoCoords[j].lon,
+                        "color": color,
+                        "lineageExists": active,
+                        "scheduleErase": false,
+                        "scheduleDraw": false,
+                        "maskContinuum": false
+                    };
+
+                    // interpolate
+                    v += vTick;
+                }
+            }
         }
-    }
+        
+        // continuous areas: coordinates change, values constant 
+        else if (this.areaType === "continuous")
+        {
+            ;
+        }
+	}
 };
 
 Phylowood.initMarkersForce = function() {
@@ -1557,15 +1551,6 @@ CONTROLS
 Phylowood.initPlayer = function() {
 
 	this.ticker = ""; // setInterval() object
-
-	this.curPhyloTime = this.startPhyloTime;
-
-	this.startClockTime = 0.0;
-	this.endClockTime = 30000.0; // play for 30 seconds, by default
-	this.curClockTime = 0.0;
-	this.clockTick = 100.0;
-	this.phyloTick = 0.0;
-	this.phyloTick = (this.endPhyloTime - this.curPhyloTime) / this.clockTick;
 
 	this.playSpeed = 1.0;
 	
