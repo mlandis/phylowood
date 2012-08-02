@@ -470,6 +470,14 @@ Phylowood.initTree = function() {
     // get phylo start and end times (treeheight + offset)
 	this.startPhyloTime = this.nodesByTime[0].timeStart;
 	this.endPhyloTime = this.nodesByTime[this.numNodes-1].timeEnd;
+    for (var i = 0; i < this.numNodes; i++)
+    {
+        if (this.nodes[i].descendants.length === 0) { 
+            var t = this.nodes[i].timeEnd;
+            if (t > this.endPhyloTime)
+                this.endPhyloTime = t;
+        }
+    }
 
     // assign treeLength
     this.treeLength = 0.0;
@@ -868,7 +876,7 @@ Phylowood.drawTree = function() {
 
 Phylowood.initNodeColors = function() {
 	
-	var lStep = 0.6 / (this.nodesByTime[this.numNodes-1].timeEnd - this.nodesByTime[0].timeEnd);
+	var lStep = 0.6 / this.treeHeight; //(this.nodesByTime[this.numNodes-1].timeEnd - this.nodesByTime[0].timeStart);
 	var hStep = 300.0 / (this.numTips - 1);
 
 	var lValue = 0.0;
@@ -880,6 +888,7 @@ Phylowood.initNodeColors = function() {
 			lValue = 1.0 - lStep*this.nodes[i].timeEnd;
 			this.nodes[i].color = [hValue, 1, lValue];
 			hValue += hStep;
+		    console.log("tip", i, this.nodes[i].color, this.nodes[i].timeEnd);
 		}
 	}
 
@@ -898,11 +907,13 @@ Phylowood.initNodeColors = function() {
 			this.nodesByTime[i].color = [hTemp, 1, lValue];
 			
 		}
-		// console.log(this.nodesByTime[i].color);
+		console.log("node",i, this.nodesByTime[i].color);
 	}
 }
 
 Phylowood.initAnimationData = function() {
+
+    this.areaType = "continuous";
 
     // used to mask very small values 
 	this.showThreshhold = 0.05;
@@ -938,54 +949,77 @@ Phylowood.initAnimationData = function() {
         var c = p.color;
 		var color = "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)";
 
-        // discrete areas: values change, coordinates constant
-        if (this.areaType === "discrete")
-        {
-            // for each area
-		    for (var j = 0; j < this.numAreas; j++)
-		    {
-            
-                v = q.states[j];
-                vTick = (p.states[j] - v) / numClockIdx;
+        // for each area
+	    for (var j = 0; j < this.numAreas; j++)
+	    {
+            var v = p.states[j];
+            var lat = this.geoCoords[j].lat;
+            var lon = this.geoCoords[j].lon;
 
+            // discrete areas: values change, coordinates constant
+            if (this.areaType === "discrete")
+            {
+                vTick = (q.states[j] - v) / numClockIdx;
+            }
 
-                // for each tick in [startClockIdx,endClockIdx] 
-                for (var k = 0; k < this.numClockTicks; k++)
+            // continuous areas: coordinates change, values constant 
+            else if (this.areaType === "continuous")
+            {
+                // find the single occupied ancestral area
+                var ancAreaIdx = -1;
+                for (var l = 0; l < this.numAreas; l++)
                 {
-                    var val = 0.0;
-                    var active = false;
-                   
-                    if (k >= startClockIdx && k <= endClockIdx)
+                    if (q.states[l] > 0)
                     {
-                        active = true;
-
-                        if (v > this.showThreshhold) {
-                            val = v;
-                            //console.log(i,j,k,v);
-                        }
+                        ancAreaIdx = l;
+                        break;
                     }
+                }
 
-                    this.animationData[i][j][k] = {
-                        "val": val, 
-                        "lat": this.geoCoords[j].lat,
-                        "lon": this.geoCoords[j].lon,
-                        "color": color,
-                        "lineageExists": active,
-                        "scheduleErase": false,
-                        "scheduleDraw": false,
-                        "maskContinuum": false
-                    };
+                latTick = this.geoCoords[ancAreaIdx].lat - this.geoCoords[j].lat;
+                lonTick = this.geoCoords[ancAreaIdx].lon - this.geoCoords[j].lon;
+            }
 
-                    // interpolate
+            // for each tick in [startClockIdx,endClockIdx] 
+            for (var k = this.numClockTicks - 1; k >= 0; k--)
+            {
+                var val = 0.0;
+                var lineageExists = false;
+                   
+                if (k >= startClockIdx && k <= endClockIdx)
+                {
+                    lineageExists = true;
+                    if (v > this.showThreshhold)
+                    {
+                        val = v;
+                        //console.log(i,j,k,v);
+                    }
+                    else if (this.areaType === "continuous")
+                    {
+                        val = v;
+                    }
+                }
+
+                this.animationData[i][j][k] = {
+                    "val": val, 
+                    "lat": this.geoCoords[j].lat,
+                    "lon": this.geoCoords[j].lon,
+                    "color": color,
+                    "lineageExists": lineageExists,
+                    "scheduleErase": false,
+                    "scheduleDraw": false,
+                    "maskContinuum": false
+                };
+
+                // interpolate depending on areaType
+                if (this.areaType === "discrete")
                     v += vTick;
+                else if (this.areaType === "continuous")
+                {
+                    lat += latTick;
+                    lon += lonTick;
                 }
             }
-        }
-        
-        // continuous areas: coordinates change, values constant 
-        else if (this.areaType === "continuous")
-        {
-            ;
         }
 	}
 };
