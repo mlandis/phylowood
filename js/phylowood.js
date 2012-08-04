@@ -1380,7 +1380,7 @@ Phylowood.animRewind = function() {
 
 Phylowood.animFfwd = function() {
 
-	if (this.playTick === -1.0 && this.playSpeed === -1.0)
+	if (this.playTick === -1.0 && this.playSpeed === 1.0)
 		this.playTick = 1.0;
     if (this.playTick === -1.0 && this.playSpeed > 1.0)
 		this.playSpeed /= 2.0;
