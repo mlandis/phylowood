@@ -1,3 +1,8 @@
+#SETTINGS
+drawtype pie
+modeltype phylogeography
+areatype discrete
+
 #GEO
 0 25
 38 -97

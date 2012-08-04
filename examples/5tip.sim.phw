@@ -1,3 +1,8 @@
+#SETTINGS
+drawstyle pie
+modeltype biogeography
+areatype discrete
+
 #GEO
 38 -122.2
 38 -122.1947

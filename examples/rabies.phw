@@ -1,3 +1,8 @@
+#SETTINGS
+drawstyle standard
+modeltype phylogeography
+areatype continuous
+
 #GEO
 39.622 -78.803
 40.326 -79.562
