@@ -1540,9 +1540,25 @@ Phylowood.updateMarkers = function() {
                     else
                         return "hidden";
                 })
+
+            d3.selectAll("svg circle")
+                .select(function(d)
+                {
+                    if (d.startClkIdx <= Phylowood.curClockTick && d.endClkIdx >= Phylowood.curClockTick)
+                        return this;
+                    else
+                        return null;
+                })
               .transition()
                 .ease("linear")
-                .duration(function(d) { return Phylowood.clockTick; })
+                .duration(function(d) { 
+                    // makes animations looth smoother when using slider
+                    if (Phylowood.sliderBusy === true)
+                        return 5;
+                    // otherwise, animate per clockTick of playSpeed
+                    else
+                        return Phylowood.clockTick / Phylowood.playSpeed;
+                })
                 .attr("cx", function(d) { 
                     if (d.startClkIdx > Phylowood.curClockTick)
                         return d.x[d.startClkIdx];
@@ -1570,13 +1586,14 @@ Phylowood.updateMarkers = function() {
         // should the animation be paused?
         if (Phylowood.dragPauseAnimation === false
             && Phylowood.zoomPauseAnimation == false
-            && Phylowood.sliderBusy === false)
+            )//&& Phylowood.sliderBusy === false)
         {
             Phylowood.curClockTick += Phylowood.playTick;
         }
         else if (Phylowood.dragPauseAnimation === true
             || Phylowood.zoomPauseAnimation === true
-            || Phylowood.sliderBusy === true)
+            
+            )//|| Phylowood.sliderBusy === true)
         {
             d3.selectAll("svg circle").transition(0);
         }
