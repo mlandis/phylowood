@@ -904,7 +904,6 @@ Phylowood.initAnimationData = function() {
 	// for each lineage, postorder
 	for (var i = 0; i < this.numNodes; i++)
 	{
-       // this.animationData[i] = [];
         // get the node and its ancestor (or if it is the root, itself)
         var p = this.nodesPostorder[i];
         var q = p.ancestor || p;
@@ -928,8 +927,6 @@ Phylowood.initAnimationData = function() {
             // for each area
             for (var j = 0; j < this.numAreas; j++)
             {
-            // this.animationData[i][j] = [];
-
                 // get current value and tick size
                 var v = p.states[j];
                 vTick = (q.states[j] - v) / numClockIdx;
@@ -966,6 +963,7 @@ Phylowood.initAnimationData = function() {
                 }
             }
         }
+
         // continuous areas: coordinates change, values constant
         // marker per lineage, interpolated values
         else if (this.areaType === "continuous")
@@ -1499,15 +1497,20 @@ Phylowood.updateMarkers = function() {
                 })
                 .attr("visibility", "hidden") 
                 .attr("cx", function(d) { 
-                    if (d.startClockTick > Phylowood.curClockTick)
+                    if (d.startClockTick > Phylowood.curClockTick) {
+                        console.log("fwd", d.x[d.startClockTick]);
                         return d.x[d.startClockTick];
-                    else if (d.endClockTick < Phylowood.curClockTick)
+                    }
+                    else if (d.endClockTick <= Phylowood.curClockTick)
+                    {
+                        console.log("bwd",d.x[d.endClockTick]);
                         return d.x[d.endClockTick];
+                    }
                 })
                 .attr("cy", function(d) {
                     if (d.startClockTick > Phylowood.curClockTick)
                         return d.y[d.startClockTick];
-                    else if (d.endClockTick < Phylowood.curClockTick)
+                    else if (d.endClockTick <= Phylowood.curClockTick)
                         return d.y[d.endClockTick];
                 });
 
@@ -1515,16 +1518,10 @@ Phylowood.updateMarkers = function() {
             d3.selectAll("svg circle")
                 .select(function(d)
                 {
-                    if (d.startClockTick <= Phylowood.curClockTick && d.endClockTick >= Phylowood.curClockTick)
+                    if (d.startClockTick <= Phylowood.curClockTick && d.endClockTick > Phylowood.curClockTick)
                         return this;
                     else
                         return null;
-                })
-                .attr("visibility", function(d) {
-                    if (d.maskContinuum === true)
-                        return "hidden";
-                    else
-                        return "visible";
                 })
               .transition()
                 .ease("linear")
@@ -1535,6 +1532,12 @@ Phylowood.updateMarkers = function() {
                     // otherwise, animate per clockTick of playSpeed
                     else
                         return Phylowood.clockTick / Phylowood.playSpeed;
+                })
+                .attr("visibility", function(d) {
+                    if (d.maskContinuum === true)
+                        return "hidden";
+                    else
+                        return "visible";
                 })
                 .attr("cx", function(d) { return d.x[Phylowood.curClockTick]; })
                 .attr("cy", function(d) { return d.y[Phylowood.curClockTick]; });
