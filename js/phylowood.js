@@ -1015,63 +1015,17 @@ Phylowood.initAnimationData = function() {
                 }
             }
             this.animationData.push({
+                "id": p.id,
                 "val": val,
                 "coord": coordArray,
                 "color": color,
-                "startClkIdx": startClockIdx,
-                "endClkIdx": endClockIdx,
+                "startClockTick": startClockIdx,
+                "endClockTick": endClockIdx,
                 "lineageExists": true,
                 "scheduleErase": false,
                 "scheduleDraw": false,
                 "maskContinuum": false
             });
-        }
-
-        // continuous areas: coordinates change, values constant
-        // marker per interpolated value (seems too slow for use).
-        else if (this.areaType === "continuous2")
-        {
-
-            // find the currently and ancestrally occupied areas
-            var ancAreaIdx = -1;
-            var curAreaIdx = -1;
-            for (var j = 0; j < this.numAreas; j++) {
-                if (q.states[j] > 0.0)
-                    ancAreaIdx = j;
-                if (p.states[j] > 0.0) 
-                    curAreaIdx = j;
-            }
-
-            // get current value and tick size
-            var lat = parseFloat(this.geoCoords[curAreaIdx].lat);
-            var lon = parseFloat(this.geoCoords[curAreaIdx].lon);
-            var ancLat = parseFloat(this.geoCoords[ancAreaIdx].lat);
-            var ancLon = parseFloat(this.geoCoords[ancAreaIdx].lon);
-            var latTick = (ancLat - lat) / numClockIdx;
-            var lonTick = (ancLon - lon) / numClockIdx;
-            var val = 1.0;
-
-            // interploate coordinates, constant values
-            for (var k = this.numClockTicks-1; k >= 0; k--)
-            {
-                if (k >= startClockIdx && k <= endClockIdx)
-                {
-                    this.animationData.push({
-                        "val": val,
-                        "lat": String(lat),
-                        "lon": String(lon),
-                        "color": color,
-                        "t": k,
-                        "lineageExists": true,
-                        "scheduleErase": false,
-                        "scheduleDraw": false,
-                        "maskContinuum": false
-                    });
-                
-                    lat += latTick;
-                    lon += lonTick;
-                }
-            }
         }
 	}
 };
@@ -1113,8 +1067,8 @@ Phylowood.drawMarkersContinuous = function() {
         .data(data)
       .enter().append("svg:circle")
         .attr("class","marker")
-        .attr("cx", function(d) { return d.x[d.startClkIdx]; })
-        .attr("cy", function(d) { return d.y[d.startClkIdx]; })
+        .attr("cx", function(d) { return d.x[d.startClockTick]; })
+        .attr("cy", function(d) { return d.y[d.startClockTick]; })
         .attr("r", function(d) {
                 return Math.pow(Phylowood.map.zoom() / Phylowood.bestZoom, 4) * d.val * 3;
         })
@@ -1122,7 +1076,7 @@ Phylowood.drawMarkersContinuous = function() {
         .attr("stroke-width", 1)
         .attr("fill-opacity", 1)
         .attr("visibility", function(d) {
-            if (d.startClkIdx <= Phylowood.curTick && d.endClkIdx >= Phylowood.curTick)
+            if (d.startClockTick <= Phylowood.curTick && d.endClockTick >= Phylowood.curTick)
                 return "visible";
             else
                 return "hidden";
@@ -1149,18 +1103,18 @@ Phylowood.drawMarkersContinuous = function() {
 		// update positions and radii for nodes
 		Phylowood.node
             .attr("cx", function(d) { 
-                if (d.startClkIdx > Phylowood.curClockTick)
-                    return d.x[d.startClkIdx];
-                else if (d.endClkIdx < Phylowood.curClockTick)
-                    return d.x[d.endClkIdx];
+                if (d.startClockTick > Phylowood.curClockTick)
+                    return d.x[d.startClockTick];
+                else if (d.endClockTick < Phylowood.curClockTick)
+                    return d.x[d.endClockTick];
                 else
                     return d.x[Phylowood.curClockTick];
             })
             .attr("cy", function(d) {
-                if (d.startClkIdx > Phylowood.curClockTick)
-                    return d.y[d.startClkIdx];
-                else if (d.endClkIdx < Phylowood.curClockTick)
-                    return d.y[d.endClkIdx];
+                if (d.startClockTick > Phylowood.curClockTick)
+                    return d.y[d.startClockTick];
+                else if (d.endClockTick < Phylowood.curClockTick)
+                    return d.y[d.endClockTick];
                 else
                     return d.y[Phylowood.curClockTick];
             })
@@ -1532,22 +1486,45 @@ Phylowood.updateMarkers = function() {
     if (this.areaType === "continuous")
     {
         if (Phylowood.prevZoom === Phylowood.map.zoom())
-        {   
-            d3.selectAll("svg circle")
-                .attr("visibility", function(d) {
-                    if (d.startClkIdx <= Phylowood.curClockTick && d.endClkIdx >= Phylowood.curClockTick)
-                        return "visible";
-                    else
-                        return "hidden";
-                })
+        {  
 
+            // inactive lineages
             d3.selectAll("svg circle")
                 .select(function(d)
                 {
-                    if (d.startClkIdx <= Phylowood.curClockTick && d.endClkIdx >= Phylowood.curClockTick)
+                    if (d.startClockTick > Phylowood.curClockTick || d.endClockTick <= Phylowood.curClockTick)
                         return this;
                     else
                         return null;
+                })
+                .attr("visibility", "hidden") 
+                .attr("cx", function(d) { 
+                    if (d.startClockTick > Phylowood.curClockTick)
+                        return d.x[d.startClockTick];
+                    else if (d.endClockTick < Phylowood.curClockTick)
+                        return d.x[d.endClockTick];
+                })
+                .attr("cy", function(d) {
+                    if (d.startClockTick > Phylowood.curClockTick)
+                        return d.y[d.startClockTick];
+                    else if (d.endClockTick < Phylowood.curClockTick)
+                        return d.y[d.endClockTick];
+                });
+
+            // active lineages
+            d3.selectAll("svg circle")
+                .select(function(d)
+                {
+                    if (d.startClockTick <= Phylowood.curClockTick && d.endClockTick >= Phylowood.curClockTick)
+                        return this;
+                    else
+                        return null;
+                })
+                .attr("visibility", function(d) {
+                    if (d.maskContinuum === true)
+                        return "hidden";
+                    else
+                        return "visible";
                 })
               .transition()
                 .ease("linear")
@@ -1559,22 +1536,8 @@ Phylowood.updateMarkers = function() {
                     else
                         return Phylowood.clockTick / Phylowood.playSpeed;
                 })
-                .attr("cx", function(d) { 
-                    if (d.startClkIdx > Phylowood.curClockTick)
-                        return d.x[d.startClkIdx];
-                    else if (d.endClkIdx <= Phylowood.curClockTick)
-                        return d.x[d.endClkIdx];
-                    else
-                        return d.x[Phylowood.curClockTick];
-                })
-                .attr("cy", function(d) {
-                    if (d.startClkIdx > Phylowood.curClockTick)
-                        return d.y[d.startClkIdx];
-                    else if (d.endClkIdx <= Phylowood.curClockTick)
-                        return d.y[d.endClkIdx];
-                    else
-                        return d.y[Phylowood.curClockTick];
-                });
+                .attr("cx", function(d) { return d.x[Phylowood.curClockTick]; })
+                .attr("cy", function(d) { return d.y[Phylowood.curClockTick]; });
 
             Phylowood.zoomPauseAnimation = false;
         }
@@ -1585,15 +1548,12 @@ Phylowood.updateMarkers = function() {
 
         // should the animation be paused?
         if (Phylowood.dragPauseAnimation === false
-            && Phylowood.zoomPauseAnimation == false
-            )//&& Phylowood.sliderBusy === false)
+            && Phylowood.zoomPauseAnimation == false)
         {
             Phylowood.curClockTick += Phylowood.playTick;
         }
         else if (Phylowood.dragPauseAnimation === true
-            || Phylowood.zoomPauseAnimation === true
-            
-            )//|| Phylowood.sliderBusy === true)
+            || Phylowood.zoomPauseAnimation === true)
         {
             d3.selectAll("svg circle").transition(0);
         }
@@ -1606,12 +1566,9 @@ Phylowood.updateMarkers = function() {
     }
 }
 
-
-
 /***
 UTILITY FUNCTIONS
 ***/
-
 
 Phylowood.distance = function(x, y) {
 	var z = 0.0;
@@ -2059,158 +2016,3 @@ Phylowood.drawMarkersForce = function() {
 	});
 	
 }
-
-
-
-Phylowood.drawMarkersContinuous2 = function() {
-
-	// div size (get dynamically)
-	var h = document.getElementById("divGeo").offsetHeight;
-	var w = document.getElementById("divGeo").offsetWidth;
-
-	// geo data
-	var data = this.animationData; //this.initMarkers();
-	var coords = this.geoCoords;
-	var foci = []; // cluster foci, i.e. areas lat,lons
-	
-	// assign foci xy coordinates from geographical coordinates
-	for (var i = 0; i < coords.length; i++)
-		foci[i] = this.map.locationPoint(coords[i]);
-
-    // add xy coordinates to markers
-    data.forEach(function(d) {
-        xy = Phylowood.map.locationPoint({"lat":d.lat, "lon":d.lon});
-        d.x = xy.x;
-        d.y = xy.y;
-    });
-
-    // draw circle markers
-    var layer = d3.select("#divGeo svg");
-    this.node = layer.selectAll("circle.marker")
-        .data(data)
-      .enter().append("svg:circle")
-        .attr("class","marker")
-        .attr("cx", function(d) { return d.x; })
-        .attr("cy", function(d) { return d.y; })
-        .attr("r", function(d) {
-                return Math.pow(Phylowood.map.zoom() / Phylowood.bestZoom, 4) * d.val * 3;
-        })
-        .attr("fill", function(d) { return d.color })
-        .attr("stroke-width", 1)
-        .attr("fill-opacity", 1)
-        .attr("visibility", "visible");
-
-        
-
-/*
-	// create force layout
-	this.force = d3.layout.force()
-		.nodes(data)
-		.links([])
-		.charge( function(d) {
-            return -Math.pow(Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 2) * d.val * 4, 2.2);
-        })
-		.gravity(0.0)
-		.theta(1.5)
-		.friction(0.9)
-		//.alpha(100000)
-		.size([w, h])
-		;
-		
-	data.forEach(function(d, i) {
-		d.x = foci[d.area].x;
-		d.y = foci[d.area].y;
-	});
-
-	this.force.start();
-	
-	// create svg markers
-	var layer = d3.select("#divGeo svg")
-	var node = layer.selectAll("circle.marker")
-			.data(data)
-		.enter().append("svg:circle")
-			.attr("class","marker")
-			.attr("cx", function(d) { return foci[d.area].x; })
-			.attr("cy", function(d) { return foci[d.area].y; })
-			.attr("r",  function(d) {
-                return Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * d.val * 3;
-            })
-			.attr("fill", function(d) { return d.color; })
-			.attr("stroke-width", 1)
-			.attr("fill-opacity", 1)
-			.attr("visibility","hidden")
-			;
-
-	// freeze markers during pan & zoom
-	d3.select("#divGeo")
-		.on("mousedown", mousedown)
-		.on("mouseup", mouseup);
-		
-	function mousedown() {
-		Phylowood.force.stop();
-	}
-	
-	function mouseup() {
-		// disabled to suppress d3.layout.pack "boioioing"-iness
-		//force.resume();
-	}
-
-	// update coordinates when map pans and zooms
-	this.map.on("move", function() {
-
-		// update force properties with each move
-        // Phylowood.force.charge( function(d) { return -Math.pow(Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 2) * d.val * 4, 2.2); } )
-
-        // better visualization: have all nodes retain actual positions, instead of refocusing
-		// it seems like areas contract at different zoom levels... weird
-		// update positions of js states[] objects
-		Phylowood.force.stop();
-	
-		// get new map-to-pixel coordinates for all states
-        data.forEach(function(o,i) {
-			xy = Phylowood.map.locationPoint({"lon": o.lon, "lat":o.lat});
-			o.x = xy.x;
-			o.y = xy.y; 
-		});
-		
-		// update positions and radii for nodes
-		node.attr("cx", function(d) { return d.x; })
-		    .attr("cy", function(d) { return d.y; })
-		    .attr("r", function(d) {
-                return  Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * d.val * 3;
-            });
-
-
-		// update force foci positions
-		for (var i = 0; i < coords.length; i++)
-			foci[i] = Phylowood.map.locationPoint(coords[i]);
-		
-	    // force.resume();
-
-	});	
-
-
-	// update node[] each tick
-	this.force.on("tick", function(e) {
-
-		// set stepsize per tick
-		var k = e.alpha * 5;
-
-		// update object values per tick
-		data.forEach(function(o,i) {
-			o.x += (foci[o.area].x - o.x) * k
-			o.y += (foci[o.area].y - o.y) * k
-			var latlon = Phylowood.map.pointLocation({"x": o.x, "y": o.y});
-			o.lon = latlon.lon;
-			o.lat = latlon.lat;
-		});
-
-		// update object attributes per tick
-		layer.selectAll(".marker")
-		     .attr("cx", function(d) { return d.x; })
-		     .attr("cy", function(d) { return d.y; });
-		
-	});
-    */
-	
-};
