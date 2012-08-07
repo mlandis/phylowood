@@ -680,8 +680,6 @@ Phylowood.maskContinuumForBranch = function(d) {
 
 Phylowood.highlightContinuumForBranch = function(d) {
 
-    console.log(d);
-
 	// mask branches not part of heritage
 	this.treeSvg.selectAll("line").select(
 		function(b) {
@@ -1223,21 +1221,32 @@ Phylowood.drawMarkersDiscretePie = function() {
     }
    
     // whatever initial time value
-    this.curClockTick = 50;
+    this.curClockTick = 40;
 
     // pie chart variables
     this.arc = d3.svg.arc()
         .startAngle(function(d) { return d.startAngle; })
         .endAngle(function(d) { return d.endAngle; })
-        .innerRadius(function(d) { return r * (1 - d.data.val[Phylowood.curClockTick]); })
+        .innerRadius(function(d) { 
+            return Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 5) * r *(1 - d.data.val[Phylowood.curClockTick]);
+        })
+        .outerRadius(function(d) {
+            return Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 5) * r;
+        });
+
+/*
+    this.arc2 = d3.svg.arc()
+        .startAngle(function(d) { return d.startAngle; })
+        .endAngle(function(d) { return d.endAngle; })
+        .innerRadius(0)
         .outerRadius(r);
+        */
 
     // useful ??
     // http://bl.ocks.org/1346395
 
     // attach data
-    this.pie = d3.selectAll("#divGeo svg") 
-      .append("svg:g");
+    this.pie = []; 
 
     // construct pie charts
     this.donut = [];
@@ -1248,7 +1257,7 @@ Phylowood.drawMarkersDiscretePie = function() {
         {
             if (d.val[Phylowood.curClockTick] !== 0.0)
             {
-                console.log(Phylowood.curClockTick,d);
+                //console.log(Phylowood.curClockTick,d);
                 return Math.ceil(d.val[Phylowood.curClockTick]);
             }
         }
@@ -1257,16 +1266,21 @@ Phylowood.drawMarkersDiscretePie = function() {
 
     for (var i = 0; i < this.numAreas; i++) //this.numAreas; i++)
     {
+        this.pie[i] = d3.selectAll("#divGeo svg") 
+            .append("svg:g")
+            .attr("class", "pie" + i);
 
         // center arcs at foci
-        this.arcs = this.pie.selectAll("g.arc" + i)
+        this.arcs[i] = this.pie[i].selectAll("g.arc")
             .data(donut(data[i]))
           .enter().append("svg:g")
             .attr("class","arc" + i)
-            .attr("transform", function(d) { return "translate(" + d.data.x + "," + d.data.y + ")"; });
+            .attr("transform", function(d) {
+                return "translate(" + d.data.x + "," + d.data.y + ")";
+            });
 
         // draw paths according to this.arc
-        this.paths = this.arcs.append("svg:path")
+        this.paths[i] = this.arcs[i].append("svg:path")
             .attr("fill", function(d) { return d.data.color; })
             .attr("d", Phylowood.arc)
             .attr("class", "marker");
@@ -1279,50 +1293,74 @@ Phylowood.drawMarkersDiscretePie = function() {
             });
             */ 
     }
-
-    Phylowood.curClockTick = 400;
+/*
+    Phylowood.curClockTick = 60;
     for (var i = 0; i < this.numAreas; i++)
     {
         // center arcs at foci
-        this.arcs = this.pie.selectAll("g.arc" + i)
+        //this.arcs = d3.selectAll("#divGeo svg .pie" + i + "g.arc")
+        this.arcs[i] = d3.selectAll("g.arc")
             .data(donut(data[i]));
-            //.attr("class","arc" + i)
-            //.attr("transform", function(d) { return "translate(" + d.data.x + "," + d.data.y + ")"; });
+
 
         // draw paths according to this.arc
-   //     this.paths.transition()
-    //        .duration(2000)
-    //        .attrTween("d", tweenDonut);
+      
+        //this.paths = d3.selectAll(".pie" + i + " g").transition()
+        //    .duration(5000)
+         //   .attrTween("d", tweenDonut);
 
-        this.paths.attr("d", Phylowood.arc);
+        this.paths[i] = d3.selectAll(".pie" + i + " g")
+    //        .transition(2000)
+      //      .duration(5000)
+        //    .attrTween("d", tweenDonut);
+            
+            //.attr("d", Phylowood.arc2);
+        //console.log(i, "path", Phylowood.paths);
+        //this.paths.attr("d", Phylowood.arc);
 
         function tweenDonut(b) {
-            console.log(b);
+ //           console.log(b);
             oldR = b.innerRadius || 0.0;
-            newR = r * (1.0 - b.data.val[t]);
+            newR = r * (1.0 - b.data.val[Phylowood.curClockTick]);
             b.innerRadius = newR;
             var i = d3.interpolate({innerRadius:oldR, outerRadius:r},b);
             return function(t) {
-                return Phylowood.arc(i(t));
+                return Phylowood.arc2(i(t));
             };
         };
-        //Phylowood.arc);
-
     }
-
-    // how to rescale continuous markers if the map perspective changes
-    
+*/
+    // rescale discrete pie markers if the map perspective changes
 	this.map.on("move", function() {
 
 		// get new map-to-pixel coordinates for all states
-        data.forEach(function(d) {
-            if (typeof d.coord !== "undefined")
-            {
-                xy = Phylowood.map.locationPoint(d.coord);
-                d.x = xy.x;
-                d.y = xy.y;
-            }
-        });
+        for (var i = 0; i < Phylowood.numAreas; i++) {
+            Phylowood.pie[i].selectAll("g").attr("transform", function(d) {
+                if (typeof d !== "undefined") {
+                    xy = Phylowood.map.locationPoint(d.data.coord);
+                    d.data.x = xy.x;
+                    d.data.y = xy.y;
+                    //console.log(d);
+                    return "translate(" + d.data.x + "," + d.data.y + ")"; 
+                }
+            })
+
+            // adjust for zoom
+            var x = d3.selectAll(".pie" + i + " path");
+            x.attr("d", Phylowood.arc);
+        }
+
+
+
+/*
+        // draw paths according to this.arc
+        for (var i = 0; i < Phylowood.numAreas; i++)
+        {
+            Phylowood.paths[i] = d3.selectAll(".pie" + i + " g path").attr("d", Phylowood.arc);
+  
+        }
+        */
+    });
 
 // same thing but for selectAll(path)...	
     /*
@@ -1348,7 +1386,6 @@ Phylowood.drawMarkersDiscretePie = function() {
                 return  Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * d.val * 3;
             });
     */
-	});	
 }
 
 
