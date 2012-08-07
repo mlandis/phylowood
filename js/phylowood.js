@@ -90,9 +90,9 @@ Phylowood.initialize = function() {
         && this.areaType === "continuous")
     {
         this.drawMarkersContinuous();
+        this.initPlayer();
     }
     else if (this.drawType === "pie"
-        && this.modelType === "phylogeography"
         && this.areaType === "discrete")
     {
         this.drawMarkersDiscretePie();
@@ -898,69 +898,13 @@ Phylowood.initAnimationData = function() {
     // discrete areas: values change, coordinates constant
     if (this.areaType === "discrete")
     {
-        // for each lineage, postorder
-        for (var i = 0; i < this.numNodes; i++)
-        {
-            // get the node and its ancestor (or if it is the root, itself)
-            var p = this.nodesPostorder[i];
-            var q = p.ancestor || p;
-            // console.log(p.id,q.id);
-            
-            // time lineage i exists
-            var tClockStart = (p.timeStart / this.treeHeight) * this.endClockTime;
-            var tClockEnd = (p.timeEnd / this.treeHeight) * this.endClockTime;
-            var tClockDuration = tClockEnd - tClockStart;
-            var startClockIdx = Math.ceil(tClockStart / this.clockTick);
-            var endClockIdx = Math.ceil(tClockEnd / this.clockTick);
-            var numClockIdx = endClockIdx - startClockIdx + 1;
-
-            // lineage values
-            var c = p.color;
-            var color = "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)";
-
-            // for each area
-            for (var j = 0; j < this.numAreas; j++)
-            {
-                // get current value and tick size
-                var v = p.states[j];
-                vTick = (q.states[j] - v) / numClockIdx;
-                var valArray = [];
-                var val;
-
-                // for each tick in [startClockIdx,endClockIdx] 
-                for (var k = this.numClockTicks; k >= 0; --k)
-                {
-                    if (k >= startClockIdx && k <= endClockIdx)
-                    {
-                        val = v;
-                        v += vTick;
-                    }
-                    valArray.push(val);
-                }
-                //console.log(valArray);
-                this.animationData.push({
-                    "id": p.id,
-                    "area": j,
-                    "val": valArray,
-                    "coord": {"lat":this.geoCoords[j].lat, "lon":this.geoCoords[j].lon},
-                    "color": color,
-                    "startClockTick": startClockIdx,
-                    "endClockTick": endClockIdx,
-                    "maskContinuum": false
-                });
-            }
-        }
-    }
-
-    // discrete areas: values change, coordinates constant
-    else if (this.areaType === "discrete2")
-    {
-        // animationData = [area][time]
-
         // for each area
         for (var j = 0; j < this.numAreas; j++)
         {
+            this.animationData[j] = [];
+
             // pre-compute basic lineage information
+            var val = [];
             var tClockStart = [],
                 tClockEnd = [],
                 tClockDuration = [],
@@ -968,7 +912,6 @@ Phylowood.initAnimationData = function() {
                 endClockIdx = [],
                 numClockIdx = [],
                 color = [],
-                val = []
                 vTick = [];
 
             for (var i = 0; i < this.numNodes; i++)
@@ -976,8 +919,9 @@ Phylowood.initAnimationData = function() {
                 // get the node and its ancestor (or if it is the root, itself)
                 var p = this.nodesPostorder[i];
                 var q = p.ancestor || p;
-                // console.log(p.id,q.id);
-                
+                //val[i] = 0;
+                val[i] = p.states[j];
+
                 // time lineage i exists
                 tClockStart[i]  = (p.timeStart / this.treeHeight) * this.endClockTime;
                 tClockEnd[i] = (p.timeEnd / this.treeHeight) * this.endClockTime;
@@ -986,41 +930,59 @@ Phylowood.initAnimationData = function() {
                 endClockIdx[i] = Math.ceil(tClockEnd[i] / this.clockTick);
                 numClockIdx[i] = endClockIdx[i] - startClockIdx[i] + 1;
                 
+                // vals and vTicks 
+                vTick[i] = (q.states[j] - p.states[j]) / numClockIdx[i];
+                //console.log(val[i], p.states[j]);
+
                 // lineage colors
                 var c = p.color;
                 color[i] = "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)";
-
-                // vals and vTicks 
-                vTick[i] = (q.states[j] - p.states[j]) / numClockIdx[i];
-                val[i] = p.states[j];
             }
 
-            // for each tick in [startClockIdx,endClockIdx] 
-            for (var k = this.numClockTicks; k >= 0; --k)
-            {
-                var valArray = [];
+            // UNEXPECTED BEHAVIOR
+            // console.log() DOES NOT report val correctly to Google Chrome
+            // alert() has no problem.
+            // alert(val);
+            // console.log(val);
 
-                // for each lineage
-                for (var i = 0; i < this.numNodes; i++)
+            var valArray = [];
+
+            // for each lineage (i indexes nodesPostorder)
+            for (var i = 0; i < this.numNodes; i++)
+            {
+                var saveV = false; 
+                var v = [];
+
+                // for each tick in [startClockIdx,endClockIdx] 
+                for (var k = this.numClockTicks; k >= 0; --k)
                 {
                     // get current value and tick size
                     if (k >= startClockIdx[i] && k <= endClockIdx[i])
                     {
-                        valArray[i] = val[i];
+                        v[k] = val[i];
+                        if (val[i] > 0)
+                            saveV = true;
                         val[i] += vTick[i];
                     }
+                    //else
+                        //valArray[k][i] = 0;
                 }
-
-                //console.log(valArray);
-                this.animationData.push({
-                    "area": j,
-                    "val": valArray,
-                    "coord": {"lat":this.geoCoords[j].lat, "lon":this.geoCoords[j].lon},
-                    "color": color,
-                    "startClockTick": startClockIdx,
-                    "endClockTick": endClockIdx,
-                    "maskContinuum": false
-                });
+                // console.log(valArray[k]);
+                if (saveV === true)
+                {
+                    x = {
+                        "id": i,
+                        "area": j,
+                        "val": v,
+                        "coord": {"lat":this.geoCoords[j].lat, "lon":this.geoCoords[j].lon},
+                        "color": color[i],
+                        "startClockTick": startClockIdx[i],
+                        "endClockTick": endClockIdx[i],
+                        "maskContinuum": false
+                    };
+                    // console.log(j,i,x);
+                    this.animationData[j].push(x);
+                }
             }
         }
     }
@@ -1083,8 +1045,8 @@ Phylowood.initAnimationData = function() {
                     rv = Phylowood.rnorm(0,1);
 
                     coordArray[k] = {
-                        "lat":String(lat + rv.x * latTick), 
-                        "lon":String(lon + rv.y * lonTick)
+                        "lat":String(lat),// + rv.x * latTick), 
+                        "lon":String(lon)// + rv.y * lonTick)
                     };
                     lat += latTick;
                     lon += lonTick;
@@ -1199,43 +1161,66 @@ Phylowood.drawMarkersContinuous = function() {
             });
 	});	
 }
-
 /*
+
 // consider just using my own d3.layout.pie()
-
-
-Phylowood.pie = function(data, i) {
-    var values = data.map(function(d, i) {
-        return +value.call(pie, d, i);
-    });
-    var a = +(typeof startAngle === "function" ? startAngle.apply(this, arguments) : startAngle);
-    var k = ((typeof endAngle === "function" ? endAngle.apply(this, arguments) : endAngle) - startAngle) / d3.sum(values);
-    var index = d3.range(data.length);
-    if (sort != null) index.sort(sort === d3_layout_pieSortByValue ? function(i, j) {
-        return values[j] - values[i];
-    } : function(i, j) {
-        return sort(data[i], data[j]);
-    });
-    var arcs = [];
-    index.forEach(function(i) {
-        var d;
-        arcs[i] = {
-            data: data[i],
-            value: d = values[i],
-            innerRadius:
-            startAngle: a,
-            endAngle: a += d * k
-        };
-    });
-    return arcs;
-};
+d3.layout.pie = function () {
+    var value = Number, sort = d3_layout_pieSortByValue, startAngle = 0, endAngle = 2 * Math.PI;
+    function pie(data, i) {
+        var values = data.map(function(d, i) {
+            return +value.call(pie, d, i);
+        });
+        var a = +(typeof startAngle === "function" ? startAngle.apply(this, arguments) : startAngle);
+        var k = ((typeof endAngle === "function" ? endAngle.apply(this, arguments) : endAngle) - startAngle) / d3.sum(values);
+        var index = d3.range(data.length);
+        if (sort != null) index.sort(sort === d3_layout_pieSortByValue ? function(i, j) {
+            return values[j] - values[i];
+        } : function(i, j) {
+            return sort(data[i], data[j]);
+        });
+        var arcs = [];
+        index.forEach(function(i) {
+            var d;
+            arcs[i] = {
+                data: data[i],
+                value: d = values[i],
+                startAngle: a,
+                endAngle: a += d * k
+            };
+        });
+        return arcs;
+    }
+    pie.value = function(x) {
+        if (!arguments.length) return value;
+        value = x;
+        return pie;
+    };
+    pie.sort = function(x) {
+        if (!arguments.length) return sort;
+        sort = x;
+        return pie;
+    };
+    pie.startAngle = function(x) {
+        if (!arguments.length) return startAngle;
+        startAngle = x;
+        return pie;
+    };
+    pie.endAngle = function(x) {
+        if (!arguments.length) return endAngle;
+        endAngle = x;
+        return pie;
+    };
+    console.log("hi");
+    return pie;
+}
 */
+
 Phylowood.drawMarkersDiscretePie = function() {
 
 	// div size (get dynamically)
 	var h = document.getElementById("divGeo").offsetHeight;
 	var w = document.getElementById("divGeo").offsetWidth;
-    var r = 15;
+    var r = 5;
 
 	// geo data
 	var data = this.animationData;
@@ -1244,28 +1229,34 @@ Phylowood.drawMarkersDiscretePie = function() {
 	
 	// assign foci xy coordinates from geographical coordinates
 	for (var i = 0; i < coords.length; i++)
+    {
 		foci[i] = this.map.locationPoint(coords[i]);
 
-    // add xy coordinates to markers
-    data.forEach(function(d) {
-        if (typeof d.coord !== "undefined")
+        // add xy coordinates to markers
+        data[i].forEach(function(d)
         {
-            xy = Phylowood.map.locationPoint(d.coord);
-            d.x = xy.x;
-            d.y = xy.y;
-        }
-    });
+            if (typeof d !== "undefined")
+            {
+    //            console.log(d);
+                xy = Phylowood.map.locationPoint(d.coord);
+                d.x = xy.x;
+                d.y = xy.y;
+            }
+        });
+    }
+   
+    // whatever initial time value
+    var t = 400;
 
     // pie chart variables
     this.arc = d3.svg.arc()
         .startAngle(function(d) { return d.startAngle; })
         .endAngle(function(d) { return d.endAngle; })
-        .innerRadius(0)// function(d) { console.log(d); return r * (1 - d.data.val[Phylowood.curClockTick]); })
+        .innerRadius(function(d) { return r * (1 - d.data.val[t]); })
         .outerRadius(r);
 
-// useful ??
-// http://bl.ocks.org/1346395
-
+    // useful ??
+    // http://bl.ocks.org/1346395
 
     // attach data
     this.pie = d3.selectAll("#divGeo svg") 
@@ -1275,44 +1266,60 @@ Phylowood.drawMarkersDiscretePie = function() {
     this.donut = [];
     this.arcs = [];
     this.paths = [];
-
-    for (var i = 0; i < 1; i++)
-    {
-        // all non-zero values have equal arc lengths
-        this.donut[i] = d3.layout.pie().value(function(d) {
-            if (typeof d !== "undefined") {
-                if (d.area === i) {
-                    console.log("T",i,d);
-                    return Math.ceil(d.val[Phylowood.curClockTick]);
-                }
-                //else
-                //    console.log("F",d.area,d);
+    var t = 400; // 545 is good for 5tip
+    var donut = d3.layout.pie().sort(null).value(function(d) {
+        if (typeof d.val[t] !== "undefined")
+        {
+            if (d.val[t] !== 0.0)
+            {
+                return Math.ceil(d.val[t]);
             }
-        });
+        }
+        return null;
+    });
+
+    var i = 454;
+    for (var i = 0; i < this.numAreas; i++) //this.numAreas; i++)
+    {
 
         // center arcs at foci
-        this.arcs[i] = this.pie.selectAll("g.arc")
-            .data(this.donut[i](data))
+        this.arcs = this.pie.selectAll("g.arc" + i)
+            .data(donut(data[i]))
           .enter().append("svg:g")
-            .attr("class","arc")
-            .attr("transform", "translate(" + foci[i].x + "," + foci[i].y + ")");
+            .attr("class","arc" + i)
+            .attr("transform", function(d) { return "translate(" + d.data.x + "," + d.data.y + ")"; });
 
         // draw paths according to this.arc
-        this.paths[i] = this.arcs[i].append("svg:path")
+        this.paths = this.arcs.append("svg:path")
             .attr("fill", function(d) { return d.data.color; })
             .attr("d", Phylowood.arc)
-            .attr("class", "marker")
-            
-            /*
+            .attr("class", "marker");
+          /* 
             .attr("visibility", function(d) {
                 if (d.startClockTick <= Phylowood.curTick && d.endClockTick >= Phylowood.curTick)
                     return "visible";
                 else
                     return "hidden";
-            });*/
+            });
+           */ 
+    }
+
+    t = 500;
+    for (var i = 0; i < this.numAreas; i++)
+    {
+        // center arcs at foci
+        this.arcs = this.pie.selectAll("g.arc" + i)
+            .data(donut(data[i]));
+            //.attr("class","arc" + i)
+            //.attr("transform", function(d) { return "translate(" + d.data.x + "," + d.data.y + ")"; });
+
+        // draw paths according to this.arc
+        this.paths = this.arcs.transition(2000).attr("d", Phylowood.arc);
+
     }
 
     // how to rescale continuous markers if the map perspective changes
+    
 	this.map.on("move", function() {
 
 		// get new map-to-pixel coordinates for all states
@@ -1324,7 +1331,8 @@ Phylowood.drawMarkersDiscretePie = function() {
                 d.y = xy.y;
             }
         });
-	
+
+// same thing but for selectAll(path)...	
     /*
 		// update positions and radii for nodes
 		Phylowood.node
@@ -1350,6 +1358,7 @@ Phylowood.drawMarkersDiscretePie = function() {
     */
 	});	
 }
+
 
 Phylowood.drawMap = function() {
 
@@ -2237,3 +2246,264 @@ Phylowood.drawMarkersForce = function() {
 	});
 	
 }
+Phylowood.drawMarkersDiscretePie2 = function() {
+
+	// div size (get dynamically)
+	var h = document.getElementById("divGeo").offsetHeight;
+	var w = document.getElementById("divGeo").offsetWidth;
+    var r = 15;
+
+	// geo data
+	var data = this.animationData;
+	var coords = this.geoCoords;
+	var foci = [];
+	
+	// assign foci xy coordinates from geographical coordinates
+	for (var i = 0; i < coords.length; i++)
+		foci[i] = this.map.locationPoint(coords[i]);
+
+    // add xy coordinates to markers
+    data.forEach(function(d) {
+        if (typeof d.coord !== "undefined")
+        {
+            xy = Phylowood.map.locationPoint(d.coord);
+            d.x = xy.x;
+            d.y = xy.y;
+        }
+    });
+
+    // pie chart variables
+    this.arc = d3.svg.arc()
+        .startAngle(function(d) { return d.startAngle; })
+        .endAngle(function(d) { return d.endAngle; })
+        .innerRadius(0)// function(d) { console.log(d); return r * (1 - d.data.val[Phylowood.curClockTick]); })
+        .outerRadius(r);
+
+    // attach data
+    this.pie = d3.selectAll("#divGeo svg") 
+      .append("svg:g");
+
+    // construct pie charts
+    this.donut = [];
+    this.arcs = [];
+    this.paths = [];
+
+    for (var i = 0; i < this.numAreas; i++)
+    {
+        // all non-zero values have equal arc lengths
+        this.donut[i] = d3.layout.pie().value(function(d) {
+            if (typeof d !== "undefined") {
+                if (d.area === i) {
+                    console.log("T",i,d);
+                    return Math.ceil(d.val[Phylowood.curClockTick]);
+                }
+                //else
+                //    console.log("F",d.area,d);
+            }
+        });
+
+        // center arcs at foci
+        this.arcs[i] = this.pie.selectAll("g.arc")
+            .data(this.donut[i](data))
+          .enter().append("svg:g")
+            .attr("class","arc")
+            .attr("transform", "translate(" + foci[i].x + "," + foci[i].y + ")");
+
+        // draw paths according to this.arc
+        this.paths[i] = this.arcs[i].append("svg:path")
+            .attr("fill", function(d) { return d.data.color; })
+            .attr("d", Phylowood.arc)
+            .attr("class", "marker")
+            
+            /*
+            .attr("visibility", function(d) {
+                if (d.startClockTick <= Phylowood.curTick && d.endClockTick >= Phylowood.curTick)
+                    return "visible";
+                else
+                    return "hidden";
+            });*/
+    }
+
+    // how to rescale continuous markers if the map perspective changes
+	this.map.on("move", function() {
+
+		// get new map-to-pixel coordinates for all states
+        data.forEach(function(d) {
+            if (typeof d.coord !== "undefined")
+            {
+                xy = Phylowood.map.locationPoint(d.coord);
+                d.x = xy.x;
+                d.y = xy.y;
+            }
+        });
+	
+    /*
+		// update positions and radii for nodes
+		Phylowood.node
+            .attr("cx", function(d) { 
+                if (d.startClockTick > Phylowood.curClockTick)
+                    return d.x[d.startClockTick];
+                else if (d.endClockTick < Phylowood.curClockTick)
+                    return d.x[d.endClockTick];
+                else
+                    return d.x[Phylowood.curClockTick];
+            })
+            .attr("cy", function(d) {
+                if (d.startClockTick > Phylowood.curClockTick)
+                    return d.y[d.startClockTick];
+                else if (d.endClockTick < Phylowood.curClockTick)
+                    return d.y[d.endClockTick];
+                else
+                    return d.y[Phylowood.curClockTick];
+            })
+		    .attr("r", function(d) {
+                return  Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * d.val * 3;
+            });
+    */
+	});	
+}
+/*
+    // discrete areas: values change, coordinates constant
+    else if (this.areaType === "discrete2")
+    {
+        // for each lineage, postorder
+        for (var i = 0; i < this.numNodes; i++)
+        {
+            // get the node and its ancestor (or if it is the root, itself)
+            var p = this.nodesPostorder[i];
+            var q = p.ancestor || p;
+            // console.log(p.id,q.id);
+            
+            // time lineage i exists
+            var tClockStart = (p.timeStart / this.treeHeight) * this.endClockTime;
+            var tClockEnd = (p.timeEnd / this.treeHeight) * this.endClockTime;
+            var tClockDuration = tClockEnd - tClockStart;
+            var startClockIdx = Math.ceil(tClockStart / this.clockTick);
+            var endClockIdx = Math.ceil(tClockEnd / this.clockTick);
+            var numClockIdx = endClockIdx - startClockIdx + 1;
+
+            // lineage values
+            var c = p.color;
+            var color = "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)";
+
+            // for each area
+            for (var j = 0; j < this.numAreas; j++)
+            {
+                // get current value and tick size
+                var v = p.states[j];
+                vTick = (q.states[j] - v) / numClockIdx;
+                var valArray = [];
+                var showArray = [];
+
+                // for each tick in [startClockIdx,endClockIdx] 
+                for (var k = this.numClockTicks; k >= 0; --k)
+                {
+                    var val;
+                    if (k >= startClockIdx && k <= endClockIdx)
+                    {
+                        val = v;
+                        v += vTick;
+                    }
+                    valArray.push(val);
+                }
+                //console.log(valArray);
+                this.animationData.push({
+                    "id": p.id,
+                    "area": j,
+                    "val": valArray,
+                    "coord": {"lat":this.geoCoords[j].lat, "lon":this.geoCoords[j].lon},
+                    "color": color,
+                    "startClockTick": startClockIdx,
+                    "endClockTick": endClockIdx,
+                    "maskContinuum": false
+                });
+            }
+        }
+    }
+    */
+/*
+    else if (this.areaType === "discrete2")
+    {
+        // animationData = [area][time]
+
+        // for each area
+        for (var j = 0; j < this.numAreas; j++)
+        {
+            this.animationData[j] = [];
+
+            // pre-compute basic lineage information
+            var val = [];
+            var tClockStart = [],
+                tClockEnd = [],
+                tClockDuration = [],
+                startClockIdx = [],
+                endClockIdx = [],
+                numClockIdx = [],
+                color = [],
+                vTick = [];
+
+            for (var i = 0; i < this.numNodes; i++)
+            {
+                // get the node and its ancestor (or if it is the root, itself)
+                var p = this.nodesPostorder[i];
+                var q = p.ancestor || p;
+                //val[i] = 0;
+                val[i] = p.states[j];
+
+                // time lineage i exists
+                tClockStart[i]  = (p.timeStart / this.treeHeight) * this.endClockTime;
+                tClockEnd[i] = (p.timeEnd / this.treeHeight) * this.endClockTime;
+                tClockDuration[i] = tClockEnd[i] - tClockStart[i];
+                startClockIdx[i] = Math.ceil(tClockStart[i] / this.clockTick);
+                endClockIdx[i] = Math.ceil(tClockEnd[i] / this.clockTick);
+                numClockIdx[i] = endClockIdx[i] - startClockIdx[i] + 1;
+                
+                // vals and vTicks 
+                vTick[i] = (q.states[j] - p.states[j]) / numClockIdx[i];
+                //console.log(val[i], p.states[j]);
+
+                // lineage colors
+                var c = p.color;
+                color[i] = "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)";
+            }
+
+            // UNEXPECTED BEHAVIOR
+            // console.log() DOES NOT report val correctly to Google Chrome
+            // alert() has no problem.
+            // alert(val);
+            // console.log(val);
+
+            var valArray = [];
+            // for each tick in [startClockIdx,endClockIdx] 
+            for (var k = this.numClockTicks; k >= 0; --k)
+            {
+                valArray[k] = [];
+                // for each lineage
+                for (var i = 0; i < this.numNodes; i++)
+                {
+                    // get current value and tick size
+                    if (k >= startClockIdx[i] && k <= endClockIdx[i])
+                    {
+                        valArray[k][i] = val[i];
+                        val[i] += vTick[i];
+                    }
+                    else
+                        valArray[k][i] = 0;
+                }
+                // console.log(valArray[k]);
+
+            }
+            x = {
+                "area": j,
+                "val": valArray,
+                "coord": {"lat":this.geoCoords[j].lat, "lon":this.geoCoords[j].lon},
+                "color": color,
+                "startClockTick": startClockIdx,
+                "endClockTick": endClockIdx,
+                "maskContinuum": false
+            };
+            //console.log(j,x);
+            animationData[j].push(x);
+        }
+    }
+    */
