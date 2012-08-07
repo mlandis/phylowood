@@ -611,6 +611,13 @@ Phylowood.unmaskContinuumForBranch = function(d) {
 					m.maskContinuum = false;
 					return this;
 				}
+                else if (typeof m.data !== "undefined")
+                {
+                    if (m.data.id === d.heritage[i]) {
+                        m.maskContinuum = false;
+                        return this;
+                    }
+                }
 			}
 
 		}
@@ -647,9 +654,20 @@ Phylowood.maskContinuumForBranch = function(d) {
 				if (m.id === d.heritage[i]) {
 					found = true;
 				}
+                else if (typeof m.data !== "undefined")
+                {
+                    if (m.data.id === d.heritage[i])
+                        found = true;
+                }
 			}
 			if (found) {
-				m.maskContinuum = true;
+                if (typeof m.maskContinuum !== "undefined")
+				    m.maskContinuum = true;
+                else if (typeof m.data !== "undefined")
+                {
+                    if (typeof m.data.maskContinuum !== "undefined")
+                        m.maskContinuum = true;
+                }
 				return this;
 			}
 			else
@@ -661,6 +679,8 @@ Phylowood.maskContinuumForBranch = function(d) {
 
 
 Phylowood.highlightContinuumForBranch = function(d) {
+
+    console.log(d);
 
 	// mask branches not part of heritage
 	this.treeSvg.selectAll("line").select(
@@ -687,6 +707,11 @@ Phylowood.highlightContinuumForBranch = function(d) {
 				if (m.id === d.heritage[i]) {
 					ancestral = true;
 				}
+                else if (typeof m.data !== "undefined")
+                {
+                    if (m.data.id === d.heritage[i])
+                        ancestral = true;
+                }
 			}
 			if (!ancestral) {
 				return this;
@@ -694,7 +719,7 @@ Phylowood.highlightContinuumForBranch = function(d) {
 			else
 				return null;
 		}
-	).style("fill-opacity", 0.1);
+	).style("fill-opacity", 0.2);
 }
 
 Phylowood.restoreMask = function() {
@@ -712,6 +737,11 @@ Phylowood.restoreMask = function() {
 		function(m) {
 			if (m.maskContinuum === false)
 				return this;
+            else if (typeof m.data !== "undefined")
+            {
+                if (m.data.maskContinuum === false)
+                    return this;
+            }
 		}
 	).style("fill-opacity", 1.0);
 }
@@ -971,7 +1001,7 @@ Phylowood.initAnimationData = function() {
                 if (saveV === true)
                 {
                     x = {
-                        "id": i,
+                        "id": this.nodesPostorder[i].id,
                         "area": j,
                         "val": v,
                         "coord": {"lat":this.geoCoords[j].lat, "lon":this.geoCoords[j].lon},
@@ -1120,7 +1150,7 @@ Phylowood.drawMarkersContinuous = function() {
                 return "hidden";
         });
     
-    // how to rescale continuous markers if the map perspective changes
+    // rescale continuous markers if the map perspective changes
 	this.map.on("move", function() {
 
 		// get new map-to-pixel coordinates for all states
@@ -1161,59 +1191,6 @@ Phylowood.drawMarkersContinuous = function() {
             });
 	});	
 }
-/*
-
-// consider just using my own d3.layout.pie()
-d3.layout.pie = function () {
-    var value = Number, sort = d3_layout_pieSortByValue, startAngle = 0, endAngle = 2 * Math.PI;
-    function pie(data, i) {
-        var values = data.map(function(d, i) {
-            return +value.call(pie, d, i);
-        });
-        var a = +(typeof startAngle === "function" ? startAngle.apply(this, arguments) : startAngle);
-        var k = ((typeof endAngle === "function" ? endAngle.apply(this, arguments) : endAngle) - startAngle) / d3.sum(values);
-        var index = d3.range(data.length);
-        if (sort != null) index.sort(sort === d3_layout_pieSortByValue ? function(i, j) {
-            return values[j] - values[i];
-        } : function(i, j) {
-            return sort(data[i], data[j]);
-        });
-        var arcs = [];
-        index.forEach(function(i) {
-            var d;
-            arcs[i] = {
-                data: data[i],
-                value: d = values[i],
-                startAngle: a,
-                endAngle: a += d * k
-            };
-        });
-        return arcs;
-    }
-    pie.value = function(x) {
-        if (!arguments.length) return value;
-        value = x;
-        return pie;
-    };
-    pie.sort = function(x) {
-        if (!arguments.length) return sort;
-        sort = x;
-        return pie;
-    };
-    pie.startAngle = function(x) {
-        if (!arguments.length) return startAngle;
-        startAngle = x;
-        return pie;
-    };
-    pie.endAngle = function(x) {
-        if (!arguments.length) return endAngle;
-        endAngle = x;
-        return pie;
-    };
-    console.log("hi");
-    return pie;
-}
-*/
 
 Phylowood.drawMarkersDiscretePie = function() {
 
@@ -1246,13 +1223,13 @@ Phylowood.drawMarkersDiscretePie = function() {
     }
    
     // whatever initial time value
-    var t = 400;
+    this.curClockTick = 50;
 
     // pie chart variables
     this.arc = d3.svg.arc()
         .startAngle(function(d) { return d.startAngle; })
         .endAngle(function(d) { return d.endAngle; })
-        .innerRadius(function(d) { return r * (1 - d.data.val[t]); })
+        .innerRadius(function(d) { return r * (1 - d.data.val[Phylowood.curClockTick]); })
         .outerRadius(r);
 
     // useful ??
@@ -1266,19 +1243,18 @@ Phylowood.drawMarkersDiscretePie = function() {
     this.donut = [];
     this.arcs = [];
     this.paths = [];
-    var t = 400; // 545 is good for 5tip
     var donut = d3.layout.pie().sort(null).value(function(d) {
-        if (typeof d.val[t] !== "undefined")
+        if (typeof d.val[Phylowood.curClockTick] !== "undefined")
         {
-            if (d.val[t] !== 0.0)
+            if (d.val[Phylowood.curClockTick] !== 0.0)
             {
-                return Math.ceil(d.val[t]);
+                console.log(Phylowood.curClockTick,d);
+                return Math.ceil(d.val[Phylowood.curClockTick]);
             }
         }
         return null;
     });
 
-    var i = 454;
     for (var i = 0; i < this.numAreas; i++) //this.numAreas; i++)
     {
 
@@ -1294,17 +1270,17 @@ Phylowood.drawMarkersDiscretePie = function() {
             .attr("fill", function(d) { return d.data.color; })
             .attr("d", Phylowood.arc)
             .attr("class", "marker");
-          /* 
+            /* 
             .attr("visibility", function(d) {
                 if (d.startClockTick <= Phylowood.curTick && d.endClockTick >= Phylowood.curTick)
                     return "visible";
                 else
                     return "hidden";
             });
-           */ 
+            */ 
     }
 
-    t = 500;
+    Phylowood.curClockTick = 400;
     for (var i = 0; i < this.numAreas; i++)
     {
         // center arcs at foci
@@ -1314,7 +1290,23 @@ Phylowood.drawMarkersDiscretePie = function() {
             //.attr("transform", function(d) { return "translate(" + d.data.x + "," + d.data.y + ")"; });
 
         // draw paths according to this.arc
-        this.paths = this.arcs.transition(2000).attr("d", Phylowood.arc);
+   //     this.paths.transition()
+    //        .duration(2000)
+    //        .attrTween("d", tweenDonut);
+
+        this.paths.attr("d", Phylowood.arc);
+
+        function tweenDonut(b) {
+            console.log(b);
+            oldR = b.innerRadius || 0.0;
+            newR = r * (1.0 - b.data.val[t]);
+            b.innerRadius = newR;
+            var i = d3.interpolate({innerRadius:oldR, outerRadius:r},b);
+            return function(t) {
+                return Phylowood.arc(i(t));
+            };
+        };
+        //Phylowood.arc);
 
     }
 
@@ -2507,3 +2499,56 @@ Phylowood.drawMarkersDiscretePie2 = function() {
         }
     }
     */
+/*
+
+// consider just using my own d3.layout.pie()
+d3.layout.pie = function () {
+    var value = Number, sort = d3_layout_pieSortByValue, startAngle = 0, endAngle = 2 * Math.PI;
+    function pie(data, i) {
+        var values = data.map(function(d, i) {
+            return +value.call(pie, d, i);
+        });
+        var a = +(typeof startAngle === "function" ? startAngle.apply(this, arguments) : startAngle);
+        var k = ((typeof endAngle === "function" ? endAngle.apply(this, arguments) : endAngle) - startAngle) / d3.sum(values);
+        var index = d3.range(data.length);
+        if (sort != null) index.sort(sort === d3_layout_pieSortByValue ? function(i, j) {
+            return values[j] - values[i];
+        } : function(i, j) {
+            return sort(data[i], data[j]);
+        });
+        var arcs = [];
+        index.forEach(function(i) {
+            var d;
+            arcs[i] = {
+                data: data[i],
+                value: d = values[i],
+                startAngle: a,
+                endAngle: a += d * k
+            };
+        });
+        return arcs;
+    }
+    pie.value = function(x) {
+        if (!arguments.length) return value;
+        value = x;
+        return pie;
+    };
+    pie.sort = function(x) {
+        if (!arguments.length) return sort;
+        sort = x;
+        return pie;
+    };
+    pie.startAngle = function(x) {
+        if (!arguments.length) return startAngle;
+        startAngle = x;
+        return pie;
+    };
+    pie.endAngle = function(x) {
+        if (!arguments.length) return endAngle;
+        endAngle = x;
+        return pie;
+    };
+    console.log("hi");
+    return pie;
+}
+*/
