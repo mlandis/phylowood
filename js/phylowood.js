@@ -98,7 +98,7 @@ Phylowood.initialize = function() {
         this.drawMarkersDiscretePie();
     }
 
-//    this.initPlayer();
+    this.initPlayer();
 };
 
 Phylowood.parseInput = function() {
@@ -718,6 +718,31 @@ Phylowood.highlightContinuumForBranch = function(d) {
 				return null;
 		}
 	).style("fill-opacity", 0.2);
+	
+    // mask heritage of branch's tracers
+	d3.selectAll("#divGeo .tracer").select(
+		function(m) {
+			
+            console.log(m);
+
+			var ancestral = false;
+			for (var i = 0; i < d.heritage.length; i++) {
+				if (m.id === d.heritage[i]) {
+					ancestral = true;
+				}
+                else if (typeof m.data !== "undefined")
+                {
+                    if (m.data.id === d.heritage[i])
+                        ancestral = true;
+                }
+			}
+			if (!ancestral) {
+				return this;
+			}
+			else
+				return null;
+		}
+	).style("stroke-opacity", 0.2);
 }
 
 Phylowood.restoreMask = function() {
@@ -742,6 +767,19 @@ Phylowood.restoreMask = function() {
             }
 		}
 	).style("fill-opacity", 1.0);
+	
+    // unmask all tracers
+	d3.selectAll("#divGeo .tracer").select(
+		function(m) {
+			if (m.maskContinuum === false)
+				return this;
+            else if (typeof m.data !== "undefined")
+            {
+                if (m.data.maskContinuum === false)
+                    return this;
+            }
+		}
+	).style("stroke-opacity", 1.0);
 }
 
 Phylowood.drawTree = function() {
@@ -1147,6 +1185,17 @@ Phylowood.drawMarkersContinuous = function() {
             else
                 return "hidden";
         });
+
+    // draw lines
+    this.nodelines = layer.selectAll("line.tracer")
+        .data(data)
+      .enter().append("svg:line")
+        .attr("class","tracer")
+        .attr("x1", function(d) { return d.x[d.startClockTick]; })
+        .attr("y1", function(d) { return d.y[d.startClockTick]; })
+        .attr("x2", function(d) { return d.x[d.startClockTick]; })
+        .attr("y2", function(d) { return d.y[d.startClockTick]; })
+        .attr("stroke", function(d) { return d.color; });
     
     // rescale continuous markers if the map perspective changes
 	this.map.on("move", function() {
@@ -1187,6 +1236,26 @@ Phylowood.drawMarkersContinuous = function() {
 		    .attr("r", function(d) {
                 return  Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * d.val * 3;
             });
+
+        Phylowood.nodelines
+            .attr("x1", function(d) { return d.x[d.startClockTick]; })
+            .attr("y1", function(d) { return d.y[d.startClockTick]; })
+            .attr("x2", function(d) {
+                if (d.startClockTick > Phylowood.curClockTick)
+                    return d.x[d.startClockTick];
+                else if (d.endClockTick < Phylowood.curClockTick)
+                    return d.x[d.endClockTick];
+                else
+                    return d.x[Phylowood.curClockTick];
+            })
+            .attr("y2", function(d) {
+                if (d.startClockTick > Phylowood.curClockTick)
+                    return d.y[d.startClockTick];
+                else if (d.endClockTick < Phylowood.curClockTick)
+                    return d.y[d.endClockTick];
+                else
+                    return d.y[Phylowood.curClockTick];
+            });
 	});	
 }
 
@@ -1212,52 +1281,43 @@ Phylowood.drawMarkersDiscretePie = function() {
         {
             if (typeof d !== "undefined")
             {
-    //            console.log(d);
                 xy = Phylowood.map.locationPoint(d.coord);
                 d.x = xy.x;
                 d.y = xy.y;
             }
         });
     }
-   
-    // whatever initial time value
-    this.curClockTick = 40;
 
     // pie chart variables
+    // initializiation
     this.arc = d3.svg.arc()
         .startAngle(function(d) { return d.startAngle; })
         .endAngle(function(d) { return d.endAngle; })
         .innerRadius(function(d) { 
-            return Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 5) * r *(1 - d.data.val[Phylowood.curClockTick]);
+            return Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * r *(1 - d.data.val[Phylowood.curClockTick]);
         })
         .outerRadius(function(d) {
-            return Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 5) * r;
+            return Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * r;
         });
 
-/*
+    // animation
     this.arc2 = d3.svg.arc()
         .startAngle(function(d) { return d.startAngle; })
         .endAngle(function(d) { return d.endAngle; })
-        .innerRadius(0)
-        .outerRadius(r);
-        */
-
-    // useful ??
-    // http://bl.ocks.org/1346395
-
-    // attach data
-    this.pie = []; 
+        .innerRadius(function(d) { return d.innerRadius; })
+        .outerRadius(function(d) { return d.outerRadius; });
 
     // construct pie charts
-    this.donut = [];
+    this.pie = []; 
+    //this.donut = [];
     this.arcs = [];
     this.paths = [];
-    var donut = d3.layout.pie().sort(null).value(function(d) {
+
+    this.donut = d3.layout.pie().sort(null).value(function(d) {
         if (typeof d.val[Phylowood.curClockTick] !== "undefined")
         {
             if (d.val[Phylowood.curClockTick] !== 0.0)
             {
-                //console.log(Phylowood.curClockTick,d);
                 return Math.ceil(d.val[Phylowood.curClockTick]);
             }
         }
@@ -1272,7 +1332,7 @@ Phylowood.drawMarkersDiscretePie = function() {
 
         // center arcs at foci
         this.arcs[i] = this.pie[i].selectAll("g.arc")
-            .data(donut(data[i]))
+            .data(Phylowood.donut(data[i]))
           .enter().append("svg:g")
             .attr("class","arc" + i)
             .attr("transform", function(d) {
@@ -1293,43 +1353,7 @@ Phylowood.drawMarkersDiscretePie = function() {
             });
             */ 
     }
-/*
-    Phylowood.curClockTick = 60;
-    for (var i = 0; i < this.numAreas; i++)
-    {
-        // center arcs at foci
-        //this.arcs = d3.selectAll("#divGeo svg .pie" + i + "g.arc")
-        this.arcs[i] = d3.selectAll("g.arc")
-            .data(donut(data[i]));
 
-
-        // draw paths according to this.arc
-      
-        //this.paths = d3.selectAll(".pie" + i + " g").transition()
-        //    .duration(5000)
-         //   .attrTween("d", tweenDonut);
-
-        this.paths[i] = d3.selectAll(".pie" + i + " g")
-    //        .transition(2000)
-      //      .duration(5000)
-        //    .attrTween("d", tweenDonut);
-            
-            //.attr("d", Phylowood.arc2);
-        //console.log(i, "path", Phylowood.paths);
-        //this.paths.attr("d", Phylowood.arc);
-
-        function tweenDonut(b) {
- //           console.log(b);
-            oldR = b.innerRadius || 0.0;
-            newR = r * (1.0 - b.data.val[Phylowood.curClockTick]);
-            b.innerRadius = newR;
-            var i = d3.interpolate({innerRadius:oldR, outerRadius:r},b);
-            return function(t) {
-                return Phylowood.arc2(i(t));
-            };
-        };
-    }
-*/
     // rescale discrete pie markers if the map perspective changes
 	this.map.on("move", function() {
 
@@ -1349,45 +1373,8 @@ Phylowood.drawMarkersDiscretePie = function() {
             var x = d3.selectAll(".pie" + i + " path");
             x.attr("d", Phylowood.arc);
         }
-
-
-
-/*
-        // draw paths according to this.arc
-        for (var i = 0; i < Phylowood.numAreas; i++)
-        {
-            Phylowood.paths[i] = d3.selectAll(".pie" + i + " g path").attr("d", Phylowood.arc);
-  
-        }
-        */
     });
-
-// same thing but for selectAll(path)...	
-    /*
-		// update positions and radii for nodes
-		Phylowood.node
-            .attr("cx", function(d) { 
-                if (d.startClockTick > Phylowood.curClockTick)
-                    return d.x[d.startClockTick];
-                else if (d.endClockTick < Phylowood.curClockTick)
-                    return d.x[d.endClockTick];
-                else
-                    return d.x[Phylowood.curClockTick];
-            })
-            .attr("cy", function(d) {
-                if (d.startClockTick > Phylowood.curClockTick)
-                    return d.y[d.startClockTick];
-                else if (d.endClockTick < Phylowood.curClockTick)
-                    return d.y[d.endClockTick];
-                else
-                    return d.y[Phylowood.curClockTick];
-            })
-		    .attr("r", function(d) {
-                return  Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * d.val * 3;
-            });
-    */
 }
-
 
 Phylowood.drawMap = function() {
 
@@ -1664,57 +1651,47 @@ Phylowood.updateMarkers = function() {
 
         if (Phylowood.prevZoom === Phylowood.map.zoom())
         {  
+            // update all areas per tick
+            for (var i = 0; i < this.numAreas; i++)
+            {
+                // center arcs at foci
+                this.arcs[i] = d3.selectAll("g.arc")
+                    .data(Phylowood.donut(Phylowood.animationData[i]));
 
-            // inactive lineages
-            d3.selectAll("svg circle")
-                .select(function(d)
-                {
-                    if (d.startClockTick > Phylowood.curClockTick || d.endClockTick <= Phylowood.curClockTick)
-                        return this;
-                    else
-                        return null;
-                })
-                .attr("visibility", "hidden") 
-                .attr("cx", function(d) { 
-                    if (d.startClockTick > Phylowood.curClockTick)
-                        return d.x[d.startClockTick];
-                    else if (d.endClockTick <= Phylowood.curClockTick)
-                        return d.x[d.endClockTick];
-                })
-                .attr("cy", function(d) {
-                    if (d.startClockTick > Phylowood.curClockTick)
-                        return d.y[d.startClockTick];
-                    else if (d.endClockTick <= Phylowood.curClockTick)
-                        return d.y[d.endClockTick];
-                });
+                // draw paths according to this.arc
+                // this.paths[i] = d3.selectAll(".pie" + i + " g")
+                var x = d3.selectAll(".pie" + i + " path");
+                //console.log(x);
+                //x.transition(2000).duration(5000).attrTween("d", tweenDonut);
+                x.transition()
+                    .duration(function(d) { 
+                        // makes animations looth smoother when using slider
+                        if (Phylowood.sliderBusy === true)
+                            return 5;
+                        // otherwise, animate per clockTick of playSpeed
+                        else
+                            return Phylowood.clockTick / Phylowood.playSpeed;
+                    })
+                    .attrTween("d", tweenDonut);
+               
+                var r = 5;
+                function tweenDonut(b) {
+                    // console.log(b);
+                    // oldIR = b.innerRadius || 0.0;
+                    // oldOR = b.outerRadius || 0.0;
 
-            // active lineages
-            d3.selectAll("svg circle")
-                .select(function(d)
-                {
-                    if (d.startClockTick <= Phylowood.curClockTick && d.endClockTick > Phylowood.curClockTick)
-                        return this;
-                    else
-                        return null;
-                })
-              .transition()
-                .ease("linear")
-                .duration(function(d) { 
-                    // makes animations looth smoother when using slider
-                    if (Phylowood.sliderBusy === true)
-                        return 5;
-                    // otherwise, animate per clockTick of playSpeed
-                    else
-                        return Phylowood.clockTick / Phylowood.playSpeed;
-                })
-                .attr("visibility", function(d) {
-                    if (d.maskContinuum === true)
-                        return "hidden";
-                    else
-                        return "visible";
-                })
-                .attr("cx", function(d) { return d.x[Phylowood.curClockTick]; })
-                .attr("cy", function(d) { return d.y[Phylowood.curClockTick]; });
+                    oldIR = Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * r *(1 - b.data.val[Phylowood.curClockTick]) || 0.0;
+                    oldOR = Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * r || 0.0;
+                    //newIR = 0.0; //r * (1.0 - b.data.val[Phylowood.curClockTick]);
+                    newIR = Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * r *(1 - b.data.val[150]) || 0.0;
+                    b.innerRadius = newIR;
+                    //console.log(oldOR, oldIR, newIR);
+                    var i = d3.interpolate({innerRadius:oldIR, outerRadius:oldOR},b);
+                    return function(t) {
+                        return Phylowood.arc2(i(t));
+                    };
+                };
+            }
 
             Phylowood.zoomPauseAnimation = false;
         }
@@ -1797,6 +1774,34 @@ Phylowood.updateMarkers = function() {
                 })
                 .attr("cx", function(d) { return d.x[Phylowood.curClockTick]; })
                 .attr("cy", function(d) { return d.y[Phylowood.curClockTick]; });
+
+            Phylowood.nodelines
+              .transition()
+                .ease("linear")
+                .duration(function(d) { 
+                    // makes animations looth smoother when using slider
+                    if (Phylowood.sliderBusy === true)
+                        return 5;
+                    // otherwise, animate per clockTick of playSpeed
+                    else
+                        return Phylowood.clockTick / Phylowood.playSpeed;
+                })
+                .attr("x2", function(d) {
+                    if (d.startClockTick > Phylowood.curClockTick)
+                        return d.x[d.startClockTick];
+                    else if (d.endClockTick < Phylowood.curClockTick)
+                        return d.x[d.endClockTick];
+                    else
+                        return d.x[Phylowood.curClockTick];
+                })
+                .attr("y2", function(d) {
+                    if (d.startClockTick > Phylowood.curClockTick)
+                        return d.y[d.startClockTick];
+                    else if (d.endClockTick < Phylowood.curClockTick)
+                        return d.y[d.endClockTick];
+                    else
+                        return d.y[Phylowood.curClockTick];
+                });
 
             Phylowood.zoomPauseAnimation = false;
         }
@@ -2589,3 +2594,58 @@ d3.layout.pie = function () {
     return pie;
 }
 */
+            /*
+            // inactive lineages
+            d3.selectAll("svg circle")
+                .select(function(d)
+                {
+                    if (d.startClockTick > Phylowood.curClockTick || d.endClockTick <= Phylowood.curClockTick)
+                        return this;
+                    else
+                        return null;
+                })
+                .attr("visibility", "hidden") 
+                .attr("cx", function(d) { 
+                    if (d.startClockTick > Phylowood.curClockTick)
+                        return d.x[d.startClockTick];
+                    else if (d.endClockTick <= Phylowood.curClockTick)
+                        return d.x[d.endClockTick];
+                })
+                .attr("cy", function(d) {
+                    if (d.startClockTick > Phylowood.curClockTick)
+                        return d.y[d.startClockTick];
+                    else if (d.endClockTick <= Phylowood.curClockTick)
+                        return d.y[d.endClockTick];
+                });
+
+            // active lineages
+            d3.selectAll("svg circle")
+                .select(function(d)
+                {
+                    if (d.startClockTick <= Phylowood.curClockTick && d.endClockTick > Phylowood.curClockTick)
+                        return this;
+                    else
+                        return null;
+                })
+              .transition()
+                .ease("linear")
+                .duration(function(d) { 
+                    // makes animations looth smoother when using slider
+                    if (Phylowood.sliderBusy === true)
+                        return 5;
+                    // otherwise, animate per clockTick of playSpeed
+                    else
+                        return Phylowood.clockTick / Phylowood.playSpeed;
+                })
+                .attr("visibility", function(d) {
+                    if (d.maskContinuum === true)
+                        return "hidden";
+                    else
+                        return "visible";
+                })
+                .attr("cx", function(d) { return d.x[Phylowood.curClockTick]; })
+                .attr("cy", function(d) { return d.y[Phylowood.curClockTick]; });
+
+            Phylowood.zoomPauseAnimation = false;
+        }
+        */
