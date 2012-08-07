@@ -90,7 +90,6 @@ Phylowood.initialize = function() {
         && this.areaType === "continuous")
     {
         this.drawMarkersContinuous();
-        this.initPlayer();
     }
     else if (this.drawType === "pie"
         && this.areaType === "discrete")
@@ -723,8 +722,6 @@ Phylowood.highlightContinuumForBranch = function(d) {
 	d3.selectAll("#divGeo .tracer").select(
 		function(m) {
 			
-            console.log(m);
-
 			var ancestral = false;
 			for (var i = 0; i < d.heritage.length; i++) {
 				if (m.id === d.heritage[i]) {
@@ -1071,7 +1068,7 @@ Phylowood.initAnimationData = function() {
             var tClockDuration = tClockEnd - tClockStart;
             var startClockIdx = Math.ceil(tClockStart / this.clockTick);
             var endClockIdx = Math.ceil(tClockEnd / this.clockTick);
-            var numClockIdx = endClockIdx - startClockIdx + 1;
+            var numClockIdx = endClockIdx - startClockIdx;// + 1;
 
             // lineage values
             var c = p.color;
@@ -1105,22 +1102,21 @@ Phylowood.initAnimationData = function() {
             // interpolate coordinates, constant values
             for (var k = this.numClockTicks; k >= 0; --k)
             {
-                if (k >= startClockIdx && k < endClockIdx)
-                {
-                    // add a little noise to the path
-                    rv = Phylowood.rnorm(0,1);
-
-                    coordArray[k] = {
-                        "lat":String(lat),// + rv.x * latTick), 
-                        "lon":String(lon)// + rv.y * lonTick)
-                    };
-                    lat += latTick;
-                    lon += lonTick;
-                }
-                else if (k === endClockIdx)
+                if (k === endClockIdx)
                 {
                     coordArray[k] = {"lat":String(lat), "lon":String(lon)};
                 }
+                else if (k >= startClockIdx && k < endClockIdx)
+                {
+                    lat += latTick;
+                    lon += lonTick;
+                    coordArray[k] = {
+                        "lat":String(lat),
+                        "lon":String(lon)
+                    };
+                }
+                /*
+                */
             }
             this.animationData.push({
                 "id": p.id,
@@ -1195,7 +1191,10 @@ Phylowood.drawMarkersContinuous = function() {
         .attr("y1", function(d) { return d.y[d.startClockTick]; })
         .attr("x2", function(d) { return d.x[d.startClockTick]; })
         .attr("y2", function(d) { return d.y[d.startClockTick]; })
-        .attr("stroke", function(d) { return d.color; });
+        .attr("stroke", function(d) { return d.color; })
+        .style("stroke-width", function() {
+            return Math.pow(Phylowood.map.zoom() / Phylowood.bestZoom, 4) * 2;
+        });
     
     // rescale continuous markers if the map perspective changes
 	this.map.on("move", function() {
@@ -1255,6 +1254,9 @@ Phylowood.drawMarkersContinuous = function() {
                     return d.y[d.endClockTick];
                 else
                     return d.y[Phylowood.curClockTick];
+            })
+            .style("stroke-width", function() {
+                return Math.pow(Phylowood.map.zoom() / Phylowood.bestZoom, 4) * 2;
             });
 	});	
 }
