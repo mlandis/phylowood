@@ -481,7 +481,7 @@ Phylowood.initTree = function() {
 	if (this.areaType === "continuous")
         this.clockTick = 100.0; // update per .1s
     else if (this.areaType === "discrete")
-        this.clockTick = 100.0;
+        this.clockTick = 500.0;
     else
         this.clockTick = 1000.0;
 	this.phyloTick = 0.0;
@@ -855,8 +855,8 @@ Phylowood.drawTree = function() {
 				xEnd = p.timeEnd * unitsW,
 //				yStart = pp.coord * unitsH,
 				yEnd = p.coord * unitsH,
-				heritage = p.heritage;
-
+				heritage = p.heritage,
+                name = p.name;
 
 			// offset the borders by linewidth
 //			if (p.ancestor === null)	xStart += 2;
@@ -876,7 +876,8 @@ Phylowood.drawTree = function() {
 				"y2phy": yEnd,
 				"color": "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)",
 				"maskContinuum": false,
-				"heritage": heritage
+				"heritage": heritage,
+                "name": name
 			});
 			
 			if (pp !== null) {
@@ -894,7 +895,8 @@ Phylowood.drawTree = function() {
 					"y2phy": yEnd,
 					"color": "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)",
 					"maskContinuum": false,
-					"heritage": heritage
+					"heritage": heritage,
+                    "name": name
 					});
 			}
 				
@@ -1018,6 +1020,7 @@ Phylowood.initAnimationData = function() {
             }
             
             // use jQuery to gather array of unique divergence times
+            // used for animation of discrete pie
             this.divergenceTicks = $.unique(this.divergenceTicks).reverse();
 
             // UNEXPECTED BEHAVIOR
@@ -1026,24 +1029,35 @@ Phylowood.initAnimationData = function() {
             // alert(val);
             // console.log(val);
 
-            var valArray = [];
-
             // for each lineage (i indexes nodesPostorder)
             for (var i = 0; i < this.numNodes; i++)
             {
                 var saveV = false; 
                 var v = [];
+                var show = [];
 
                 // for each tick in [startClockIdx,endClockIdx] 
                 for (var k = this.numClockTicks; k >= 0; --k)
+           //     for (var k = 0; k < this.numClockTicks; k++)
                 {
                     // get current value and tick size
                     if (k >= startClockIdx[i] && k < endClockIdx[i])
                     {
                         v[k] = val[i];
-                        if (val[i] > 0)
+                        show[k] = 1;
+//                        if (val[i] > 0)
                             saveV = true;
                         val[i] += vTick[i];
+                    }
+                    else if (k === endClockIdx[i] && k === this.numClockTicks - 1)
+                    {
+                        saveV = true;
+                        show[k] = 1;
+                        v[k] = val[i];
+                    }
+                    else if (k < startClockIdx[i] || k >= endClockIdx[i])
+                    {
+                        show[k] = 0;
                     }
                     //else
                         //valArray[k][i] = 0;
@@ -1055,6 +1069,7 @@ Phylowood.initAnimationData = function() {
                         "id": this.nodesPostorder[i].id,
                         "area": j,
                         "val": v,
+                        "show": show,
                         "coord": {"lat":this.geoCoords[j].lat, "lon":this.geoCoords[j].lon},
                         "color": color[i],
                         "startClockTick": startClockIdx[i],
@@ -1336,11 +1351,13 @@ Phylowood.drawMarkersDiscretePie = function() {
     this.donut = d3.layout.pie().sort(null).value(function(d) {
         if (typeof d.val[Phylowood.curClockTick] !== "undefined")
         {
-            if (d.val[Phylowood.curClockTick] !== 0.0
+            
+            //if (d.val[Phylowood.curClockTick] !== 0.0)
                 //&& d.startClockIdx >= Phylowood.curClockTick
                 //&& d.endClockIdx <= Phylowood.curClockTick
-            ){
-                return Math.ceil(d.val[Phylowood.curClockTick]);
+            {
+            //    return Math.ceil(d.val[Phylowood.curClockTick]);
+                return 1;
             }
         }
         //return null;
@@ -1741,7 +1758,13 @@ Phylowood.updateMarkers = function() {
                     { 
                         //console.log(i, this.paths[i]);
 
-                        this.paths[i]//.selectAll("svg path")
+                        this.paths[i]
+                            .select(function(d) {
+                                if (d.data.val[Phylowood.curClockTick] !== d.data.val[Phylowood.curClockTick - Phylowood.playForward])
+                                    return this;
+                                else
+                                    return null;
+                            })
                             .attr("d", Phylowood.arc);
            ;//             var x = d3.selectAll(".pie" + i + " path");
            ;//             x.attr("d", Phylowood.arc);
