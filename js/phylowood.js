@@ -1160,118 +1160,6 @@ Phylowood.initAnimationData = function() {
         }
     }
 
-    else if (this.areaType === "discrete2")
-    {
-        // for each area
-        for (var j = 0; j < this.numAreas; j++)
-        {
-            this.animationData[j] = [];
-            this.animationPathStr[j] = [];
-
-            // pre-compute basic lineage information
-            var val = [];
-            var tClockStart = [],
-                tClockEnd = [],
-                tClockDuration = [],
-                startClockIdx = [],
-                endClockIdx = [],
-                numClockIdx = [],
-                color = [],
-                vTick = [];
-
-
-            for (var i = 0; i < this.numNodes; i++)
-            {
-                // get the node and its ancestor (or if it is the root, itself)
-                var p = this.nodesPostorder[i];
-                var q = p.ancestor || p;
-                //val[i] = 0;
-
-                // time lineage i exists
-                tClockStart[i]  = (p.timeStart / this.treeHeight) * this.endClockTime;
-                tClockEnd[i] = (p.timeEnd / this.treeHeight) * this.endClockTime;
-                tClockDuration[i] = tClockEnd[i] - tClockStart[i];
-                startClockIdx[i] = Math.ceil(tClockStart[i] / this.clockTick);
-                endClockIdx[i] = Math.ceil(tClockEnd[i] / this.clockTick);
-                numClockIdx[i] = endClockIdx[i] - startClockIdx[i] + 1;
-                
-                // lineage colors
-                var c = p.color;
-                color[i] = "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)";
-
-                // populate divergenceTicks[]
-                this.divergenceTicks.push(startClockIdx[i]);
-
-                // vals and vTicks 
-                val[i] = p.states[j];
-                vTick[i] = (q.states[j] - p.states[j]) / numClockIdx[i];
-                //console.log(val[i], p.states[j]);
-
-            }
-            
-            // use jQuery to gather array of unique divergence times
-            // used for animation of discrete pie
-            this.divergenceTicks = $.unique(this.divergenceTicks).reverse();
-
-            // UNEXPECTED BEHAVIOR
-            // console.log() DOES NOT report val correctly to Google Chrome
-            // alert() has no problem.
-            // alert(val);
-            // console.log(val);
-
-            // for each lineage (i indexes nodesPostorder)
-            for (var i = 0; i < this.numNodes; i++)
-            {
-                var saveV = false; 
-                var v = [];
-                var show = [];
-
-                // for each tick in [startClockIdx,endClockIdx] 
-                for (var k = this.numClockTicks; k >= 0; --k)
-           //     for (var k = 0; k < this.numClockTicks; k++)
-                {
-                    // get current value and tick size
-                    if (k >= startClockIdx[i] && k < endClockIdx[i])
-                    {
-                        v[k] = val[i];
-                        show[k] = 1;
-//                        if (val[i] > 0)
-                            saveV = true;
-                        val[i] += vTick[i];
-                    }
-                    else if (k === endClockIdx[i] && k === this.numClockTicks - 1)
-                    {
-                        saveV = true;
-                        show[k] = 1;
-                        v[k] = val[i];
-                    }
-                    else if (k < startClockIdx[i] || k >= endClockIdx[i])
-                    {
-                        show[k] = 0;
-                    }
-                    //else
-                        //valArray[k][i] = 0;
-                }
-                // console.log(valArray[k]);
-                if (saveV === true)
-                {
-                    x = {
-                        "id": this.nodesPostorder[i].id,
-                        "area": j,
-                        "val": v,
-                        "show": show,
-                        "coord": {"lat":this.geoCoords[j].lat, "lon":this.geoCoords[j].lon},
-                        "color": color[i],
-                        "startClockTick": startClockIdx[i],
-                        "endClockTick": endClockIdx[i],
-                        "maskContinuum": false
-                    };
-                    // console.log(j,i,x);
-                    this.animationData[j].push(x);
-                }
-            }
-        }
-    }
     // continuous areas: coordinates change, values constant
     // marker per lineage, interpolated values
     else if (this.areaType === "continuous")
@@ -1488,7 +1376,7 @@ Phylowood.drawMarkersDiscretePie = function() {
 	// div size (get dynamically)
 	var h = document.getElementById("divGeo").offsetHeight;
 	var w = document.getElementById("divGeo").offsetWidth;
-    var r = 15;
+    this.pieRadius = 15;
 
 	// geo data
 	var data = this.animationData;
@@ -1518,10 +1406,10 @@ Phylowood.drawMarkersDiscretePie = function() {
         .startAngle(function(d) { return d.startAngle; })
         .endAngle(function(d) { return d.endAngle; })
         .innerRadius(function(d) { 
-            return Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * r *(1 - d.data.val[Phylowood.curClockTick]);
+            return Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * Phylowood.pieRadius *(1 - d.data.val[Phylowood.curClockTick]);
         })
         .outerRadius(function(d) {
-            return Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * r;
+            return Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * Phylowood.pieRadius;
         });
 
     // animation
@@ -1614,9 +1502,7 @@ Phylowood.drawMarkersDiscretePie = function() {
                 })
 
                 // adjust for zoom
-                //var x = d3.selectAll(".pie" + i + " path");
-                //x.attr("d", Phylowood.arc);
-                Phylowood.arcs[i].attr("d", Phylowood.arc);
+                Phylowood.paths[i].attr("d", Phylowood.arc);
             }
         }
     });
@@ -1915,11 +1801,6 @@ Phylowood.updateMarkers = function() {
                     if (this.animationData[i].length !== 0)
                     {
                         // remove old pie 
-                        //this.arcs[i] = this.pie[i].selectAll("g.arc")
-                        //    .data(Phylowood.donut(Phylowood.animationData[i]))
-                        //    .exit().remove();
-//                        this.arcs[i] = this.pie[i].selectAll("path")
-//                            .remove();
                         this.paths[i].remove();
 
                         // add new pie
@@ -1949,109 +1830,16 @@ Phylowood.updateMarkers = function() {
                 {
                     if (this.animationData[i].length !== 0)
                     { 
-                        //console.log(i, this.paths[i]);
-
-                        this.paths[i]
-                            .select(function(d) {
-                                if (d.data.val[Phylowood.curClockTick] !== d.data.val[Phylowood.curClockTick - Phylowood.playForward])
-                                    return this;
-                                else
-                                {
-                                    //console.log(d);
-                                    ///console.log( d.data.val[Phylowood.curClockTick], d.data.val[Phylowood.curClockTick - Phylowood.playForward]);
-                                    return null;
-                                }
-                            })
-                            .attr("d", Phylowood.arc);
-           ;//             var x = d3.selectAll(".pie" + i + " path");
-           ;//             x.attr("d", Phylowood.arc);
-                    
-                    /*
-                        console.log(this.paths[i]);
-                        this.paths[i]
-                          .transition()
-                            .duration(function(d) { 
-                                // makes animations looth smoother when using slider
-                                if (Phylowood.sliderBusy === true)
-                                    return 5;
-                                // otherwise, animate per clockTick of playSpeed
-                                else
-                                    return Phylowood.clockTick / Phylowood.playSpeed;
-                            })
-                            .attrTween("d", tweenDonut);
-                       
-                        var r = 5;
-                        function tweenDonut(b) {
-                            // console.log(b);
-                            // oldIR = b.innerRadius || 0.0;
-                            // oldOR = b.outerRadius || 0.0;
-
-                            oldIR = Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * r *(1 - b.data.val[Phylowood.prevClockTick]) || 0.0;
-                            oldOR = Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * r || 0.0;
-                            newIR = Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * r *(1 - b.data.val[Phylowood.curClockTick]) || 0.0;
-                            b.innerRadius = newIR;
-                            //console.log(oldOR, oldIR, newIR);
-                            var i = d3.interpolate({innerRadius:oldIR, outerRadius:oldOR},b);
-                            return function(t) {
-                                return Phylowood.arc2(i(t));
-                            };
-                        };
-                        
-                      ; // var x = d3.selectAll(".pie" + i + " path");
-                    */
+                        this.paths[i].select(function(d) {
+                            if (d.data.val[Phylowood.curClockTick]
+                                !== d.data.val[Phylowood.curClockTick - Phylowood.playForward])
+                                return this;
+                            else
+                                return null;
+                        }).attr("d", Phylowood.arc);
                     }
                 }
-           } 
-
-/*
-                // center arcs at foci
-                this.arcs[i] = d3.selectAll("g.arc")
-                    .data(Phylowood.donut(Phylowood.animationData[i]));
-
-                console.log(this.arcs[i]);
-
-                var x = d3.selectAll(".pie" + i + " path");
-                x.attr("d", Phylowood.arc);
-*/
-
-
-                /*
-
-                // draw paths according to this.arc
-                // this.paths[i] = d3.selectAll(".pie" + i + " g")
-                var x = d3.selectAll(".pie" + i + " path");
-                //console.log(x);
-                //x.transition(2000).duration(5000).attrTween("d", tweenDonut);
-                x.transition()
-                    .duration(function(d) { 
-                        // makes animations looth smoother when using slider
-                        if (Phylowood.sliderBusy === true)
-                            return 5;
-                        // otherwise, animate per clockTick of playSpeed
-                        else
-                            return Phylowood.clockTick / Phylowood.playSpeed;
-                    })
-                    .attrTween("d", tweenDonut);
-               
-                var r = 5;
-                function tweenDonut(b) {
-                    // console.log(b);
-                    // oldIR = b.innerRadius || 0.0;
-                    // oldOR = b.outerRadius || 0.0;
-
-                    oldIR = Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * r *(1 - b.data.val[Phylowood.curClockTick]) || 0.0;
-                    oldOR = Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * r || 0.0;
-                    //newIR = 0.0; //r * (1.0 - b.data.val[Phylowood.curClockTick]);
-                    newIR = Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * r *(1 - b.data.val[150]) || 0.0;
-                    b.innerRadius = newIR;
-                    //console.log(oldOR, oldIR, newIR);
-                    var i = d3.interpolate({innerRadius:oldIR, outerRadius:oldOR},b);
-                    return function(t) {
-                        return Phylowood.arc2(i(t));
-                    };
-                };
-                */
-
+            }
             Phylowood.zoomPauseAnimation = false;
         }
         else {
@@ -3047,3 +2835,93 @@ d3.layout.pie = function () {
             Phylowood.zoomPauseAnimation = false;
         }
         */
+
+
+// from updateMarkers areaType==="discrete"
+
+           //             var x = d3.selectAll(".pie" + i + " path");
+           //             x.attr("d", Phylowood.arc);
+                    
+                    /*
+                        console.log(this.paths[i]);
+                        this.paths[i]
+                          .transition()
+                            .duration(function(d) { 
+                                // makes animations looth smoother when using slider
+                                if (Phylowood.sliderBusy === true)
+                                    return 5;
+                                // otherwise, animate per clockTick of playSpeed
+                                else
+                                    return Phylowood.clockTick / Phylowood.playSpeed;
+                            })
+                            .attrTween("d", tweenDonut);
+                       
+                        var r = 5;
+                        function tweenDonut(b) {
+                            // console.log(b);
+                            // oldIR = b.innerRadius || 0.0;
+                            // oldOR = b.outerRadius || 0.0;
+
+                            oldIR = Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * r *(1 - b.data.val[Phylowood.prevClockTick]) || 0.0;
+                            oldOR = Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * r || 0.0;
+                            newIR = Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * r *(1 - b.data.val[Phylowood.curClockTick]) || 0.0;
+                            b.innerRadius = newIR;
+                            //console.log(oldOR, oldIR, newIR);
+                            var i = d3.interpolate({innerRadius:oldIR, outerRadius:oldOR},b);
+                            return function(t) {
+                                return Phylowood.arc2(i(t));
+                            };
+                        };
+                        
+                      ; // var x = d3.selectAll(".pie" + i + " path");
+                    */
+
+/*
+                // center arcs at foci
+                this.arcs[i] = d3.selectAll("g.arc")
+                    .data(Phylowood.donut(Phylowood.animationData[i]));
+
+                console.log(this.arcs[i]);
+
+                var x = d3.selectAll(".pie" + i + " path");
+                x.attr("d", Phylowood.arc);
+*/
+
+
+                /*
+
+                // draw paths according to this.arc
+                // this.paths[i] = d3.selectAll(".pie" + i + " g")
+                var x = d3.selectAll(".pie" + i + " path");
+                //console.log(x);
+                //x.transition(2000).duration(5000).attrTween("d", tweenDonut);
+                x.transition()
+                    .duration(function(d) { 
+                        // makes animations looth smoother when using slider
+                        if (Phylowood.sliderBusy === true)
+                            return 5;
+                        // otherwise, animate per clockTick of playSpeed
+                        else
+                            return Phylowood.clockTick / Phylowood.playSpeed;
+                    })
+                    .attrTween("d", tweenDonut);
+               
+                var r = 5;
+                function tweenDonut(b) {
+                    // console.log(b);
+                    // oldIR = b.innerRadius || 0.0;
+                    // oldOR = b.outerRadius || 0.0;
+
+                    oldIR = Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * r *(1 - b.data.val[Phylowood.curClockTick]) || 0.0;
+                    oldOR = Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * r || 0.0;
+                    //newIR = 0.0; //r * (1.0 - b.data.val[Phylowood.curClockTick]);
+                    newIR = Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * r *(1 - b.data.val[150]) || 0.0;
+                    b.innerRadius = newIR;
+                    //console.log(oldOR, oldIR, newIR);
+                    var i = d3.interpolate({innerRadius:oldIR, outerRadius:oldOR},b);
+                    return function(t) {
+                        return Phylowood.arc2(i(t));
+                    };
+                };
+                */
+
