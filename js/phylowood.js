@@ -1692,7 +1692,7 @@ Phylowood.animStart = function() {
 	if (this.playTick === -1.0)
     {
         $( "#play" ).click();
-		//this.animPause();
+		this.animPause();
     }
 
 	this.playSpeed = 1.0;
@@ -1709,7 +1709,7 @@ Phylowood.animEnd = function() {
 	if (this.playTick === 1.0)
     {
         $( "#play" ).click();
-		//this.animPause();
+		this.animPause();
     }
 
 	this.playSpeed = 1.0;
@@ -1769,6 +1769,7 @@ Phylowood.animStop = function() {
 
 Phylowood.slideSlider = function() {
 
+    console.log("slideSlider");
 	this.curClockTick = $( "#divSlider" ).slider("option","value");
 	var pos = Phylowood.tickToPxScale(Phylowood.curClockTick);
 	$( "#phyloSlider" ).attr("x1", pos).attr("x2", pos);
@@ -1777,11 +1778,13 @@ Phylowood.slideSlider = function() {
 }
 
 Phylowood.changeSlider = function() {
-	
+
+    console.log("changeSlider");
 	if (typeof this.sliderBusy !== "undefined") {
 		this.curClockTick = $( "#divSlider" ).slider("option","value");
 		var pos = Phylowood.tickToPxScale(Phylowood.curClockTick);
 		$( "#phyloSlider" ).attr("x1", pos).attr("x2", pos);
+	    Phylowood.updateMarkers();
 	}
 	this.sliderBusy = false;
 }
@@ -1885,9 +1888,13 @@ Phylowood.updateMarkers = function() {
         }
 
         // stop at boundaries
-        if (Phylowood.curClockTick >= Phylowood.numClockTicks || Phylowood.curClockTick <= 0)
+        if (Phylowood.curClockTick >= Phylowood.numClockTicks)
         {
-            clearInterval(Phylowood.ticker);
+            Phylowood.animEnd();
+        }
+        else if (Phylowood.curClockTick <= 0)
+        {
+            Phylowood.animStart();
         }
     }
 
