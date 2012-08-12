@@ -98,7 +98,7 @@ Phylowood.initialize = function() {
     }
 
     this.initPlayer();
-    this.initInfoBox();
+    this.initFilter();
 };
 
 Phylowood.parseInput = function() {
@@ -780,9 +780,37 @@ Phylowood.highlightContinuumForBranch = function(d) {
             var bbox = this.getBBox();
             var w = bbox.width;
             var y = bbox.y;
-            if (y - w < 0) return y - w;
+            if (y - w < 0) return -w-10;
         })
         .style("fill", function() { return d.color; })
+
+    this.svgFilter.append("svg:text")
+        .text(function() { return d.name; })
+        .attr("x", 160)
+        .attr("y", 40)
+        .attr("class","info")
+        .style("fill","white");
+
+    this.svgFilter.append("svg:text")
+        .text(function() { return d.id; })
+        .attr("x", 160)
+        .attr("y", 20)
+        .attr("class","info")
+        .style("fill","white");
+
+    this.svgFilter.append("svg:text")
+        .text(function() { return d.timeStart; })
+        .attr("x", 160)
+        .attr("y", 60)
+        .attr("class","info")
+        .style("fill","white");
+    
+    this.svgFilter.append("svg:text")
+        .text(function() { return d.timeEnd; })
+        .attr("x", 160)
+        .attr("y", 80)
+        .attr("class","info")
+        .style("fill","white");
 }
 
 Phylowood.restoreMask = function() {
@@ -825,6 +853,7 @@ Phylowood.restoreMask = function() {
 
     // erase lineage information
     d3.selectAll("#divPhylo svg text").remove();
+    this.svgFilter.selectAll(".info").remove();
 }
 
 Phylowood.drawTree = function() {
@@ -2163,16 +2192,32 @@ Phylowood.updateMarkers = function() {
 INFO BOX
 ***/
 
-Phylowood.initInfoBox = function() {
+Phylowood.initFilter = function() {
 
     
-    // lineage: name, id, color, 
-
-    /*
-    this.textareaInfo = d3.selectAll("#divFilter").append("text")
-        .attr("id", "textareaInfo");
-
-    */
+    this.svgFilter = d3.selectAll("#divFilter").append("svg");
+   
+    // permanent labels
+    this.svgFilter.append("svg:text")
+        .text("Lineage name:")
+        .attr("x", 10)
+        .attr("y", 40)
+        .style("fill","white")
+    this.svgFilter.append("svg:text")
+        .text("Lineage id:")
+        .attr("x", 10)
+        .attr("y", 20)
+        .style("fill","white")
+    this.svgFilter.append("svg:text")
+        .text("Lineage start:")
+        .attr("x", 10)
+        .attr("y", 60)
+        .style("fill","white")
+    this.svgFilter.append("svg:text")
+        .text("Lineage end:")
+        .attr("x", 10)
+        .attr("y", 80)
+        .style("fill","white");
 
 }
 
