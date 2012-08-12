@@ -1115,14 +1115,13 @@ Phylowood.initAnimationData = function() {
 
                 // for each tick in [startClockIdx,endClockIdx] 
                 for (var k = this.numClockTicks; k >= 0; --k)
-           //     for (var k = 0; k < this.numClockTicks; k++)
                 {
                     // get current value and tick size
                     if (k >= startClockIdx[i] && k < endClockIdx[i])
                     {
                         v[k] = val[i];
                         show[k] = 1;
-//                        if (val[i] > 0)
+                        // if (val[i] > 0)
                             saveV = true;
                         val[i] += vTick[i];
                     }
@@ -1246,6 +1245,7 @@ Phylowood.drawMarkersContinuous = function() {
 	// div size (get dynamically)
 	var h = document.getElementById("divGeo").offsetHeight;
 	var w = document.getElementById("divGeo").offsetWidth;
+    Phylowood.pieRadius = 10;
 
 	// geo data
 	var data = this.animationData; //this.initMarkers();
@@ -1280,7 +1280,9 @@ Phylowood.drawMarkersContinuous = function() {
         .attr("cx", function(d) { return d.x[d.startClockTick]; })
         .attr("cy", function(d) { return d.y[d.startClockTick]; })
         .attr("r", function(d) {
-                return Math.pow(Phylowood.map.zoom() / Phylowood.bestZoom, 4) * d.val * 3;
+            var v = Phylowood.pieRadius * d.val;
+            return Math.pow(2, Phylowood.map.zoom() - Phylowood.bestZoom) * Math.sqrt(v);
+                //return Math.pow(Phylowood.map.zoom() / Phylowood.bestZoom, 4) * d.val * 3;
         })
         .attr("fill", function(d) { return d.color })
         .attr("stroke-width", 1)
@@ -1303,7 +1305,9 @@ Phylowood.drawMarkersContinuous = function() {
         .attr("y2", function(d) { return d.y[d.startClockTick]; })
         .attr("stroke", function(d) { return d.color; })
         .style("stroke-width", function() {
-            return Math.pow(Phylowood.map.zoom() / Phylowood.bestZoom, 4) * 2;
+            var v = Phylowood.pieRadius;
+            return Math.pow(2, Phylowood.map.zoom() - Phylowood.bestZoom) * Math.sqrt(v);
+            //return Math.pow(Phylowood.map.zoom() / Phylowood.bestZoom, 4) * 2;
         });
     
     // rescale continuous markers if the map perspective changes
@@ -1343,7 +1347,9 @@ Phylowood.drawMarkersContinuous = function() {
                     return d.y[Phylowood.curClockTick];
             })
 		    .attr("r", function(d) {
-                return  Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * d.val * 3;
+                var v = Phylowood.pieRadius * d.val;
+                return Math.pow(2, Phylowood.map.zoom() - Phylowood.bestZoom) * Math.sqrt(v);
+                //return  Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * d.val * 3;
             });
 
         Phylowood.nodelines
@@ -1366,7 +1372,9 @@ Phylowood.drawMarkersContinuous = function() {
                     return d.y[Phylowood.curClockTick];
             })
             .style("stroke-width", function() {
-                return Math.pow(Phylowood.map.zoom() / Phylowood.bestZoom, 4) * 2;
+                //return Math.pow(Phylowood.map.zoom() / Phylowood.bestZoom, 4) * 2;
+                var v = Phylowood.pieRadius;
+                return Math.pow(2, Phylowood.map.zoom() - Phylowood.bestZoom) * Math.sqrt(v);
             });
 	});	
 }
@@ -1376,7 +1384,7 @@ Phylowood.drawMarkersDiscretePie = function() {
 	// div size (get dynamically)
 	var h = document.getElementById("divGeo").offsetHeight;
 	var w = document.getElementById("divGeo").offsetWidth;
-    this.pieRadius = 15;
+    this.pieRadius = 250;
 
 	// geo data
 	var data = this.animationData;
@@ -1406,10 +1414,16 @@ Phylowood.drawMarkersDiscretePie = function() {
         .startAngle(function(d) { return d.startAngle; })
         .endAngle(function(d) { return d.endAngle; })
         .innerRadius(function(d) { 
-            return Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * Phylowood.pieRadius *(1 - d.data.val[Phylowood.curClockTick]);
+            var v = Phylowood.pieRadius * (1 - d.data.val[Phylowood.curClockTick]);
+            return Math.pow(2, Phylowood.map.zoom() - Phylowood.bestZoom) * Math.sqrt(v)
+            //* Math.pow(Phylowood.map.zoom() / Phylowood.bestZoom, 5)
+            ;
         })
         .outerRadius(function(d) {
-            return Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * Phylowood.pieRadius;
+            var v = Phylowood.pieRadius;
+            return Math.pow(2, Phylowood.map.zoom() - Phylowood.bestZoom) * Math.sqrt(v)
+            //* Math.pow(Phylowood.map.zoom() / Phylowood.bestZoom, 5)
+            ;
         });
 
     // animation
