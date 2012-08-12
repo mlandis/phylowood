@@ -1305,13 +1305,15 @@ Phylowood.drawMarkersContinuous = function() {
         .attr("y2", function(d) { return d.y[d.startClockTick]; })
         .attr("stroke", function(d) { return d.color; })
         .style("stroke-width", function() {
-            var v = Phylowood.pieRadius;
+            var v = Phylowood.pieRadius * 0.5;
             return Math.pow(2, Phylowood.map.zoom() - Phylowood.bestZoom) * Math.sqrt(v);
             //return Math.pow(Phylowood.map.zoom() / Phylowood.bestZoom, 4) * 2;
         });
     
     // rescale continuous markers if the map perspective changes
 	this.map.on("move", function() {
+
+        Phylowood.zoomPauseAnimation = true;
 
 		// get new map-to-pixel coordinates for all states
         data.forEach(function(d) {
@@ -1373,7 +1375,7 @@ Phylowood.drawMarkersContinuous = function() {
             })
             .style("stroke-width", function() {
                 //return Math.pow(Phylowood.map.zoom() / Phylowood.bestZoom, 4) * 2;
-                var v = Phylowood.pieRadius;
+                var v = Phylowood.pieRadius * 0.5;
                 return Math.pow(2, Phylowood.map.zoom() - Phylowood.bestZoom) * Math.sqrt(v);
             });
 	});	
@@ -1687,9 +1689,10 @@ Phylowood.drag = function(dx) {
 
 Phylowood.animStart = function() {
 
-	if (this.playForward === -1.0)
+	if (this.playTick === -1.0)
     {
-		this.animPause();
+        $( "#play" ).click();
+		//this.animPause();
     }
 
 	this.playSpeed = 1.0;
@@ -1703,9 +1706,10 @@ Phylowood.animStart = function() {
 
 Phylowood.animEnd = function() {
 	
-	if (this.playForward === 1.0)
+	if (this.playTick === 1.0)
     {
-		this.animPause();
+        $( "#play" ).click();
+		//this.animPause();
     }
 
 	this.playSpeed = 1.0;
@@ -1714,6 +1718,7 @@ Phylowood.animEnd = function() {
 	var pos = this.tickToPxScale(this.numClockTicks); 
 	$( "#phyloSlider" ).attr("x1", pos).attr("x2", pos);
 	$( "#divSlider" ).slider("option","value",this.numClockTicks);
+
 }
 
 Phylowood.animRewind = function() {
@@ -1846,7 +1851,7 @@ Phylowood.updateMarkers = function() {
                     { 
                         this.paths[i].select(function(d) {
                             if (d.data.val[Phylowood.curClockTick]
-                                !== d.data.val[Phylowood.curClockTick - Phylowood.playForward])
+                                !== d.data.val[Phylowood.curClockTick - Phylowood.playTick])
                                 return this;
                             else
                                 return null;
@@ -1990,9 +1995,13 @@ Phylowood.updateMarkers = function() {
         }
 
         // stop at boundaries
-        if (Phylowood.curClockTick >= Phylowood.numClockTicks || Phylowood.curClockTick <= 0)
+        if (Phylowood.curClockTick >= Phylowood.numClockTicks)
         {
-            clearInterval(Phylowood.ticker);
+            Phylowood.animEnd();
+        }
+        else if (Phylowood.curClockTick <= 0)
+        {
+            Phylowood.animStart();
         }
     }
 }
