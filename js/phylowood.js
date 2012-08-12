@@ -609,6 +609,61 @@ Phylowood.Tree = function() {
 DRAW
 ***/
 
+Phylowood.maskContinuumForBranch = function(d) {
+
+    Phylowood.forceRedraw = true;
+
+	// mask heritage of branch
+	this.treeSvg.selectAll("line").select(
+		function(b) {
+
+			var found = false;
+			for (var i = 0; i < d.heritage.length; i++) {
+				if (b.id === d.heritage[i])
+					found = true;
+			}
+			//if (found) {
+			if (!found) {
+				b.maskContinuum = true;
+				return this;
+			}
+			else
+				return null;
+		}
+	).style("stroke-opacity", 0.2);
+
+	// mask heritage of branch's markers
+	d3.selectAll("#divGeo .marker").select(
+		function(m) {
+			
+			var found = false;
+			for (var i = 0; i < d.heritage.length; i++) {
+				if (m.id === d.heritage[i]) {
+					found = true;
+				}
+                else if (typeof m.data !== "undefined")
+                {
+                    if (m.data.id === d.heritage[i])
+                        found = true;
+                }
+			}
+			if (!found) {
+                if (typeof m.maskContinuum !== "undefined")
+				    m.maskContinuum = true;
+                else if (typeof m.data !== "undefined")
+                {
+                    if (typeof m.data.maskContinuum !== "undefined")
+                        m.data.maskContinuum = true;
+                }
+				return this;
+			}
+			else
+				return null;
+		}
+	);//.style("visibility", "hidden");
+	Phylowood.updateMarkers();
+}
+
 Phylowood.unmaskContinuumForBranch = function(d) {
 
     Phylowood.forceRedraw = true;
@@ -650,60 +705,6 @@ Phylowood.unmaskContinuumForBranch = function(d) {
 	Phylowood.updateMarkers();
 }
 
-Phylowood.maskContinuumForBranch = function(d) {
-
-    Phylowood.forceRedraw = true;
-
-	// mask heritage of branch
-	this.treeSvg.selectAll("line").select(
-		function(b) {
-
-			var found = false;
-			for (var i = 0; i < d.heritage.length; i++) {
-				if (b.id === d.heritage[i])
-					found = true;
-			}
-			if (found) {
-				b.maskContinuum = true;
-				return this;
-			}
-			else
-				return null;
-		}
-	).style("stroke-opacity", 0.2);
-
-	// mask heritage of branch's markers
-	d3.selectAll("#divGeo .marker").select(
-		function(m) {
-			
-			var found = false;
-			for (var i = 0; i < d.heritage.length; i++) {
-				if (m.id === d.heritage[i]) {
-					found = true;
-				}
-                else if (typeof m.data !== "undefined")
-                {
-                    if (m.data.id === d.heritage[i])
-                        found = true;
-                }
-			}
-			if (found) {
-                if (typeof m.maskContinuum !== "undefined")
-				    m.maskContinuum = true;
-                else if (typeof m.data !== "undefined")
-                {
-                    if (typeof m.data.maskContinuum !== "undefined")
-                        m.data.maskContinuum = true;
-                }
-				return this;
-			}
-			else
-				return null;
-		}
-	);//.style("visibility", "hidden");
-	Phylowood.updateMarkers();
-}
-
 
 Phylowood.highlightContinuumForBranch = function(d) {
 
@@ -715,9 +716,13 @@ Phylowood.highlightContinuumForBranch = function(d) {
 			var ancestral = false;
 			for (var i = 0; i < d.heritage.length; i++) {
 				if (b.id === d.heritage[i])
+                {
+                    b.highlightContinuum = true;
 					ancestral = true;
+                }
 			}
 			if (!ancestral) {
+                b.highlightContinuum = false;
 				return this;
 			}
 			else
@@ -732,15 +737,23 @@ Phylowood.highlightContinuumForBranch = function(d) {
 			var ancestral = false;
 			for (var i = 0; i < d.heritage.length; i++) {
 				if (m.id === d.heritage[i]) {
+                    m.highlightContinuum = true;
 					ancestral = true;
 				}
                 else if (typeof m.data !== "undefined")
                 {
                     if (m.data.id === d.heritage[i])
+                    {
+                        m.data.highlightContinuum = true;
                         ancestral = true;
+                    }
                 }
 			}
 			if (!ancestral) {
+                if (typeof m.data !== "undefined")
+                    m.data.highlightContinuum = false;
+                else
+                    m.highlightContinuum = false;
 				return this;
 			}
 			else
@@ -838,11 +851,17 @@ Phylowood.restoreMask = function() {
 	d3.selectAll("#divGeo .marker").select(
 		function(m) {
 			if (m.maskContinuum === false)
+            {
+                m.highlightContinuum = true;
 				return this;
+            }
             else if (typeof m.data !== "undefined")
             {
                 if (m.data.maskContinuum === false)
+                {
+                    m.data.highlightContinuum = true;
                     return this;
+                }
             }
 		}
 	).style("fill-opacity", 1.0);
@@ -954,6 +973,7 @@ Phylowood.drawTree = function() {
 				"y2phy": yEnd,
 				"color": "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)",
 				"maskContinuum": false,
+                "highlightContinuum": true,
 				"heritage": heritage,
                 "name": name
 			});
@@ -973,6 +993,7 @@ Phylowood.drawTree = function() {
 					"y2phy": yEnd,
 					"color": "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)",
 					"maskContinuum": false,
+                    "highlightContinuum": true,
 					"heritage": heritage,
                     "name": name
 					});
@@ -1193,7 +1214,8 @@ Phylowood.initAnimationData = function() {
                         "color": color[i],
                         "startClockTick": startClockIdx[i],
                         "endClockTick": endClockIdx[i],
-                        "maskContinuum": false
+                        "maskContinuum": false,
+                        "highlightContinuum": true
                     };
                     // console.log(j,i,x);
                     this.animationData[j].push(x);
@@ -1704,9 +1726,10 @@ Phylowood.drag = function(dx) {
 
 Phylowood.animStart = function() {
 
-	if (this.playTick === -1.0)
+	//if (this.playTick === -1.0)
     {
-        $( "#play" ).click();
+        $( "#play" ).button("option", { label: "play", icons: { primary: "ui-icon-play" }});
+        clearInterval(Phylowood.ticker);
 		this.animPause();
     }
 
@@ -1720,10 +1743,12 @@ Phylowood.animStart = function() {
 }
 
 Phylowood.animEnd = function() {
-	
-	if (this.playTick === 1.0)
+
+
+	//if (this.playTick === 1.0)
     {
-        $( "#play" ).click();
+        $( "#play" ).button("option", { label: "play", icons: { primary: "ui-icon-play" }});
+        clearInterval(Phylowood.ticker);
 		this.animPause();
     }
 
@@ -1765,11 +1790,12 @@ Phylowood.animFfwd = function() {
 }
 
 Phylowood.animPause = function() {
-	clearInterval(this.ticker);
+	clearInterval(Phylowood.ticker);
 }
 
 Phylowood.animPlay = function() {
 
+    console.log("called???");
     if (this.playerLoaded === true) {
 		this.ticker = setInterval(this.updateDisplay, this.clockTick / this.playSpeed); 
 	}
@@ -1798,9 +1824,9 @@ Phylowood.changeSlider = function() {
 		this.curClockTick = $( "#divSlider" ).slider("option","value");
 		var pos = Phylowood.tickToPxScale(Phylowood.curClockTick);
 		$( "#phyloSlider" ).attr("x1", pos).attr("x2", pos);
-	    Phylowood.updateMarkers();
+	    //Phylowood.updateMarkers();
 	}
-	this.sliderBusy = false;
+	//this.sliderBusy = false;
 }
 
 Phylowood.updateDisplay = function() {
@@ -1869,7 +1895,14 @@ Phylowood.updateMarkers = function() {
                             .attr("class","arc" + i)
                             .attr("transform", function(d) {
                                 return "translate(" + d.data.x + "," + d.data.y + ")";
-                            });
+                            })
+                            .attr("visibility", function(d) {
+                                if (d.data.highlightContinuum === true)
+                                    return "visible";
+                                else
+                                    return "hidden";
+                            })
+                            ;
 
                         // draw paths according to this.arc
                         this.paths[i] = this.arcs[i].append("svg:path")
@@ -1929,10 +1962,12 @@ Phylowood.updateMarkers = function() {
         {
             Phylowood.animEnd();
         }
-        else if (Phylowood.curClockTick <= 0)
+        else if (Phylowood.curClockTick < 0)
         {
             Phylowood.animStart();
         }
+
+        Phylowood.sliderBusy = false;
     }
 
     else if (this.modelType === "phylogeography" && this.areaType === "continuous")
