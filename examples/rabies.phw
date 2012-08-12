@@ -1,7 +1,9 @@
 #SETTINGS
-drawstyle standard
+
 modeltype phylogeography
 areatype continuous
+timestart 3030
+timeunit yr
 
 #GEO
 39.622 -78.803

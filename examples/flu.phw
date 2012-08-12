@@ -4,6 +4,8 @@ piestyle full
 drawtype pie
 modeltype phylogeography
 areatype discrete
+timestart 1990
+timeunit yr
 
 #GEO
 0 25

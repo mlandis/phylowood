@@ -146,6 +146,12 @@ Phylowood.initSettings = function() {
     
     // tokenize settingsTokens
     var settingsTokens;
+
+    this.phyloTimeOffset = 0.0;
+    this.phyloTimeUnit = "Myr";
+    this.modelType = "phylogeography";
+    this.areaType = "continuous";
+
     if (typeof this.settingsStr !== "undefined") {
         settingsTokens = this.settingsStr.split("\n");
 
@@ -160,6 +166,10 @@ Phylowood.initSettings = function() {
                 Phylowood.areaType = s[1];
             else if (s[0] === "piestyle")
                 Phylowood.pieStyle = s[1];
+            else if (s[0] === "timestart")
+                Phylowood.phyloTimeOffset =  parseFloat(s[1]);
+            else if (s[0] === "timeunit")
+                Phylowood.phyloTimeUnit = s[1];
         }
     }
 };
@@ -767,20 +777,11 @@ Phylowood.highlightContinuumForBranch = function(d) {
         .attr("transform", function() {
             return "rotate(270 " + d.x2phy + "," + d.y2phy + ")";
         })
-        .attr("dy", function() {
-            return 0;
-        /*
-            var bbox = this.getBBox();
-            var h = bbox.height;
-            var x = bbox.x;
-            if (x - h < 0) return x - h;
-        */
-        })
         .attr("dx", function() {
             var bbox = this.getBBox();
             var w = bbox.width;
             var y = bbox.y;
-            if (y - w < 0) return -w-10;
+            if (y - w < 0) return -(w + 10);
         })
         .style("fill", function() { return d.color; })
 
@@ -799,14 +800,20 @@ Phylowood.highlightContinuumForBranch = function(d) {
         .style("fill","white");
 
     this.svgFilter.append("svg:text")
-        .text(function() { return d.timeStart; })
+        .text(function() {
+            var t = d.timeStart + Phylowood.phyloTimeOffset;
+            return t.toFixed(2) + " " + Phylowood.phyloTimeUnit;
+        })
         .attr("x", 160)
         .attr("y", 60)
         .attr("class","info")
         .style("fill","white");
     
     this.svgFilter.append("svg:text")
-        .text(function() { return d.timeEnd; })
+        .text(function() {
+            var t = d.timeEnd + Phylowood.phyloTimeOffset;
+            return t.toFixed(2) + " " + Phylowood.phyloTimeUnit;
+        })
         .attr("x", 160)
         .attr("y", 80)
         .attr("class","info")
