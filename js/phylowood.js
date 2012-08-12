@@ -98,6 +98,7 @@ Phylowood.initialize = function() {
     }
 
     this.initPlayer();
+    this.initInfoBox();
 };
 
 Phylowood.parseInput = function() {
@@ -481,7 +482,7 @@ Phylowood.initTree = function() {
 	if (this.areaType === "continuous")
         this.clockTick = 100.0; // update per .1s
     else if (this.areaType === "discrete")
-        this.clockTick = 500.0;
+        this.clockTick = 200.0;
     else
         this.clockTick = 1000.0;
 	this.phyloTick = 0.0;
@@ -596,6 +597,8 @@ DRAW
 
 Phylowood.unmaskContinuumForBranch = function(d) {
 
+    Phylowood.forceRedraw = true;
+
 	// unmask heritage of branch				
 	this.treeSvg.selectAll("line").select(
 		function(b) {
@@ -622,7 +625,7 @@ Phylowood.unmaskContinuumForBranch = function(d) {
                 else if (typeof m.data !== "undefined")
                 {
                     if (m.data.id === d.heritage[i]) {
-                        m.maskContinuum = false;
+                        m.data.maskContinuum = false;
                         return this;
                     }
                 }
@@ -634,6 +637,8 @@ Phylowood.unmaskContinuumForBranch = function(d) {
 }
 
 Phylowood.maskContinuumForBranch = function(d) {
+
+    Phylowood.forceRedraw = true;
 
 	// mask heritage of branch
 	this.treeSvg.selectAll("line").select(
@@ -674,7 +679,7 @@ Phylowood.maskContinuumForBranch = function(d) {
                 else if (typeof m.data !== "undefined")
                 {
                     if (typeof m.data.maskContinuum !== "undefined")
-                        m.maskContinuum = true;
+                        m.data.maskContinuum = true;
                 }
 				return this;
 			}
@@ -687,6 +692,8 @@ Phylowood.maskContinuumForBranch = function(d) {
 
 
 Phylowood.highlightContinuumForBranch = function(d) {
+
+    Phylowood.forceRedraw = true;
 
 	// mask branches not part of heritage
 	this.treeSvg.selectAll("line").select(
@@ -702,7 +709,7 @@ Phylowood.highlightContinuumForBranch = function(d) {
 			else
 				return null;
 		}
-	).style("stroke-opacity", 0.2);
+	).style("stroke-opacity", 0.1);
 
 	// mask heritage of branch's markers
 	d3.selectAll("#divGeo .marker").select(
@@ -725,7 +732,7 @@ Phylowood.highlightContinuumForBranch = function(d) {
 			else
 				return null;
 		}
-	).style("fill-opacity", 0.2);
+	).style("fill-opacity", 0.1);
 	
     // mask heritage of branch's tracers
 	d3.selectAll("#divGeo .tracer").select(
@@ -748,10 +755,37 @@ Phylowood.highlightContinuumForBranch = function(d) {
 			else
 				return null;
 		}
-	).style("stroke-opacity", 0.2);
+	).style("stroke-opacity", 0.1);
+
+    // display lineage information
+    d3.selectAll("#divPhylo svg").append("svg:text")
+        .text(function() { return d.name; })
+        .attr("x", function() { return d.x2phy + 5; })
+        .attr("y", function() { return d.y2phy - 5; })
+        .attr("transform", function() {
+            return "rotate(270 " + d.x2phy + "," + d.y2phy + ")";
+        })
+        .attr("dy", function() {
+            return 0;
+        /*
+            var bbox = this.getBBox();
+            var h = bbox.height;
+            var x = bbox.x;
+            if (x - h < 0) return x - h;
+        */
+        })
+        .attr("dx", function() {
+            var bbox = this.getBBox();
+            var w = bbox.width;
+            var y = bbox.y;
+            if (y - w < 0) return y - w;
+        })
+        .style("fill", function() { return d.color; })
 }
 
 Phylowood.restoreMask = function() {
+
+    Phylowood.forceRedraw = true;
 
 	// unmask all branches 
 	this.treeSvg.selectAll("line").select(
@@ -786,6 +820,9 @@ Phylowood.restoreMask = function() {
             }
 		}
 	).style("stroke-opacity", 1.0);
+
+    // erase lineage information
+    d3.selectAll("#divPhylo svg text").remove();
 }
 
 Phylowood.drawTree = function() {
@@ -926,7 +963,6 @@ Phylowood.drawTree = function() {
 				.on("dblclick", function(d) {
 					Phylowood.maskContinuumForBranch(d);
 				});
-		
 }
 
 Phylowood.initNodeColors = function() {
@@ -968,6 +1004,9 @@ Phylowood.initAnimationData = function() {
 
     // animation data structure for generic drawType
 	this.animationData = [];
+    
+    // animation path strings for drawType==="pie"
+    this.animationPathStr = [];
 
     // discrete areas: values change, coordinates constant
     if (this.areaType === "discrete")
@@ -1083,6 +1122,118 @@ Phylowood.initAnimationData = function() {
         }
     }
 
+    else if (this.areaType === "discrete2")
+    {
+        // for each area
+        for (var j = 0; j < this.numAreas; j++)
+        {
+            this.animationData[j] = [];
+            this.animationPathStr[j] = [];
+
+            // pre-compute basic lineage information
+            var val = [];
+            var tClockStart = [],
+                tClockEnd = [],
+                tClockDuration = [],
+                startClockIdx = [],
+                endClockIdx = [],
+                numClockIdx = [],
+                color = [],
+                vTick = [];
+
+
+            for (var i = 0; i < this.numNodes; i++)
+            {
+                // get the node and its ancestor (or if it is the root, itself)
+                var p = this.nodesPostorder[i];
+                var q = p.ancestor || p;
+                //val[i] = 0;
+
+                // time lineage i exists
+                tClockStart[i]  = (p.timeStart / this.treeHeight) * this.endClockTime;
+                tClockEnd[i] = (p.timeEnd / this.treeHeight) * this.endClockTime;
+                tClockDuration[i] = tClockEnd[i] - tClockStart[i];
+                startClockIdx[i] = Math.ceil(tClockStart[i] / this.clockTick);
+                endClockIdx[i] = Math.ceil(tClockEnd[i] / this.clockTick);
+                numClockIdx[i] = endClockIdx[i] - startClockIdx[i] + 1;
+                
+                // lineage colors
+                var c = p.color;
+                color[i] = "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)";
+
+                // populate divergenceTicks[]
+                this.divergenceTicks.push(startClockIdx[i]);
+
+                // vals and vTicks 
+                val[i] = p.states[j];
+                vTick[i] = (q.states[j] - p.states[j]) / numClockIdx[i];
+                //console.log(val[i], p.states[j]);
+
+            }
+            
+            // use jQuery to gather array of unique divergence times
+            // used for animation of discrete pie
+            this.divergenceTicks = $.unique(this.divergenceTicks).reverse();
+
+            // UNEXPECTED BEHAVIOR
+            // console.log() DOES NOT report val correctly to Google Chrome
+            // alert() has no problem.
+            // alert(val);
+            // console.log(val);
+
+            // for each lineage (i indexes nodesPostorder)
+            for (var i = 0; i < this.numNodes; i++)
+            {
+                var saveV = false; 
+                var v = [];
+                var show = [];
+
+                // for each tick in [startClockIdx,endClockIdx] 
+                for (var k = this.numClockTicks; k >= 0; --k)
+           //     for (var k = 0; k < this.numClockTicks; k++)
+                {
+                    // get current value and tick size
+                    if (k >= startClockIdx[i] && k < endClockIdx[i])
+                    {
+                        v[k] = val[i];
+                        show[k] = 1;
+//                        if (val[i] > 0)
+                            saveV = true;
+                        val[i] += vTick[i];
+                    }
+                    else if (k === endClockIdx[i] && k === this.numClockTicks - 1)
+                    {
+                        saveV = true;
+                        show[k] = 1;
+                        v[k] = val[i];
+                    }
+                    else if (k < startClockIdx[i] || k >= endClockIdx[i])
+                    {
+                        show[k] = 0;
+                    }
+                    //else
+                        //valArray[k][i] = 0;
+                }
+                // console.log(valArray[k]);
+                if (saveV === true)
+                {
+                    x = {
+                        "id": this.nodesPostorder[i].id,
+                        "area": j,
+                        "val": v,
+                        "show": show,
+                        "coord": {"lat":this.geoCoords[j].lat, "lon":this.geoCoords[j].lon},
+                        "color": color[i],
+                        "startClockTick": startClockIdx[i],
+                        "endClockTick": endClockIdx[i],
+                        "maskContinuum": false
+                    };
+                    // console.log(j,i,x);
+                    this.animationData[j].push(x);
+                }
+            }
+        }
+    }
     // continuous areas: coordinates change, values constant
     // marker per lineage, interpolated values
     else if (this.areaType === "continuous")
@@ -1299,7 +1450,7 @@ Phylowood.drawMarkersDiscretePie = function() {
 	// div size (get dynamically)
 	var h = document.getElementById("divGeo").offsetHeight;
 	var w = document.getElementById("divGeo").offsetWidth;
-    var r = 5;
+    var r = 15;
 
 	// geo data
 	var data = this.animationData;
@@ -1351,7 +1502,8 @@ Phylowood.drawMarkersDiscretePie = function() {
     this.donut = d3.layout.pie().sort(null).value(function(d) {
         if (typeof d.val[Phylowood.curClockTick] !== "undefined")
         {
-            
+            //console.log(d);
+            if (d.maskContinuum === false) 
             //if (d.val[Phylowood.curClockTick] !== 0.0)
                 //&& d.startClockIdx >= Phylowood.curClockTick
                 //&& d.endClockIdx <= Phylowood.curClockTick
@@ -1359,6 +1511,8 @@ Phylowood.drawMarkersDiscretePie = function() {
             //    return Math.ceil(d.val[Phylowood.curClockTick]);
                 return 1;
             }
+            //else if (d.maskContinuum === true)
+            //    console.log(d);
         }
         //return null;
         return 0;
@@ -1496,7 +1650,7 @@ Phylowood.drawMap = function() {
 
 	// zoom out to fit all the foci	
 	// need to center map at {0,0} when zoom is 1 to put entire globe in view
-    var autoZoomSize = 0.1;
+    var autoZoomSize = 0.25;
 	while (minLat < map.extent()[0].lat) { 
 		map.zoomBy(-autoZoomSize); 
 		if (map.zoom() <= 2) { map.center({lat:20,lon:20}) }
@@ -1547,6 +1701,7 @@ Phylowood.initPlayer = function() {
 
 	this.playSpeed = 1.0;
     this.playTick = 1.0;
+    this.forceRedraw = false;
 	
 	$( "#divSlider" ).slider("option", "max", this.numClockTicks)
 		.slider("option", "min", 0)
@@ -1715,7 +1870,7 @@ Phylowood.updateMarkers = function() {
         if (Phylowood.prevZoom === Phylowood.map.zoom())
         {
             // cladogenesis (add / remove pie slices)
-            if ($.inArray(Phylowood.curClockTick, Phylowood.divergenceTicks) !== -1)
+            if ($.inArray(Phylowood.curClockTick, Phylowood.divergenceTicks) !== -1 || Phylowood.forceRedraw === true)
             {
                 console.log("cg", Phylowood.curClockTick);
                 for (var i = 0; i < this.numAreas; i++)
@@ -1726,11 +1881,12 @@ Phylowood.updateMarkers = function() {
                         //this.arcs[i] = this.pie[i].selectAll("g.arc")
                         //    .data(Phylowood.donut(Phylowood.animationData[i]))
                         //    .exit().remove();
-                        this.arcs[i] = this.pie[i].selectAll("path")
-                            .remove();
+//                        this.arcs[i] = this.pie[i].selectAll("path")
+//                            .remove();
+                        this.paths[i].remove();
 
                         // add new pie
-                        this.arcs[i] = this.pie[i].selectAll("g.arc")
+                        this.arcs[i] = this.pie[i].selectAll(".arc")
                             .data(Phylowood.donut(Phylowood.animationData[i]))
                           .enter().append("svg:g")
                             .attr("class","arc" + i)
@@ -1763,7 +1919,11 @@ Phylowood.updateMarkers = function() {
                                 if (d.data.val[Phylowood.curClockTick] !== d.data.val[Phylowood.curClockTick - Phylowood.playForward])
                                     return this;
                                 else
+                                {
+                                    //console.log(d);
+                                    ///console.log( d.data.val[Phylowood.curClockTick], d.data.val[Phylowood.curClockTick - Phylowood.playForward]);
                                     return null;
+                                }
                             })
                             .attr("d", Phylowood.arc);
            ;//             var x = d3.selectAll(".pie" + i + " path");
@@ -1864,10 +2024,15 @@ Phylowood.updateMarkers = function() {
 
         // should the animation be paused?
         if (Phylowood.dragPauseAnimation === false
-            && Phylowood.zoomPauseAnimation == false)
+            && Phylowood.zoomPauseAnimation === false
+            && Phylowood.forceRedraw === false)
         {
             Phylowood.prevClockTick = Phylowood.curClockTick;
             Phylowood.curClockTick += Phylowood.playTick;
+        }
+        else if (Phylowood.forceRedraw === true)
+        {
+            Phylowood.forceRedraw = false;
         }
         else if (Phylowood.dragPauseAnimation === true
             || Phylowood.zoomPauseAnimation === true)
@@ -1991,6 +2156,23 @@ Phylowood.updateMarkers = function() {
             clearInterval(Phylowood.ticker);
         }
     }
+}
+
+/***
+INFO BOX
+***/
+
+Phylowood.initInfoBox = function() {
+
+    
+    // lineage: name, id, color, 
+
+    /*
+    this.textareaInfo = d3.selectAll("#divFilter").append("text")
+        .attr("id", "textareaInfo");
+
+    */
+
 }
 
 /***

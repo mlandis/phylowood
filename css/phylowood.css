@@ -104,4 +104,11 @@ svg {
     resize:none;
 }
 
+#textareaInfo {
+    margin: 5px 5px 5px 5px;
+    height: 80px;
+    width: 830px;
+    resize:none;
+}
+
 .ui-slider .ui-slider-handle { buffer: 10px }
