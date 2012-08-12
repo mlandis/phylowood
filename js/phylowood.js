@@ -117,6 +117,7 @@ Phylowood.parseInput = function() {
 	this.treeStr = "";
 	this.geoStr = "";
 	this.statesStr = "";
+    this.settingsStr = "";
 	var parseSelect = "";
 	
 	for (var i = 0; i < inputTokens.length; i++) {
@@ -861,6 +862,7 @@ Phylowood.restoreMask = function() {
     // erase lineage information
     d3.selectAll("#divPhylo svg text").remove();
     this.svgFilter.selectAll(".info").remove();
+    //transition().attr("visibility","hidden"); // fade out??
 }
 
 Phylowood.drawTree = function() {
@@ -1769,7 +1771,6 @@ Phylowood.animStop = function() {
 
 Phylowood.slideSlider = function() {
 
-    console.log("slideSlider");
 	this.curClockTick = $( "#divSlider" ).slider("option","value");
 	var pos = Phylowood.tickToPxScale(Phylowood.curClockTick);
 	$( "#phyloSlider" ).attr("x1", pos).attr("x2", pos);
@@ -1779,7 +1780,6 @@ Phylowood.slideSlider = function() {
 
 Phylowood.changeSlider = function() {
 
-    console.log("changeSlider");
 	if (typeof this.sliderBusy !== "undefined") {
 		this.curClockTick = $( "#divSlider" ).slider("option","value");
 		var pos = Phylowood.tickToPxScale(Phylowood.curClockTick);
