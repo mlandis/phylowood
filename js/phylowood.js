@@ -158,6 +158,8 @@ Phylowood.initSettings = function() {
                 Phylowood.modelType = s[1];
             else if (s[0] === "areatype")
                 Phylowood.areaType = s[1];
+            else if (s[0] === "piestyle")
+                Phylowood.pieStyle = s[1];
         }
     }
 };
@@ -1504,12 +1506,11 @@ Phylowood.drawMarkersDiscretePie = function() {
         {
             //console.log(d);
             if (d.maskContinuum === false) 
-            //if (d.val[Phylowood.curClockTick] !== 0.0)
-                //&& d.startClockIdx >= Phylowood.curClockTick
-                //&& d.endClockIdx <= Phylowood.curClockTick
             {
-            //    return Math.ceil(d.val[Phylowood.curClockTick]);
-                return 1;
+                if (Phylowood.pieStyle === "full")
+                    return Math.ceil(d.val[Phylowood.curClockTick]);
+                else if (Phylowood.pieStyle === "even")
+                    return 1;
             }
             //else if (d.maskContinuum === true)
             //    console.log(d);

@@ -1,5 +1,6 @@
 #SETTINGS
 
+piestyle full
 drawtype pie
 modeltype phylogeography
 areatype discrete
