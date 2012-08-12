@@ -502,6 +502,7 @@ Phylowood.initTree = function() {
 	this.phyloTick = (this.endPhyloTime - this.curPhyloTime) * (this.clockTick / this.endClockTime);
     this.numClockTicks = Math.ceil(this.endClockTime / this.clockTick) + 1;
     this.curClockTick = 0;
+    this.prevClockTick = 0;
 
 	// array of nodes by postorder traversal (for drawing the tree, F84 pruning, etc.)
 	this.nodesPostorder = [this.numNodes];
@@ -1100,7 +1101,47 @@ Phylowood.initAnimationData = function() {
             
             // use jQuery to gather array of unique divergence times
             // used for animation of discrete pie
-            this.divergenceTicks = $.unique(this.divergenceTicks).reverse();
+            //this.divergenceTicks = $.unique(this.divergenceTicks).reverse();
+            //this.dticks2 = $.unique(this.divergenceTicks.sort()).reverse();
+            
+            // ... I'm beginning to distrust console.log, but $.unique and .sort()
+            //     don't seem to produce the correct results.
+
+            
+            var temp = [ this.divergenceTicks[0] ];
+
+            
+            for (var i = 1; i < this.divergenceTicks.length; i++)
+            {
+                // already in temp[]?
+                var found = false;
+
+                for (var k = 0; k < temp.length; k++)
+                {
+                
+                    if (this.divergenceTicks[i] === temp[k])
+                    {
+                        found = true;
+                    }
+                }
+
+                
+                // if not in temp[], add in sorted order
+                if (found === false)
+                {
+                    var addIdx = 0;
+                    for (var k = 0; k < temp.length; k++)
+                    {
+                        if (this.divergenceTicks[i] > temp[k])
+                        {
+                            addIdx++;
+                        }
+                    }
+                    temp.splice(addIdx,1,this.divergenceTicks[i]);
+                }
+            }
+            this.divergenceTicks = temp;
+
 
             // UNEXPECTED BEHAVIOR
             // console.log() DOES NOT report val correctly to Google Chrome
@@ -1284,7 +1325,6 @@ Phylowood.drawMarkersContinuous = function() {
         .attr("r", function(d) {
             var v = Phylowood.pieRadius * d.val;
             return Math.pow(2, Phylowood.map.zoom() - Phylowood.bestZoom) * Math.sqrt(v);
-                //return Math.pow(Phylowood.map.zoom() / Phylowood.bestZoom, 4) * d.val * 3;
         })
         .attr("fill", function(d) { return d.color })
         .attr("stroke-width", 1)
@@ -1309,7 +1349,6 @@ Phylowood.drawMarkersContinuous = function() {
         .style("stroke-width", function() {
             var v = Phylowood.pieRadius * 0.5;
             return Math.pow(2, Phylowood.map.zoom() - Phylowood.bestZoom) * Math.sqrt(v);
-            //return Math.pow(Phylowood.map.zoom() / Phylowood.bestZoom, 4) * 2;
         });
     
     // rescale continuous markers if the map perspective changes
@@ -1353,7 +1392,6 @@ Phylowood.drawMarkersContinuous = function() {
 		    .attr("r", function(d) {
                 var v = Phylowood.pieRadius * d.val;
                 return Math.pow(2, Phylowood.map.zoom() - Phylowood.bestZoom) * Math.sqrt(v);
-                //return  Math.pow( Phylowood.map.zoom() / Phylowood.bestZoom, 4) * d.val * 3;
             });
 
         Phylowood.nodelines
@@ -1376,7 +1414,6 @@ Phylowood.drawMarkersContinuous = function() {
                     return d.y[Phylowood.curClockTick];
             })
             .style("stroke-width", function() {
-                //return Math.pow(Phylowood.map.zoom() / Phylowood.bestZoom, 4) * 2;
                 var v = Phylowood.pieRadius * 0.5;
                 return Math.pow(2, Phylowood.map.zoom() - Phylowood.bestZoom) * Math.sqrt(v);
             });
@@ -1420,13 +1457,11 @@ Phylowood.drawMarkersDiscretePie = function() {
         .innerRadius(function(d) { 
             var v = Phylowood.pieRadius * (1 - d.data.val[Phylowood.curClockTick]);
             return Math.pow(2, Phylowood.map.zoom() - Phylowood.bestZoom) * Math.sqrt(v)
-            //* Math.pow(Phylowood.map.zoom() / Phylowood.bestZoom, 5)
             ;
         })
         .outerRadius(function(d) {
             var v = Phylowood.pieRadius;
             return Math.pow(2, Phylowood.map.zoom() - Phylowood.bestZoom) * Math.sqrt(v)
-            //* Math.pow(Phylowood.map.zoom() / Phylowood.bestZoom, 5)
             ;
         });
 
@@ -1457,24 +1492,8 @@ Phylowood.drawMarkersDiscretePie = function() {
             //else if (d.maskContinuum === true)
             //    console.log(d);
         }
-        //return null;
         return 0;
     });
-
-    /*
-    this.donut2 = d3.layout.pie().sort(null).value(function(d) {
-        if (typeof d.val[Phylowood.curClockTick] !== "undefined")
-        {
-            if (d.val[Phylowood.curClockTick] !== 0.0
-                && d.startClockIdx >= Phylowood.curClockTick
-                && d.endClockIdx <= Phylowood.curClockTick)
-            {
-                return Math.ceil(d.val[Phylowood.curClockTick]);
-            }
-        }
-        //return null;
-        return 0;
-    });*/
 
     for (var i = 0; i < this.numAreas; i++) //this.numAreas; i++)
     {
@@ -1581,14 +1600,12 @@ Phylowood.drawMap = function() {
 		.add(po.image()
 		  .url(po.url("http://{S}tile.cloudmade.com"
 		  + "/5b7ebc9342d84da7b27ca499a238df9d" // http://cloudmade.com/register
-		  + "/999/256/{Z}/{X}/{Y}.png")
-//		  + "/44979/256/{Z}/{X}/{Y}.png")
-// 		  + "/998/256/{Z}/{X}/{Y}.png")
+		  + "/999/256/{Z}/{X}/{Y}.png") // dark, streets, fast
+//		  + "/44979/256/{Z}/{X}/{Y}.png") // dark, blank, slow
 		  .hosts(["a.", "b.", "c.", ""])))
 		.add(po.compass().pan("none"));
 	this.map = map;
 	
-
 	// zoom out to fit all the foci	
 	// need to center map at {0,0} when zoom is 1 to put entire globe in view
     var autoZoomSize = 0.25;
@@ -1610,7 +1627,6 @@ Phylowood.drawMap = function() {
 	}
 
 	this.bestZoom = map.zoom();	
-   
     this.prevZoom = map.zoom();
     this.zoomPauseAnimation = false;
     
@@ -1677,9 +1693,6 @@ Phylowood.initPlayer = function() {
 
 	this.playerLoaded = true;
 	
-	// show current year
-	// add tick marks for divergence events	
-
 };
 
 // drag time by delta x pixels for the phyloSlider line
@@ -1771,6 +1784,7 @@ Phylowood.animStop = function() {
 
 Phylowood.slideSlider = function() {
 
+    this.prevClockTick = this.curClockTick;
 	this.curClockTick = $( "#divSlider" ).slider("option","value");
 	var pos = Phylowood.tickToPxScale(Phylowood.curClockTick);
 	$( "#phyloSlider" ).attr("x1", pos).attr("x2", pos);
@@ -1810,12 +1824,35 @@ Phylowood.updateMarkers = function() {
                 this.arcs[i] = this.pie[i].selectAll("g.arc");
             }
         }
-        
+       
+        // force redraw if curClockTick has passed over a divergence event
+        if (Phylowood.curClockTick !== Phylowood.prevClockTick + Phylowood.playTick)
+        {
+            //console.log(phw.curClockTick,phw.prevClockTick);
+
+            var curIdx = 0,
+                prevIdx = 0;
+
+            for (var i = 0; i < Phylowood.divergenceTicks.length; i++)
+            {
+                //console.log(i, phw.divergenceTicks[i], phw.curClockTick, phw.prevClockTick, curIdx, prevIdx);
+                if (Phylowood.curClockTick > Phylowood.divergenceTicks[i])
+                    curIdx = i;
+                if (Phylowood.prevClockTick > Phylowood.divergenceTicks[i])
+                    prevIdx = i;
+            }
+
+            if (curIdx !== prevIdx) {
+                //console.log("force redraw");
+                Phylowood.forceRedraw = true;
+            }
+        }
 
         if (Phylowood.prevZoom === Phylowood.map.zoom())
         {
             // cladogenesis (add / remove pie slices)
-            if ($.inArray(Phylowood.curClockTick, Phylowood.divergenceTicks) !== -1 || Phylowood.forceRedraw === true)
+            if ($.inArray(Phylowood.curClockTick, Phylowood.divergenceTicks) !== -1 
+                || Phylowood.forceRedraw === true)
             {
                 console.log("cg", Phylowood.curClockTick);
                 for (var i = 0; i < this.numAreas; i++)
@@ -1842,7 +1879,6 @@ Phylowood.updateMarkers = function() {
                     }
                 }
             }
-
 
             // anagenesis (animate pie depths)
             else
@@ -1872,7 +1908,8 @@ Phylowood.updateMarkers = function() {
         // should the animation be paused?
         if (Phylowood.dragPauseAnimation === false
             && Phylowood.zoomPauseAnimation === false
-            && Phylowood.forceRedraw === false)
+            && Phylowood.forceRedraw === false
+            && Phylowood.sliderBusy === false)
         {
             Phylowood.prevClockTick = Phylowood.curClockTick;
             Phylowood.curClockTick += Phylowood.playTick;
