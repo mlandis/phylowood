@@ -715,7 +715,7 @@ Phylowood.highlightContinuumForBranch = function(d) {
     Phylowood.forceRedraw = true;
 
 	// mask branches not part of heritage
-	this.treeSvg.selectAll("line").select(
+	this.treeSvg.selectAll("line.phylo").select(
 		function(b) {
 			var ancestral = false;
 			for (var i = 0; i < d.heritage.length; i++) {
@@ -806,26 +806,36 @@ Phylowood.highlightContinuumForBranch = function(d) {
 
     // permanent labels
     this.svgFilter.append("svg:text")
+        .attr("font-family", "Verdana")
+        .attr("font-size", "12")
         .text("Lineage name:")
         .attr("x", 10)
         .attr("y", 40)
         .style("fill","white")
     this.svgFilter.append("svg:text")
+        .attr("font-family", "Verdana")
+        .attr("font-size", "12")
         .text("Lineage id:")
         .attr("x", 10)
         .attr("y", 20)
         .style("fill","white")
     this.svgFilter.append("svg:text")
+        .attr("font-family", "Verdana")
+        .attr("font-size", "12")
         .text("Lineage start:")
         .attr("x", 10)
         .attr("y", 60)
         .style("fill","white")
     this.svgFilter.append("svg:text")
+        .attr("font-family", "Verdana")
+        .attr("font-size", "12")
         .text("Lineage end:")
         .attr("x", 10)
         .attr("y", 80)
         .style("fill","white");
     this.svgFilter.append("svg:text")
+        .attr("font-family", "Verdana")
+        .attr("font-size", "12")
         .text(function() { return d.name; })
         .attr("x", 160)
         .attr("y", 40)
@@ -833,6 +843,8 @@ Phylowood.highlightContinuumForBranch = function(d) {
         .style("fill","white");
 
     this.svgFilter.append("svg:text")
+        .attr("font-family", "Verdana")
+        .attr("font-size", "12")
         .text(function() { return d.id; })
         .attr("x", 160)
         .attr("y", 20)
@@ -840,6 +852,8 @@ Phylowood.highlightContinuumForBranch = function(d) {
         .style("fill","white");
 
     this.svgFilter.append("svg:text")
+        .attr("font-family", "Verdana")
+        .attr("font-size", "12")
         .text(function() {
             var t = d.timeStart + Phylowood.phyloTimeOffset;
             return t.toFixed(2) + " " + Phylowood.phyloTimeUnit;
@@ -850,6 +864,8 @@ Phylowood.highlightContinuumForBranch = function(d) {
         .style("fill","white");
     
     this.svgFilter.append("svg:text")
+        .attr("font-family", "Verdana")
+        .attr("font-size", "12")
         .text(function() {
             var t = d.timeEnd + Phylowood.phyloTimeOffset;
             return t.toFixed(2) + " " + Phylowood.phyloTimeUnit;
@@ -1028,10 +1044,11 @@ Phylowood.drawTree = function() {
 				
 	}
 	
-	this.treeDrawLines = this.treeSvg.selectAll("line")
+	this.treeDrawLines = this.treeSvg.selectAll("line.phylo")
 				.data(this.phyloDrawData)
 				.enter()
 				.append("svg:line")
+                .attr("class","phylo")
 				.attr("x1", function(d) { return d.x1phy; })
 				.attr("x2", function(d) { return d.x2phy; })
 				.attr("y1", function(d) { return d.y1phy; })
@@ -1059,14 +1076,14 @@ Phylowood.drawTree = function() {
 
     this.svgTimeTicks.append("svg:line")
         .attr("x1", 10)
-        .attr("y1", 10)
+        .attr("y1", 15)
         .attr("x2", 10)
         .attr("y2", divHtt)
         .style("stroke", "white");
 
     this.svgTimeTicks.append("svg:line")
         .attr("x1", divWtt - 10)
-        .attr("y1", 10)
+        .attr("y1", 15)
         .attr("x2", divWtt - 10)
         .attr("y2", divHtt)
         .style("stroke", "white");
@@ -1079,8 +1096,8 @@ Phylowood.drawTree = function() {
         .style("fill","white")
         .attr("font-family", "Verdana")
         .attr("font-size", "12")
-        .attr("x", 20)
-        .attr("y", 15);
+        .attr("x", 8)
+        .attr("y", 10);
 
     this.svgTimeTicks.append("svg:text")
         .text(function() {
@@ -1090,12 +1107,27 @@ Phylowood.drawTree = function() {
         .style("fill","white")
         .attr("font-family", "Verdana")
         .attr("font-size", "12")
-        .attr("x", divWtt -20)
-        .attr("y", 15)
+        .attr("x", divWtt - 10)
+        .attr("y", 10)
         .attr("dx", function() {
             var bbox = this.getBBox();
             return -bbox.width;
         });
+
+    this.svgTimeTicks.append("svg:text")
+     /*
+        .text(function() {
+            var t = Phylowood.phyloTimeOffset;
+            return t.toFixed(2) + " " + Phylowood.phyloTimeUnit;
+        })
+        */
+        .text("t=")
+        .style("fill","white")
+        .attr("font-family", "Verdana")
+        .attr("font-size", "12")
+        .attr("x", (divWtt - 20)/2)
+        .attr("y", 10);
+
 }
 
 Phylowood.initNodeColors = function() {
@@ -1831,10 +1863,13 @@ Phylowood.animStart = function() {
     this.playTick = 1.0;
 	this.playSpeed = 1.0;
 	
-    this.finalUpdateDisplay = true;
     this.prevClockTick = this.curClockTick;
 	this.curClockTick = 0;
-    this.updateDisplay(); 
+    if (this.finalUpdateDisplay === false)
+    {
+        this.finalUpdateDisplay = true;
+        this.updateDisplay();
+    }
     this.finalUpdateDisplay = false;
 }
 
@@ -1851,10 +1886,13 @@ Phylowood.animEnd = function() {
     this.playTick = 1.0;
 	this.playSpeed = 1.0;
 	
-    this.finalUpdateDisplay = true;
     this.prevClockTick = this.curClockTick;
 	this.curClockTick = this.numClockTicks - 1;
-    this.updateDisplay();  
+    if (this.finalUpdateDisplay === false)
+    {
+        this.finalUpdateDisplay = true;
+        this.updateDisplay();
+    }
     this.finalUpdateDisplay = false;
 }
 
@@ -1936,6 +1974,13 @@ Phylowood.updateDisplay = function() {
 
 	// update slider position
 	Phylowood.updateMarkers();
+    if (this.finalUpdateDisplay === true)
+    {
+        if (this.curClockTick >= this.numClockTicks - 1)
+            this.animEnd();
+        else if (this.curClockTick < 0)
+            this.animStart();
+    }
     Phylowood.updateSlider();
 }
 
@@ -2060,7 +2105,8 @@ Phylowood.updateMarkers = function() {
             && Phylowood.zoomPauseAnimation === false
             && Phylowood.forceRedraw === false
             && Phylowood.sliderBusy === false
-            && Phylowood.pauseAnimation === false)
+            && Phylowood.pauseAnimation === false
+            && Phylowood.finalUpdateDisplay === false)
         {
             //Phylowood.prevClockTick = Phylowood.curClockTick;
             Phylowood.curClockTick += Phylowood.playTick;
@@ -2078,15 +2124,16 @@ Phylowood.updateMarkers = function() {
         }*/
 
         // stop at boundaries
-        if (Phylowood.curClockTick >= Phylowood.numClockTicks
-            && Phylowood.finalUpdateDisplay === false)
+        if (Phylowood.curClockTick >= Phylowood.numClockTicks)
         {
-            Phylowood.animEnd();
+            this.finalUpdateDisplay = true;    
+            //Phylowood.animEnd();
         }
-        else if (Phylowood.curClockTick < 0
-            && Phylowood.finalUpdateDisplay === false)
+        else if (Phylowood.curClockTick < 0)
+            //&& Phylowood.finalUpdateDisplay === false)
         {
-            Phylowood.animStart();
+            this.finalUpdateDisplay = true;    
+            //Phylowood.animStart();
         }
 
         Phylowood.sliderBusy = false;
@@ -2198,11 +2245,13 @@ Phylowood.updateMarkers = function() {
         // stop at boundaries
         if (Phylowood.curClockTick >= Phylowood.numClockTicks)
         {
-            Phylowood.animEnd();
+            this.finalUpdateDisplay = true;
+            //Phylowood.animEnd();
         }
         else if (Phylowood.curClockTick <= 0)
         {
-            Phylowood.animStart();
+            this.finalUpdateDisplay = true;
+            //Phylowood.animStart();
         }
     }
 }
