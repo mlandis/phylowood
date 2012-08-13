@@ -1116,8 +1116,9 @@ Phylowood.initAnimationData = function() {
                 var c = p.color;
                 color[i] = "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)";
 
-                // populate divergenceTicks[]
-                this.divergenceTicks.push(startClockIdx[i]);
+                // populate divergenceTicks[], excluding 0
+                if (startClockIdx[i] !== 0)
+                    this.divergenceTicks.push(startClockIdx[i]);
             }
             
             // use jQuery to gather array of unique divergence times
@@ -1795,7 +1796,6 @@ Phylowood.animPause = function() {
 
 Phylowood.animPlay = function() {
 
-    console.log("called???");
     if (this.playerLoaded === true) {
 		this.ticker = setInterval(this.updateDisplay, this.clockTick / this.playSpeed); 
 	}
@@ -1880,13 +1880,13 @@ Phylowood.updateMarkers = function() {
             if ($.inArray(Phylowood.curClockTick, Phylowood.divergenceTicks) !== -1 
                 || Phylowood.forceRedraw === true)
             {
-                console.log("cg", Phylowood.curClockTick);
+                console.log("cg", Phylowood.curClockTick, Phylowood.forceRedraw);
                 for (var i = 0; i < this.numAreas; i++)
                 {
                     if (this.animationData[i].length !== 0)
                     {
                         // remove old pie 
-                        this.paths[i].remove();
+                        d3.selectAll("#divGeo g .arc" + i).remove();
 
                         // add new pie
                         this.arcs[i] = this.pie[i].selectAll(".arc")
@@ -1949,6 +1949,7 @@ Phylowood.updateMarkers = function() {
         }
         else if (Phylowood.forceRedraw === true)
         {
+            Phylowood.prevClockTick = Phylowood.curClockTick - Phylowood.playTick;
             Phylowood.forceRedraw = false;
         }
         else if (Phylowood.dragPauseAnimation === true
