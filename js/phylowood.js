@@ -1477,13 +1477,9 @@ Phylowood.drawMarkersDiscretePie = function() {
     this.arc = d3.svg.arc()
         .startAngle(function(d) { return d.startAngle; })
         .endAngle(function(d) { return d.endAngle; })
-        .innerRadius(function(d) { 
-            var v = Phylowood.pieRadius * (1 - d.data.val[Phylowood.curClockTick]);
-            return Math.pow(2, Phylowood.map.zoom() - Phylowood.bestZoom) * Math.sqrt(v)
-            ;
-        })
+        .innerRadius(0)
         .outerRadius(function(d) {
-            var v = Phylowood.pieRadius;
+            var v = Phylowood.pieRadius * d.data.val[Phylowood.curClockTick];
             return Math.pow(2, Phylowood.map.zoom() - Phylowood.bestZoom) * Math.sqrt(v)
             ;
         });
