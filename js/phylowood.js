@@ -627,14 +627,14 @@ Phylowood.maskContinuumForBranch = function(d) {
 					found = true;
 			}
 			//if (found) {
-			if (!found) {
+			if (found) {
 				b.maskContinuum = true;
 				return this;
 			}
 			else
 				return null;
 		}
-	).style("stroke-opacity", 0.2);
+	).style("stroke-opacity", 0.1);
 
 	// mask heritage of branch's markers
 	d3.selectAll("#divGeo .marker").select(
@@ -651,7 +651,7 @@ Phylowood.maskContinuumForBranch = function(d) {
                         found = true;
                 }
 			}
-			if (!found) {
+			if (found) {
                 if (typeof m.maskContinuum !== "undefined")
 				    m.maskContinuum = true;
                 else if (typeof m.data !== "undefined")
@@ -1478,7 +1478,35 @@ Phylowood.drawMarkersDiscretePie = function() {
 
     // pie chart variables
 
-    // view 1: arcs always have outer radius of the circle, inner radius changes (default)
+    // pieSliceStyle
+    if (this.pieSliceStyle === "full")
+    {
+        this.donut = d3.layout.pie().sort(null).value(function(d) {
+            if (typeof d.val[Phylowood.curClockTick] !== "undefined")
+            {
+                if (d.maskContinuum === false) 
+                {
+                    return Math.ceil(d.val[Phylowood.curClockTick]);
+                }
+            }
+            return 0;
+        });
+    }
+    else if (Phylowood.pieSliceStyle === "even")
+    {
+        this.donut = d3.layout.pie().sort(null).value(function(d) {
+            if (typeof d.val[Phylowood.curClockTick] !== "undefined")
+            {
+                if (d.maskContinuum === false) 
+                {
+                    return 1;
+                }
+            }
+            return 0;
+        });
+    }
+
+    // pieFillStyle
     if (this.pieFillStyle === "inwards")
     {
         this.arc = d3.svg.arc()
@@ -1493,7 +1521,6 @@ Phylowood.drawMarkersDiscretePie = function() {
     }
     else if (this.pieFillStyle === "outwards")
     {
-        // view 2: arcs always have inner radius at 0, outer radius changes (disabled)
         this.arc = d3.svg.arc()
             .startAngle(function(d) { return d.startAngle; })
             .endAngle(function(d) { return d.endAngle; })
@@ -1503,25 +1530,12 @@ Phylowood.drawMarkersDiscretePie = function() {
             });
     }
 
+
     this.pie = []; 
     this.arcs = [];
     this.paths = [];
 
-    this.donut = d3.layout.pie().sort(null).value(function(d) {
-        if (typeof d.val[Phylowood.curClockTick] !== "undefined")
-        {
-            if (d.maskContinuum === false) 
-            {
-                if (Phylowood.pieSliceStyle === "full")
-                    return Math.ceil(d.val[Phylowood.curClockTick]);
-                else if (Phylowood.pieSliceStyle === "even")
-                    return 1;
-            }
-        }
-        return 0;
-    });
-
-    for (var i = 0; i < this.numAreas; i++) //this.numAreas; i++)
+    for (var i = 0; i < this.numAreas; i++)
     {
         if (this.animationData[i].length !== 0)
         {
@@ -1815,25 +1829,28 @@ Phylowood.animStop = function() {
 
 Phylowood.slideSlider = function() {
 
+    console.log("sldSldr"); 
     this.prevClockTick = this.curClockTick;
 	this.curClockTick = $( "#divSlider" ).slider("option","value");
 	var pos = Phylowood.tickToPxScale(Phylowood.curClockTick);
 	$( "#phyloSlider" ).attr("x1", pos).attr("x2", pos);
 	this.sliderBusy = true;
-	this.updateDisplay();
+	//this.updateDisplay();
 }
 
 Phylowood.changeSlider = function() {
 
+    console.log("chgSldr");
 	if (typeof this.sliderBusy !== "undefined") {
 		this.curClockTick = $( "#divSlider" ).slider("option","value");
 		var pos = Phylowood.tickToPxScale(Phylowood.curClockTick);
 		$( "#phyloSlider" ).attr("x1", pos).attr("x2", pos);
-	    //Phylowood.updateMarkers();
+	    Phylowood.updateMarkers();
 	}
 	//this.sliderBusy = false;
 }
 
+/*
 Phylowood.updateDisplay = function() {
 
 	// update slider position
@@ -1843,6 +1860,7 @@ Phylowood.updateDisplay = function() {
 	
 	Phylowood.updateMarkers();
 }
+*/
 
 Phylowood.updateMarkers = function() {
 
@@ -1873,6 +1891,9 @@ Phylowood.updateMarkers = function() {
                     prevIdx = i;
             }
 
+
+            console.log(i, phw.curClockTick, phw.prevClockTick, curIdx, prevIdx);
+
             if (curIdx !== prevIdx) {
                 //console.log("force redraw");
                 Phylowood.forceRedraw = true;
@@ -1887,7 +1908,7 @@ Phylowood.updateMarkers = function() {
             if ($.inArray(Phylowood.curClockTick, Phylowood.divergenceTicks) !== -1 
                 || Phylowood.forceRedraw === true)
             {
-                console.log("cg", Phylowood.curClockTick, Phylowood.forceRedraw);
+                console.log("cg", Phylowood.curClockTick, Phylowood.prevClockTick, Phylowood.forceRedraw);
                 for (var i = 0; i < this.numAreas; i++)
                 {
                     if (this.animationData[i].length !== 0)
