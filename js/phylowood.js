@@ -150,6 +150,8 @@ Phylowood.initSettings = function() {
 
     this.phyloTimeOffset = 0.0;
     this.phyloTimeUnit = "Myr";
+    this.pieSliceStyle = "even";
+    this.pieFillStyle = "inwards";
     this.modelType = "phylogeography";
     this.areaType = "continuous";
 
@@ -165,12 +167,14 @@ Phylowood.initSettings = function() {
                 Phylowood.modelType = s[1];
             else if (s[0] === "areatype")
                 Phylowood.areaType = s[1];
-            else if (s[0] === "piestyle")
-                Phylowood.pieStyle = s[1];
+            else if (s[0] === "pieslicestyle")
+                Phylowood.pieSliceStyle = s[1];
             else if (s[0] === "timestart")
                 Phylowood.phyloTimeOffset =  parseFloat(s[1]);
             else if (s[0] === "timeunit")
                 Phylowood.phyloTimeUnit = s[1];
+            else if (s[0] === "piefillstyle")
+                Phylowood.pieFillStyle = s[1];
         }
     }
 };
@@ -1473,47 +1477,46 @@ Phylowood.drawMarkersDiscretePie = function() {
     }
 
     // pie chart variables
-    // initializiation
-    this.arc = d3.svg.arc()
-        .startAngle(function(d) { return d.startAngle; })
-        .endAngle(function(d) { return d.endAngle; })
-        .innerRadius(function(d) { 
-            var v = Phylowood.pieRadius * (1 - d.data.val[Phylowood.curClockTick]);
-            return Math.pow(2, Phylowood.map.zoom() - Phylowood.bestZoom) * Math.sqrt(v)
-            ;
-        })
-        .outerRadius(function(d) {
-            var v = Phylowood.pieRadius;
-            return Math.pow(2, Phylowood.map.zoom() - Phylowood.bestZoom) * Math.sqrt(v)
-            ;
-        });
 
-    // animation
-    this.arc2 = d3.svg.arc()
-        .startAngle(function(d) { return d.startAngle; })
-        .endAngle(function(d) { return d.endAngle; })
-        .innerRadius(function(d) { return d.innerRadius; })
-        .outerRadius(function(d) { return d.outerRadius; });
+    // view 1: arcs always have outer radius of the circle, inner radius changes (default)
+    if (this.pieFillStyle === "inwards")
+    {
+        this.arc = d3.svg.arc()
+            .startAngle(function(d) { return d.startAngle; })
+            .endAngle(function(d) { return d.endAngle; })
+            .innerRadius(function(d) { 
+                return Phylowood.zoomScale * Math.sqrt(Phylowood.pieRadius * (1 - d.data.val[Phylowood.curClockTick]));
+            })
+            .outerRadius(function(d) {
+                return Phylowood.zoomScale * Math.sqrt(Phylowood.pieRadius);
+            });
+    }
+    else if (this.pieFillStyle === "outwards")
+    {
+        // view 2: arcs always have inner radius at 0, outer radius changes (disabled)
+        this.arc = d3.svg.arc()
+            .startAngle(function(d) { return d.startAngle; })
+            .endAngle(function(d) { return d.endAngle; })
+            .innerRadius(0)
+            .outerRadius(function(d) {
+                return Phylowood.zoomScale * Math.sqrt(Phylowood.pieRadius * (d.data.val[Phylowood.curClockTick]));
+            });
+    }
 
-    // construct pie charts
     this.pie = []; 
-    //this.donut = [];
     this.arcs = [];
     this.paths = [];
 
     this.donut = d3.layout.pie().sort(null).value(function(d) {
         if (typeof d.val[Phylowood.curClockTick] !== "undefined")
         {
-            //console.log(d);
             if (d.maskContinuum === false) 
             {
-                if (Phylowood.pieStyle === "full")
+                if (Phylowood.pieSliceStyle === "full")
                     return Math.ceil(d.val[Phylowood.curClockTick]);
-                else if (Phylowood.pieStyle === "even")
+                else if (Phylowood.pieSliceStyle === "even")
                     return 1;
             }
-            //else if (d.maskContinuum === true)
-            //    console.log(d);
         }
         return 0;
     });
@@ -1527,7 +1530,7 @@ Phylowood.drawMarkersDiscretePie = function() {
                 .attr("class", "pie" + i);
 
             // center arcs at foci
-            this.arcs[i] = this.pie[i].selectAll("g.arc")
+            this.arcs[i] = this.pie[i].selectAll("g.arc" + i)
                 .data(Phylowood.donut(data[i]))
               .enter().append("svg:g")
                 .attr("class","arc" + i)
@@ -1562,6 +1565,7 @@ Phylowood.drawMarkersDiscretePie = function() {
                 })
 
                 // adjust for zoom
+                Phylowood.zoomScale = Math.pow(2, Phylowood.map.zoom() - Phylowood.bestZoom);
                 Phylowood.paths[i].attr("d", Phylowood.arc);
             }
         }
@@ -1669,6 +1673,7 @@ Phylowood.drawMap = function() {
     this.maxLon = maxLon;
     this.minLon = minLon;
     this.areaDensity = (maxLat - minLat) * (maxLon- minLon) / coords.length;
+    this.zoomScale = Math.pow(2, Phylowood.map.zoom() - Phylowood.bestZoom);
 };
 
 /***
@@ -1737,7 +1742,7 @@ Phylowood.animStart = function() {
 	this.playSpeed = 1.0;
 	
 	this.curClockTick = 0;
-	var pos = this.tickToPxScale(Phylowood.curClockTick);
+	var pos = this.tickToPxScale(0);
 	$( "#phyloSlider" ).attr("x1", pos).attr("x2", pos);
 	$( "#divSlider" ).slider("option", "value", 0);
 
@@ -1847,7 +1852,7 @@ Phylowood.updateMarkers = function() {
         {
             if (Phylowood.animationData[i].length !== 0)
             {
-                this.arcs[i] = this.pie[i].selectAll("g.arc");
+                this.arcs[i] = this.pie[i].selectAll(".arc" + i);
             }
         }
        
@@ -1877,6 +1882,8 @@ Phylowood.updateMarkers = function() {
         if (Phylowood.prevZoom === Phylowood.map.zoom())
         {
             // cladogenesis (add / remove pie slices)
+            // NOTE: this seems to be the bottleneck for performance
+            //       sensitive to large numbers of areas or lineages
             if ($.inArray(Phylowood.curClockTick, Phylowood.divergenceTicks) !== -1 
                 || Phylowood.forceRedraw === true)
             {
@@ -1886,10 +1893,11 @@ Phylowood.updateMarkers = function() {
                     if (this.animationData[i].length !== 0)
                     {
                         // remove old pie 
-                        d3.selectAll("#divGeo g .arc" + i).remove();
+                        //d3.selectAll("#divGeo g .arc" + i).remove();
+                        this.arcs[i].remove();
 
                         // add new pie
-                        this.arcs[i] = this.pie[i].selectAll(".arc")
+                        this.arcs[i] = this.pie[i].selectAll(".arc" + i)
                             .data(Phylowood.donut(Phylowood.animationData[i]))
                           .enter().append("svg:g")
                             .attr("class","arc" + i)
