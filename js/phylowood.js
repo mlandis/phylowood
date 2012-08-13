@@ -1050,6 +1050,52 @@ Phylowood.drawTree = function() {
 				.on("dblclick", function(d) {
 					Phylowood.maskContinuumForBranch(d);
 				});
+
+    // #divTimeTicks settings
+	divHtt = $("#divTimeTicks").height();
+	divWtt = $("#divTimeTicks").width();
+
+    this.svgTimeTicks = d3.selectAll("#divTimeTicks").append("svg");
+
+    this.svgTimeTicks.append("svg:line")
+        .attr("x1", 10)
+        .attr("y1", 10)
+        .attr("x2", 10)
+        .attr("y2", divHtt)
+        .style("stroke", "white");
+
+    this.svgTimeTicks.append("svg:line")
+        .attr("x1", divWtt - 10)
+        .attr("y1", 10)
+        .attr("x2", divWtt - 10)
+        .attr("y2", divHtt)
+        .style("stroke", "white");
+
+    this.svgTimeTicks.append("svg:text")
+        .text(function() {
+            var t = Phylowood.phyloTimeOffset;
+            return t.toFixed(2) + " " + Phylowood.phyloTimeUnit;
+        })
+        .style("fill","white")
+        .attr("font-family", "Verdana")
+        .attr("font-size", "12")
+        .attr("x", 20)
+        .attr("y", 15);
+
+    this.svgTimeTicks.append("svg:text")
+        .text(function() {
+            var t = Phylowood.endPhyloTime + Phylowood.phyloTimeOffset;
+            return t.toFixed(2) + " " + Phylowood.phyloTimeUnit;
+        })
+        .style("fill","white")
+        .attr("font-family", "Verdana")
+        .attr("font-size", "12")
+        .attr("x", divWtt -20)
+        .attr("y", 15)
+        .attr("dx", function() {
+            var bbox = this.getBBox();
+            return -bbox.width;
+        });
 }
 
 Phylowood.initNodeColors = function() {
@@ -1710,6 +1756,8 @@ Phylowood.drawMap = function() {
     this.minLon = minLon;
     this.areaDensity = (maxLat - minLat) * (maxLon- minLon) / coords.length;
     this.zoomScale = Math.pow(2, Phylowood.map.zoom() - Phylowood.bestZoom);
+
+
 };
 
 /***
@@ -2165,10 +2213,7 @@ INFO BOX
 
 Phylowood.initFilter = function() {
 
-    
     this.svgFilter = d3.selectAll("#divFilter").append("svg");
-   
-
 }
 
 /***

@@ -11,6 +11,11 @@ svg {
 	display: block;
 }
 
+text {
+    font-family:"Verdana";
+    font-size="12";
+}
+
 #container {
 	margin-left: auto; 
 	margin-right: auto;
@@ -23,22 +28,23 @@ svg {
 	background-color:#717679;
 	top:5px;
 	width:1200px;
+    height:80px;
 	float:left;
 }
 
 #divCtrl {
 	position: absolute;
-	top:15px;
-	left:1050px;
+	top:80px;
+    left:0px;
     font-size:small;
-	height:80px;
+	height:20px;
 	width:1200px;
 	float:left;
 }
 
 #divPhylo {
 	position: absolute;
-	top:80px;
+	top:130px;
 	left:0px;
     padding: 10px;
 	background-color:#818689;
@@ -47,9 +53,30 @@ svg {
 	float:left;
 }
 
+#divTimeTicks {
+    position: absolute;
+    top:110px;
+    left:0px;
+    background-color:#818689;
+    height:20px;
+	width:350px;
+    float:;
+}
+
+#divTimeTicksSpacer {
+    position: absolute;
+    top:110px;
+    left:350px;
+	background-color:#818689;
+    height:20px;
+	width:850px;
+    float:left;
+}
+
+
 #divGeo {
 	position: absolute;
-	top:80px;
+	top:130px;
 	left:350px;
 	background-color:#818689;
 	height:500px;
@@ -59,7 +86,7 @@ svg {
 
 #divPlay {
 	position: absolute;
-	top:580px;
+	top:620px;
 	left:0px;
 	background-color:#818689;
 	height:100px;
@@ -82,7 +109,7 @@ svg {
 
 #divFilter {
 	position:absolute;
-	top:580px;
+	top:620px;
 	left:350px;
 	background-color:#818689;
 	height:100px;
