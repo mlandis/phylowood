@@ -1439,7 +1439,6 @@ Phylowood.initAnimationData = function() {
 };
 
 Phylowood.showMarkerInfo = function(m) {
-    console.log(m);
     var lat, lon, val, name;
     if (typeof m.data !== "undefined")
     {
