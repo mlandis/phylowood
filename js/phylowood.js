@@ -515,6 +515,7 @@ Phylowood.initTree = function() {
     this.curClockTick = 0;
     this.prevClockTick = 0;
 
+
 	// array of nodes by postorder traversal (for drawing the tree, F84 pruning, etc.)
 	this.nodesPostorder = [this.numNodes];
 	var poIdx = 0;
@@ -809,77 +810,75 @@ Phylowood.highlightContinuumForBranch = function(d) {
             var y = bbox.y;
             if (y - w < 0) return -(w + 10);
         })
+        .attr("dy", function() {
+            var bbox = this.getBBox();
+            var h = bbox.height;
+            var x = bbox.x;
+            if (x - h < 0) return (h + 5);
+        })
         .style("fill", function() { return d.color; })
 
     // permanent labels
     this.svgFilter.append("svg:text")
-        .attr("font-family", "Verdana")
-        .attr("font-size", "12")
         .text("Lineage name:")
-        .attr("x", 10)
+        .attr("x", 435)
         .attr("y", 40)
-        .style("fill","white")
+        .attr("class","infoBranch")
+        .style("fill","white");
+
     this.svgFilter.append("svg:text")
-        .attr("font-family", "Verdana")
-        .attr("font-size", "12")
         .text("Lineage id:")
-        .attr("x", 10)
+        .attr("x", 435)
         .attr("y", 20)
-        .style("fill","white")
+        .attr("class","infoBranch")
+        .style("fill","white");
+
     this.svgFilter.append("svg:text")
-        .attr("font-family", "Verdana")
-        .attr("font-size", "12")
         .text("Lineage start:")
-        .attr("x", 10)
+        .attr("x", 435)
         .attr("y", 60)
-        .style("fill","white")
+        .attr("class","infoBranch")
+        .style("fill","white");
+
     this.svgFilter.append("svg:text")
-        .attr("font-family", "Verdana")
-        .attr("font-size", "12")
         .text("Lineage end:")
-        .attr("x", 10)
+        .attr("x", 435)
         .attr("y", 80)
+        .attr("class","infoBranch")
         .style("fill","white");
+
     this.svgFilter.append("svg:text")
-        .attr("font-family", "Verdana")
-        .attr("font-size", "12")
         .text(function() { return d.name; })
-        .attr("x", 160)
+        .attr("x", 595)
         .attr("y", 40)
-        .attr("class","info")
+        .attr("class","infoBranch")
         .style("fill","white");
 
     this.svgFilter.append("svg:text")
-        .attr("font-family", "Verdana")
-        .attr("font-size", "12")
         .text(function() { return d.id; })
-        .attr("x", 160)
+        .attr("x", 595)
         .attr("y", 20)
-        .attr("class","info")
+        .attr("class","infoBranch")
         .style("fill","white");
 
     this.svgFilter.append("svg:text")
-        .attr("font-family", "Verdana")
-        .attr("font-size", "12")
         .text(function() {
             var t = d.timeStart + Phylowood.phyloTimeOffset;
             return t.toFixed(2) + " " + Phylowood.phyloTimeUnit;
         })
-        .attr("x", 160)
+        .attr("x", 595)
         .attr("y", 60)
-        .attr("class","info")
+        .attr("class","infoBranch")
         .style("fill","white");
     
     this.svgFilter.append("svg:text")
-        .attr("font-family", "Verdana")
-        .attr("font-size", "12")
         .text(function() {
             var t = d.timeEnd + Phylowood.phyloTimeOffset;
             return t.toFixed(2) + " " + Phylowood.phyloTimeUnit;
         })
-        .attr("x", 160)
+        .attr("x", 595)
         .attr("y", 80)
-        .attr("class","info")
+        .attr("class","infoBranch")
         .style("fill","white");
 }
 
@@ -929,7 +928,7 @@ Phylowood.restoreMask = function() {
 
     // erase lineage information
     d3.selectAll("#divPhylo svg text").remove();
-    this.svgFilter.selectAll("text").remove();
+    this.svgFilter.selectAll(".infoBranch").remove();
     //transition().attr("visibility","hidden"); // fade out??
 }
 
@@ -1108,7 +1107,7 @@ Phylowood.drawTree = function() {
             return t.toFixed(2) + " " + Phylowood.phyloTimeUnit;
         })
         .style("fill","white")
-        .attr("font-family", "Verdana")
+        .attr("font-family", "Courier")
         .attr("font-size", "12")
         .attr("x", 8 + this.xRoot)
         .attr("y", 10);
@@ -1119,7 +1118,7 @@ Phylowood.drawTree = function() {
             return t.toFixed(2) + " " + Phylowood.phyloTimeUnit;
         })
         .style("fill","white")
-        .attr("font-family", "Verdana")
+        .attr("font-family", "Courier")
         .attr("font-size", "12")
         .attr("x", divWtt - 10)
         .attr("y", 10)
@@ -1131,7 +1130,7 @@ Phylowood.drawTree = function() {
     this.svgTimeTicks.append("svg:text")
         .text("t=")
         .style("fill","white")
-        .attr("font-family", "Verdana")
+        .attr("font-family", "Courier")
         .attr("font-size", "12")
         .attr("x", (divWtt - 20 - this.xRoot)/2 - 15)
         .attr("y", 10);
@@ -1139,10 +1138,30 @@ Phylowood.drawTree = function() {
     this.curPhyloTimeText = this.svgTimeTicks.append("svg:text")
         .text("")
         .style("fill","white")
-        .attr("font-family", "Verdana")
+        .attr("font-family", "Courier")
         .attr("font-size", "12")
         .attr("x", (divWtt - 20 - this.xRoot)/2)
         .attr("y", 10);
+    
+    
+    /*
+
+    // lineages per tick?? e.g.
+    // n = " "
+    this.svgFilter.append("svg:text")
+        .text("Active lineages:")
+        .attr("x", 10)
+        .attr("y", 40)
+        .attr("class","infoPerm")
+        .style("fill","white");
+    
+    this.curPhyloLineageCount = this.svgFilter.append("svg:text")
+        .text("")
+        .attr("x", 190)
+        .attr("y", 40)
+        .attr("class","infoPerm")
+        .style("fill","white");
+    */
 }
 
 Phylowood.initNodeColors = function() {
@@ -1320,6 +1339,7 @@ Phylowood.initAnimationData = function() {
                 if (saveV === true)
                 {
                     x = {
+                        "name": this.nodesPostorder[i].name,
                         "id": this.nodesPostorder[i].id,
                         "area": j,
                         "val": v,
@@ -1403,10 +1423,9 @@ Phylowood.initAnimationData = function() {
                         "lon":String(lon)
                     };
                 }
-                /*
-                */
             }
             this.animationData.push({
+                "name": p.name,
                 "id": p.id,
                 "val": val,
                 "coord": coordArray,
@@ -1417,6 +1436,84 @@ Phylowood.initAnimationData = function() {
             });
         }
 	}
+};
+
+Phylowood.showMarkerInfo = function(m) {
+    console.log(m);
+    var lat, lon, val, name;
+    if (typeof m.data !== "undefined")
+    {
+        val = m.data.val[Phylowood.curClockTick];
+        lat = m.data.coord.lat;
+        lon = m.data.coord.lon;
+        name = m.data.name;
+    }
+    else if (typeof m.coord !== "undefined")
+    {
+        val = m.val;
+        lat = m.coord[Phylowood.curClockTick].lat;
+        lon = m.coord[Phylowood.curClockTick].lon;
+        name = m.name;
+    }
+    this.svgFilter.append("svg:text")
+        .text("Marker name:")
+        .attr("x", 10)
+        .attr("y", 20)
+        .attr("class","infoMarker")
+        .style("fill","white");
+
+    this.svgFilter.append("svg:text")
+        .text("Marker latitude:")
+        .attr("x", 10)
+        .attr("y", 40)
+        .attr("class","infoMarker")
+        .style("fill","white");
+
+    this.svgFilter.append("svg:text")
+        .text("Marker longitude:")
+        .attr("x", 10)
+        .attr("y", 60)
+        .attr("class","infoMarker")
+        .style("fill","white");
+
+    this.svgFilter.append("svg:text")
+        .text("Marker value:")
+        .attr("x", 10)
+        .attr("y", 80)
+        .attr("class","infoMarker")
+        .style("fill","white");
+
+    this.svgFilter.append("svg:text")
+        .text(name)
+        .attr("x", 190)
+        .attr("y", 20)
+        .attr("class","infoMarker")
+        .style("fill","white");
+
+    this.svgFilter.append("svg:text")
+        .text(lat)
+        .attr("x", 190)
+        .attr("y", 40)
+        .attr("class","infoMarker")
+        .style("fill","white");
+
+    this.svgFilter.append("svg:text")
+        .text(lon)
+        .attr("x", 190)
+        .attr("y", 60)
+        .attr("class","infoMarker")
+        .style("fill","white");
+    
+    this.svgFilter.append("svg:text")
+        .text(val.toFixed(2))
+        .attr("x", 190)
+        .attr("y", 80)
+        .attr("class","infoMarker")
+        .style("fill","white");
+};
+
+Phylowood.eraseMarkerInfo = function(d) {
+    this.svgFilter.selectAll(".infoMarker").remove();
 };
 
 Phylowood.drawMarkersContinuous = function() {
@@ -1470,7 +1567,14 @@ Phylowood.drawMarkersContinuous = function() {
                 return "visible";
             else
                 return "hidden";
-        });
+        })
+        .on("mouseover", function(d) {
+            Phylowood.showMarkerInfo(d);
+        })
+        .on("mouseout", function(d) {
+            Phylowood.eraseMarkerInfo(d);
+        })
+        ;
 
     // draw lines
     this.nodelines = layer.selectAll("line.tracer")
@@ -1669,7 +1773,13 @@ Phylowood.drawMarkersDiscretePie = function() {
               .append("svg:path")
                 .attr("class", "marker")
                 .attr("fill", function(d) { return d.data.color; })
-                .attr("d", Phylowood.arc);
+                .attr("d", Phylowood.arc)
+                .on("mouseover", function(d) {
+                    Phylowood.showMarkerInfo(d);
+                })
+                .on("mouseout", function(d) {
+                    Phylowood.eraseMarkerInfo(d);
+                });
         /*
             // center arcs at foci
             this.arcs[i] = this.pie[i].selectAll("g.arc" + i)
@@ -2133,6 +2243,13 @@ Phylowood.updateMarkers = function() {
                                     return "hidden";
                             })
                             .attr("d", Phylowood.arc)
+                            .on("mouseover", function(d) {
+                                Phylowood.showMarkerInfo(d);
+                            })
+                            .on("mouseout", function(d) {
+                                Phylowood.eraseMarkerInfo(d);
+                            })
+                            ;
 
                             // can I select for non-zero slices after svg:g are created?
                             /*
@@ -2358,6 +2475,7 @@ INFO BOX
 Phylowood.initFilter = function() {
 
     this.svgFilter = d3.selectAll("#divFilter").append("svg");
+    
 }
 
 /***
