@@ -1038,7 +1038,12 @@ Phylowood.drawTree = function() {
 					"heritage": heritage,
                     "name": name
 					});
+
 			}
+
+            // get x root position for time ticks
+            else
+                this.xRoot = xEnd;
 				
 	//	}
 				
@@ -1075,10 +1080,11 @@ Phylowood.drawTree = function() {
     this.svgTimeTicks = d3.selectAll("#divTimeTicks").append("svg");
 
     this.svgTimeTicks.append("svg:line")
-        .attr("x1", 10)
+        .attr("x1", 10 + this.xRoot)
         .attr("y1", 15)
-        .attr("x2", 10)
+        .attr("x2", 10 + this.xRoot)
         .attr("y2", divHtt)
+		.style("stroke-width", 3)
         .style("stroke", "white");
 
     this.svgTimeTicks.append("svg:line")
@@ -1086,6 +1092,7 @@ Phylowood.drawTree = function() {
         .attr("y1", 15)
         .attr("x2", divWtt - 10)
         .attr("y2", divHtt)
+		.style("stroke-width", 3)
         .style("stroke", "white");
 
     this.svgTimeTicks.append("svg:text")
@@ -1096,7 +1103,7 @@ Phylowood.drawTree = function() {
         .style("fill","white")
         .attr("font-family", "Verdana")
         .attr("font-size", "12")
-        .attr("x", 8)
+        .attr("x", 8 + this.xRoot)
         .attr("y", 10);
 
     this.svgTimeTicks.append("svg:text")
@@ -1115,19 +1122,20 @@ Phylowood.drawTree = function() {
         });
 
     this.svgTimeTicks.append("svg:text")
-     /*
-        .text(function() {
-            var t = Phylowood.phyloTimeOffset;
-            return t.toFixed(2) + " " + Phylowood.phyloTimeUnit;
-        })
-        */
         .text("t=")
         .style("fill","white")
         .attr("font-family", "Verdana")
         .attr("font-size", "12")
-        .attr("x", (divWtt - 20)/2)
+        .attr("x", (divWtt - 20 - this.xRoot)/2 - 15)
         .attr("y", 10);
 
+    this.curPhyloTimeText = this.svgTimeTicks.append("svg:text")
+        .text("")
+        .style("fill","white")
+        .attr("font-family", "Verdana")
+        .attr("font-size", "12")
+        .attr("x", (divWtt - 20 - this.xRoot)/2)
+        .attr("y", 10);
 }
 
 Phylowood.initNodeColors = function() {
@@ -1805,7 +1813,9 @@ Phylowood.initPlayer = function() {
     this.forceRedraw = false;
     this.sliderLock = false;
     this.finalUpdateDisplay = false;
-    this.pauseAnimation = false;
+    this.zoomPauseAnimation = false;
+    this.dragPauseAnimation = false;
+    this.pauseAnimation = true;
 	
 	$( "#divSlider" ).slider("option", "max", this.numClockTicks)
 		.slider("option", "min", 0)
@@ -1840,6 +1850,7 @@ Phylowood.initPlayer = function() {
 
 	this.playerLoaded = true;
 
+    this.sliderBusy = false;
     this.animStart();
 	
 };
@@ -1853,15 +1864,9 @@ Phylowood.drag = function(dx) {
 
 Phylowood.animStart = function() {
 
-	//if (this.playTick === -1.0)
-    {
-        $( "#play" ).button("option", { label: "play", icons: { primary: "ui-icon-play" }});
-        clearInterval(Phylowood.ticker);
-		this.animPause();
-    }
-
     this.playTick = 1.0;
 	this.playSpeed = 1.0;
+    this.animPause();
 	
     this.prevClockTick = this.curClockTick;
 	this.curClockTick = 0;
@@ -1871,20 +1876,19 @@ Phylowood.animStart = function() {
         this.updateDisplay();
     }
     this.finalUpdateDisplay = false;
+
+    $( "#play" ).button("option", { label: "play", icons: { primary: "ui-icon-play" }});
+    clearInterval(Phylowood.ticker);
+
 }
 
 Phylowood.animEnd = function() {
 
-
-	//if (this.playTick === 1.0)
-    {
-        $( "#play" ).button("option", { label: "play", icons: { primary: "ui-icon-play" }});
-        clearInterval(Phylowood.ticker);
-		this.animPause();
-    }
+    console.log("animEnd");
 
     this.playTick = 1.0;
 	this.playSpeed = 1.0;
+    this.animPause();
 	
     this.prevClockTick = this.curClockTick;
 	this.curClockTick = this.numClockTicks - 1;
@@ -1894,6 +1898,9 @@ Phylowood.animEnd = function() {
         this.updateDisplay();
     }
     this.finalUpdateDisplay = false;
+
+    $( "#play" ).button("option", { label: "play", icons: { primary: "ui-icon-play" }});
+    clearInterval(Phylowood.ticker);
 }
 
 Phylowood.animRewind = function() {
@@ -1908,7 +1915,7 @@ Phylowood.animRewind = function() {
     // reset interval
     clearInterval(Phylowood.ticker);
 	if (this.pauseAnimation === false)
-        this.ticker = setInterval(this.updateDisplay, this.clockTick / this.playSpeed); 
+        Phylowood.ticker = setInterval(this.updateDisplay, this.clockTick / this.playSpeed); 
 }
 
 Phylowood.animFfwd = function() {
@@ -1923,7 +1930,7 @@ Phylowood.animFfwd = function() {
     // reset interval
     clearInterval(Phylowood.ticker);
 	if (this.pauseAnimation === false)
-        this.ticker = setInterval(this.updateDisplay, this.clockTick / this.playSpeed); 
+        Phylowood.ticker = setInterval(this.updateDisplay, this.clockTick / this.playSpeed); 
 }
 
 Phylowood.animPause = function() {
@@ -1935,7 +1942,7 @@ Phylowood.animPlay = function() {
 
     this.pauseAnimation = false;
     if (this.playerLoaded === true) {
-		this.ticker = setInterval(this.updateDisplay, this.clockTick / this.playSpeed); 
+		Phylowood.ticker = setInterval(this.updateDisplay, this.clockTick / this.playSpeed); 
 	}
 }
 
@@ -1954,32 +1961,39 @@ Phylowood.slideSlider = function() {
 
 Phylowood.changeSlider = function() {
 
-	if (typeof this.sliderBusy !== "undefined" && this.sliderLock === false) {
-        this.prevClockTick = this.curClockTick;
-		this.curClockTick = $( "#divSlider" ).slider("option","value");
-	    this.updateDisplay();
+	if (typeof Phylowood.sliderBusy !== "undefined" && Phylowood.sliderLock === false) {
+        Phylowood.prevClockTick = Phylowood.curClockTick;
+		Phylowood.curClockTick = $( "#divSlider" ).slider("option","value");
+        if (this.sliderBusy === true || this.pauseAnimation === true)
+	        this.updateDisplay();
 	}
+    Phylowood.sliderBusy = false;
 }
 
 Phylowood.updateSlider = function() {
 
+    Phylowood.sliderLock = true;
     var pos = Phylowood.tickToPxScale(Phylowood.curClockTick);
-    this.sliderLock = true;
     $( "#phyloSlider" ).attr("x1", pos).attr("x2", pos);
     $( "#divSlider" ).slider("option","value", Phylowood.curClockTick);
-    this.sliderLock = false;
+    Phylowood.curPhyloTimeText.text(function() {
+        var t = Phylowood.curClockTick * Phylowood.phyloTick + Phylowood.phyloTimeOffset;
+        return t.toFixed(2) + " " + Phylowood.phyloTimeUnit;
+    });
+    Phylowood.sliderLock = false;
 }
 
 Phylowood.updateDisplay = function() {
 
 	// update slider position
 	Phylowood.updateMarkers();
-    if (this.finalUpdateDisplay === true)
+    if (Phylowood.finalUpdateDisplay === true)
     {
-        if (this.curClockTick >= this.numClockTicks - 1)
-            this.animEnd();
-        else if (this.curClockTick < 0)
-            this.animStart();
+        console.log("oh?");
+        if (Phylowood.curClockTick >= Phylowood.numClockTicks - 1)
+            Phylowood.animEnd();
+        else if (Phylowood.curClockTick < 0)
+            Phylowood.animStart();
     }
     Phylowood.updateSlider();
 }
@@ -2043,20 +2057,47 @@ Phylowood.updateMarkers = function() {
                         // add new pie
                         this.arcs[i] = this.pie[i].selectAll(".arc" + i)
                             .data(Phylowood.donut(Phylowood.animationData[i]))
+                            /*
+                            .select(function(d) {
+                                console.log(d);
+                                if (d.data.val[Phylowood.curClockTick] !== 0.0)
+                                    return this;
+                                else
+                                    return null;
+                            })*/
                           .enter().append("svg:g")
                             .attr("class","arc" + i)
                             .attr("transform", function(d) {
                                 return "translate(" + d.data.x + "," + d.data.y + ")";
                             })
+                          .append("svg:path")
+                            /*
+                            // doesn't seem to help
+                            .select(function(d) {
+                                if (d.data.val[Phylowood.curClockTick] !== 0.0)
+                                    return this;
+                                else
+                                    return null;
+                            })
+                            */
+                            .attr("fill", function(d) { return d.data.color; })
                             .attr("visibility", function(d) {
                                 if (d.data.highlightContinuum === true)
                                     return "visible";
                                 else
                                     return "hidden";
                             })
-                          .append("svg:path")
-                            .attr("fill", function(d) { return d.data.color; })
                             .attr("d", Phylowood.arc)
+                            /*
+                            // doesn't seem to help
+                            .attr("d", function(d) {
+                                console.log(d);
+                                if (d.data.val[Phylowood.curClockTick] !== 0)
+                                    return Phylowood.arc(d);
+                                else
+                                    return null;
+                            })
+                            */
                             .attr("class", "marker");
                             ;
 
@@ -2124,16 +2165,13 @@ Phylowood.updateMarkers = function() {
         }*/
 
         // stop at boundaries
-        if (Phylowood.curClockTick >= Phylowood.numClockTicks)
+        if (Phylowood.curClockTick >= Phylowood.numClockTicks - 1)
         {
-            this.finalUpdateDisplay = true;    
-            //Phylowood.animEnd();
+            Phylowood.finalUpdateDisplay = true;    
         }
         else if (Phylowood.curClockTick < 0)
-            //&& Phylowood.finalUpdateDisplay === false)
         {
-            this.finalUpdateDisplay = true;    
-            //Phylowood.animStart();
+            Phylowood.finalUpdateDisplay = true;    
         }
 
         Phylowood.sliderBusy = false;
@@ -2232,7 +2270,10 @@ Phylowood.updateMarkers = function() {
 
         // should the animation be paused?
         if (Phylowood.dragPauseAnimation === false
-            && Phylowood.zoomPauseAnimation == false)
+            && Phylowood.zoomPauseAnimation == false
+            && Phylowood.sliderBusy === false
+            && Phylowood.pauseAnimation === false
+            && Phylowood.finalUpdateDisplay === false)
         {
             Phylowood.curClockTick += Phylowood.playTick;
         }
@@ -2243,15 +2284,14 @@ Phylowood.updateMarkers = function() {
         }
 
         // stop at boundaries
-        if (Phylowood.curClockTick >= Phylowood.numClockTicks)
+        if (Phylowood.curClockTick >= Phylowood.numClockTicks - 1)
         {
-            this.finalUpdateDisplay = true;
-            //Phylowood.animEnd();
+            console.log("ok.");
+            Phylowood.finalUpdateDisplay = true;
         }
-        else if (Phylowood.curClockTick <= 0)
+        else if (Phylowood.curClockTick < 0)
         {
-            this.finalUpdateDisplay = true;
-            //Phylowood.animStart();
+            Phylowood.finalUpdateDisplay = true;
         }
     }
 }
