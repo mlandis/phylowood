@@ -890,7 +890,7 @@ Phylowood.highlightContinuumForBranch = function(d) {
         .style("fill","white");
 }
 
-Phylowood.restoreMask = function() {
+Phylowood.unhighlightContinuumForBranch = function() {
 
     Phylowood.forceRedraw = true;
 
@@ -1078,7 +1078,7 @@ Phylowood.drawTree = function() {
 					Phylowood.highlightContinuumForBranch(d);
 				})
 				.on("mouseout", function(d) {
-					Phylowood.restoreMask();
+					Phylowood.unhighlightContinuumForBranch();
 				})
 				.on("click", function(d) {
 					Phylowood.unmaskContinuumForBranch(d);
@@ -1454,6 +1454,11 @@ Phylowood.showMarkerInfo = function(m) {
         lat = m.data.coord.lat;
         lon = m.data.coord.lon;
         name = m.data.name;
+
+        for (var i = 0; i < this.numNodes; i++)
+            if (this.nodes[i].id === m.data.id)
+                this.highlightContinuumForBranch(this.nodes[i]);
+
     }
     else if (typeof m.coord !== "undefined")
     {
@@ -1461,6 +1466,9 @@ Phylowood.showMarkerInfo = function(m) {
         lat = m.coord[Phylowood.curClockTick].lat;
         lon = m.coord[Phylowood.curClockTick].lon;
         name = m.name;
+        for (var i = 0; i < this.numNodes; i++)
+            if (this.nodes[i].id === m.id)
+                this.highlightContinuumForBranch(this.nodes[i]);
     }
     this.svgFilter.append("svg:text")
         .text("Marker name:")
@@ -1517,9 +1525,23 @@ Phylowood.showMarkerInfo = function(m) {
         .attr("y", 80)
         .attr("class","infoMarker")
         .style("fill","white");
+
 };
 
-Phylowood.eraseMarkerInfo = function(d) {
+Phylowood.eraseMarkerInfo = function(m) {
+/*
+    if (typeof m.data !== "undefined") {
+        for (var i = 0; i < this.numNodes; i++)
+            if (this.nodes[i].id === m.data.id)
+                this.highlightContinuumForBranch(this.nodes[i]);
+    }
+    else if (typeof m.coord !== "undefined") {
+        for (var i = 0; i < this.numNodes; i++)
+            if (this.nodes[i].id === m.id)
+                this.highlightContinuumForBranch(this.nodes[i]);
+    }
+    */
+    this.unhighlightContinuumForBranch();
     this.svgFilter.selectAll(".infoMarker").remove();
 };
 
