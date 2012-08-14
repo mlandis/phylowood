@@ -5,6 +5,7 @@ modeltype phylogeography
 areatype discrete
 timestart 1990
 timeunit yr
+markerradius 800
 
 #GEO
 0 25

@@ -163,7 +163,8 @@ Phylowood.initSettings = function() {
     this.phyloTimeOffset = 0.0;
     this.phyloTimeUnit = "Myr";
     this.pieSliceStyle = "even";
-    this.pieFillStyle = "inwards";
+    this.pieFillStyle = "outwards";
+    this.markerRadius = "20.0";
     this.modelType = "phylogeography";
     this.areaType = "continuous";
     this.mapType = "clean";
@@ -190,6 +191,8 @@ Phylowood.initSettings = function() {
                 Phylowood.pieFillStyle = s[1];
             else if (s[0] === "maptype")
                 Phylowood.mapType = s[1];
+            else if (s[0] === "markerradius")
+                Phylowood.markerRadius = s[1];
         }
     }
 };
@@ -514,7 +517,7 @@ Phylowood.initTree = function() {
 	if (this.areaType === "continuous")
         this.clockTick = 100.0; // update per .1s
     else if (this.areaType === "discrete")
-        this.clockTick = 200.0;
+        this.clockTick = 100.0;
     else
         this.clockTick = 1000.0;
 	this.phyloTick = 0.0;
@@ -1446,7 +1449,7 @@ Phylowood.initAnimationData = function() {
 	}
 };
 
-Phylowood.showMarkerInfo = function(m) {
+Phylowood.highlightContinuumByMarker = function(m) {
     var lat, lon, val, name;
     if (typeof m.data !== "undefined")
     {
@@ -1506,14 +1509,14 @@ Phylowood.showMarkerInfo = function(m) {
         .style("fill","white");
 
     this.svgFilter.append("svg:text")
-        .text(lat)
+        .text(parseFloat(lat).toFixed(2))
         .attr("x", 190)
         .attr("y", 40)
         .attr("class","infoMarker")
         .style("fill","white");
 
     this.svgFilter.append("svg:text")
-        .text(lon)
+        .text(parseFloat(lon).toFixed(2))
         .attr("x", 190)
         .attr("y", 60)
         .attr("class","infoMarker")
@@ -1528,7 +1531,7 @@ Phylowood.showMarkerInfo = function(m) {
 
 };
 
-Phylowood.eraseMarkerInfo = function(m) {
+Phylowood.unhighlightMarkerByContinuumInfo = function(m) {
 /*
     if (typeof m.data !== "undefined") {
         for (var i = 0; i < this.numNodes; i++)
@@ -1550,7 +1553,6 @@ Phylowood.drawMarkersContinuous = function() {
 	// div size (get dynamically)
 	var h = document.getElementById("divGeo").offsetHeight;
 	var w = document.getElementById("divGeo").offsetWidth;
-    Phylowood.pieRadius = 10;
 
 	// geo data
 	var data = this.animationData; //this.initMarkers();
@@ -1585,7 +1587,7 @@ Phylowood.drawMarkersContinuous = function() {
         .attr("cx", function(d) { return d.x[d.startClockTick]; })
         .attr("cy", function(d) { return d.y[d.startClockTick]; })
         .attr("r", function(d) {
-            var v = Phylowood.pieRadius * d.val;
+            var v = Phylowood.markerRadius * d.val;
             return Math.pow(2, Phylowood.map.zoom() - Phylowood.bestZoom) * Math.sqrt(v);
         })
         .attr("fill", function(d) { return d.color })
@@ -1598,10 +1600,10 @@ Phylowood.drawMarkersContinuous = function() {
                 return "hidden";
         })
         .on("mouseover", function(d) {
-            Phylowood.showMarkerInfo(d);
+            Phylowood.highlightContinuumByMarker(d);
         })
         .on("mouseout", function(d) {
-            Phylowood.eraseMarkerInfo(d);
+            Phylowood.unhighlightMarkerByContinuumInfo(d);
         })
         ;
 
@@ -1616,7 +1618,7 @@ Phylowood.drawMarkersContinuous = function() {
         .attr("y2", function(d) { return d.y[d.startClockTick]; })
         .attr("stroke", function(d) { return d.color; })
         .style("stroke-width", function() {
-            var v = Phylowood.pieRadius * 0.5;
+            var v = Phylowood.markerRadius * 0.5;
             return Math.pow(2, Phylowood.map.zoom() - Phylowood.bestZoom) * Math.sqrt(v);
         });
     
@@ -1659,7 +1661,7 @@ Phylowood.drawMarkersContinuous = function() {
                     return d.y[Phylowood.curClockTick];
             })
 		    .attr("r", function(d) {
-                var v = Phylowood.pieRadius * d.val;
+                var v = Phylowood.markerRadius * d.val;
                 return Math.pow(2, Phylowood.map.zoom() - Phylowood.bestZoom) * Math.sqrt(v);
             });
 
@@ -1683,7 +1685,7 @@ Phylowood.drawMarkersContinuous = function() {
                     return d.y[Phylowood.curClockTick];
             })
             .style("stroke-width", function() {
-                var v = Phylowood.pieRadius * 0.5;
+                var v = Phylowood.markerRadius * 0.5;
                 return Math.pow(2, Phylowood.map.zoom() - Phylowood.bestZoom) * Math.sqrt(v);
             });
 	});	
@@ -1694,7 +1696,6 @@ Phylowood.drawMarkersDiscretePie = function() {
 	// div size (get dynamically)
 	var h = document.getElementById("divGeo").offsetHeight;
 	var w = document.getElementById("divGeo").offsetWidth;
-    this.pieRadius = 250;
 
 	// geo data
 	var data = this.animationData;
@@ -1761,10 +1762,10 @@ Phylowood.drawMarkersDiscretePie = function() {
             .startAngle(function(d) { return d.startAngle; })
             .endAngle(function(d) { return d.endAngle; })
             .innerRadius(function(d) { 
-                return Phylowood.zoomScale * Math.sqrt(Phylowood.pieRadius * (1 - d.data.val[Phylowood.curClockTick]));
+                return Phylowood.zoomScale * Math.sqrt(Phylowood.markerRadius * (1 - d.data.val[Phylowood.curClockTick]));
             })
             .outerRadius(function(d) {
-                return Phylowood.zoomScale * Math.sqrt(Phylowood.pieRadius);
+                return Phylowood.zoomScale * Math.sqrt(Phylowood.markerRadius);
             });
     }
     else if (this.pieFillStyle === "outwards")
@@ -1774,7 +1775,7 @@ Phylowood.drawMarkersDiscretePie = function() {
             .endAngle(function(d) { return d.endAngle; })
             .innerRadius(0)
             .outerRadius(function(d) {
-                return Phylowood.zoomScale * Math.sqrt(Phylowood.pieRadius * (d.data.val[Phylowood.curClockTick]));
+                return Phylowood.zoomScale * Math.sqrt(Phylowood.markerRadius * (d.data.val[Phylowood.curClockTick]));
             });
     }
 
@@ -1793,7 +1794,10 @@ Phylowood.drawMarkersDiscretePie = function() {
 
             // center arcs at foci
             this.arcs[i] = this.pie[i].selectAll("g.arc" + i)
-                .data(Phylowood.donut(data[i]))
+                .data(Phylowood.donut(Phylowood.animationData[i]).filter(function(d) {
+                    if (typeof d.data.val[Phylowood.curClockTick] !== "undefined")
+                        return d;
+                }))
               .enter().append("svg:g")
                 .attr("class","arc" + i)
                 .attr("transform", function(d) {
@@ -1804,27 +1808,11 @@ Phylowood.drawMarkersDiscretePie = function() {
                 .attr("fill", function(d) { return d.data.color; })
                 .attr("d", Phylowood.arc)
                 .on("mouseover", function(d) {
-                    Phylowood.showMarkerInfo(d);
+                    Phylowood.highlightContinuumByMarker(d);
                 })
                 .on("mouseout", function(d) {
-                    Phylowood.eraseMarkerInfo(d);
+                    Phylowood.unhighlightMarkerByContinuumInfo(d);
                 });
-        /*
-            // center arcs at foci
-            this.arcs[i] = this.pie[i].selectAll("g.arc" + i)
-                .data(Phylowood.donut(data[i]))
-              .enter().append("svg:g")
-                .attr("class","arc" + i)
-                .attr("transform", function(d) {
-                    return "translate(" + d.data.x + "," + d.data.y + ")";
-                });
-
-            // draw paths according to this.arc
-            this.paths[i] = this.arcs[i].append("svg:path")
-                .attr("fill", function(d) { return d.data.color; })
-                .attr("d", Phylowood.arc)
-                .attr("class", "marker");
-        */
         }
     }
 
@@ -1847,6 +1835,12 @@ Phylowood.drawMarkersDiscretePie = function() {
                         return "translate(" + d.data.x + "," + d.data.y + ")"; 
                     }
                 })
+
+                Phylowood.animationData[i].forEach(function(d) {
+                    xy = Phylowood.map.locationPoint(d.coord);
+                    d.x = xy.x;
+                    d.y = xy.y;
+                });
 
                 // adjust pie radii for zoom
                 Phylowood.zoomScale = Math.pow(2, Phylowood.map.zoom() - Phylowood.bestZoom);
@@ -2164,15 +2158,16 @@ Phylowood.updateSlider = function() {
 Phylowood.updateDisplay = function() {
 
 	// update slider position
-	Phylowood.updateMarkers();
-    if (Phylowood.finalUpdateDisplay === true)
-    {
-        if (Phylowood.curClockTick >= Phylowood.numClockTicks - 1)
-            Phylowood.animEnd();
-        else if (Phylowood.curClockTick < 0)
-            Phylowood.animStart();
-    }
-    Phylowood.updateSlider();
+        Phylowood.updateMarkers();
+
+        if (Phylowood.finalUpdateDisplay === true)
+        {
+            if (Phylowood.curClockTick >= Phylowood.numClockTicks - 1)
+                Phylowood.animEnd();
+            else if (Phylowood.curClockTick < 0)
+                Phylowood.animStart();
+        }
+        Phylowood.updateSlider();
 }
 
 Phylowood.updateMarkers = function() {
@@ -2211,7 +2206,7 @@ Phylowood.updateMarkers = function() {
             }
         }
 
-        if (Phylowood.prevZoom === Phylowood.map.zoom())
+        if (Phylowood.prevZoom === Phylowood.map.zoom() && Phylowood.zoomPauseAnimation === false)
         {
             // cladogenesis (add / remove pie slices)
             // NOTE: this seems to be the bottleneck for performance
@@ -2236,27 +2231,10 @@ Phylowood.updateMarkers = function() {
 
                         // add new pie
                         this.arcs[i] = this.pie[i].selectAll(".arc" + i)
-                            .data(Phylowood.donut(Phylowood.animationData[i])) 
-
-                            // can I filter data by introducing a key?
-                            /*
-                            .data(Phylowood.donut(Phylowood.animationData[i]), function(d) {
-                                if (d.val[Phylowood.curClockTick] !== 0.0)
+                            .data(Phylowood.donut(Phylowood.animationData[i]).filter(function(d) {
+                                if (typeof d.data.val[Phylowood.curClockTick] !== "undefined")
                                     return d;
-                            })
-                            */
-
-                            // can I select for non-zero slices after data is attached?
-                            /*
-                            .select(function(d) {       // want something like this, but doesn't seem to work...
-                                console.log(d);
-                                if (d.data.val[Phylowood.curClockTick] !== 0.0)
-                                    return this;
-                                else
-                                    return 0;
-                            })
-                            */
-
+                            }))
                           .enter().append("svg:g")
                             .attr("class","arc" + i)
                             .attr("transform", function(d) {
@@ -2273,43 +2251,11 @@ Phylowood.updateMarkers = function() {
                             })
                             .attr("d", Phylowood.arc)
                             .on("mouseover", function(d) {
-                                Phylowood.showMarkerInfo(d);
+                                Phylowood.highlightContinuumByMarker(d);
                             })
                             .on("mouseout", function(d) {
-                                Phylowood.eraseMarkerInfo(d);
-                            })
-                            ;
-
-                            // can I select for non-zero slices after svg:g are created?
-                            /*
-                            // doesn't seem to help
-                            .select(function(d) {
-                                if (d.data.val[Phylowood.curClockTick] !== 0.0)
-                                    return this;
-                                else
-                                    return null;
-                            })
-                            */
-                            
-                            // can I only create svg:path arcs for non-zero arcs?
-                            /*
-                            .attr("d", function(d) {
-                                console.log(d);
-                                if (d.data.val[Phylowood.curClockTick] !== 0)
-                                    return Phylowood.arc(d);
-                                else
-                                    return null;
-                            })
-                            */
-                            ;
-
-                        // draw paths according to this.arc
-                        /*
-                        this.paths[i] = this.arcs[i].append("svg:path")
-                            .attr("fill", function(d) { return d.data.color; })
-                            .attr("d", Phylowood.arc)
-                            .attr("class", "marker");
-                        */
+                                Phylowood.unhighlightMarkerByContinuumInfo(d);
+                            });
                     }
                 }
 
@@ -2320,7 +2266,6 @@ Phylowood.updateMarkers = function() {
             // anagenesis (animate pie depths)
             else
             {
-                // console.log("ag", Phylowood.curClockTick);
                 for (var i = 0; i < this.numAreas; i++)
                 {
                     if (this.animationData[i].length !== 0)
@@ -2336,11 +2281,9 @@ Phylowood.updateMarkers = function() {
                 }
             }
             Phylowood.prevClockTick = Phylowood.curClockTick;
-            Phylowood.zoomPauseAnimation = false;
         }
         else {
             Phylowood.prevZoom = Phylowood.map.zoom();
-            Phylowood.zoomPauseAnimation = true;
         }
 
         // should the animation be paused?
@@ -2359,6 +2302,9 @@ Phylowood.updateMarkers = function() {
         //    Phylowood.prevClockTick = Phylowood.curClockTick - Phylowood.playTick;
             Phylowood.forceRedraw = false;
         }
+   
+        if (Phylowood.zoomPauseAnimation === true)
+            Phylowood.zoomPauseAnimation = false;
         /*
         else if (Phylowood.dragPauseAnimation === true
             || Phylowood.zoomPauseAnimation === true)
@@ -2381,7 +2327,7 @@ Phylowood.updateMarkers = function() {
 
     else if (this.modelType === "phylogeography" && this.areaType === "continuous")
     {
-        if (Phylowood.prevZoom === Phylowood.map.zoom())
+        if (Phylowood.prevZoom === Phylowood.map.zoom() && Phylowood.zoomPauseAnimation === false)
         {  
 
             // inactive lineages
@@ -2463,16 +2409,16 @@ Phylowood.updateMarkers = function() {
                         return d.y[Phylowood.curClockTick];
                 });
 
-            Phylowood.zoomPauseAnimation = false;
+            //Phylowood.zoomPauseAnimation = false;
         }
         else {
             Phylowood.prevZoom = Phylowood.map.zoom();
-            Phylowood.zoomPauseAnimation = true;
+            //Phylowood.zoomPauseAnimation = true;
         }
 
         // should the animation be paused?
         if (Phylowood.dragPauseAnimation === false
-            && Phylowood.zoomPauseAnimation == false
+            && Phylowood.zoomPauseAnimation === false
             && Phylowood.sliderBusy === false
             && Phylowood.pauseAnimation === false
             && Phylowood.finalUpdateDisplay === false)
@@ -2484,6 +2430,8 @@ Phylowood.updateMarkers = function() {
         {
             d3.selectAll("svg circle").transition(0);
         }
+        if (Phylowood.zoomPauseAnimation === true)
+            Phylowood.zoomPauseAnimation = false;
 
         // stop at boundaries
         if (Phylowood.curClockTick >= Phylowood.numClockTicks - 1)

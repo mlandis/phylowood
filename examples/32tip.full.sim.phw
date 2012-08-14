@@ -1,9 +1,10 @@
 #SETTINGS
 drawtype pie
 pieslicestyle full
-piefillstyle inwards
+piefillstyle outwards
 modeltype biogeography
 areatype discrete
+markerradius 250
 
 #GEO
 38 -122.5

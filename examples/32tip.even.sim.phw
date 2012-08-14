@@ -4,6 +4,7 @@ pieslicestyle even
 piefillstyle outwards
 modeltype biogeography
 areatype discrete
+markerradius 250
 
 #GEO
 38 -122.5
