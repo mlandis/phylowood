@@ -143,4 +143,8 @@ text {
     resize:none;
 }
 
+#buttonReset {
+    float:right;
+}
+
 .ui-slider .ui-slider-handle { buffer: 10px }

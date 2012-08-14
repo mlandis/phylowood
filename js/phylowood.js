@@ -63,6 +63,13 @@ $( "#selectDemoData" ).change(function() {
 	}
 });
 
+Phylowood.clearCtrlInput = function() {
+    d3.selectAll("#selectDemoData").remove();
+    d3.selectAll("#checkboxAutoload").remove();
+    d3.selectAll("#checkboxLabel").remove(); 
+    d3.selectAll("#buttonApply").remove();
+};
+
 
 /***
 INITIALIZE DATA
@@ -72,6 +79,7 @@ Phylowood.initialize = function() {
 	
 	// reset system state
 	//this.reset();
+    this.clearCtrlInput();
 
 	// parse input in inputTextArea
 	this.parseInput();
