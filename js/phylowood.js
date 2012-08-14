@@ -22,7 +22,11 @@ Phylowood.readInputFromHttp = function() {
 Phylowood.loadInput = function() {
 
 	var inputFile = $("#selectDemoData option:selected").val();	
-	$('#textareaInput').load(inputFile);
+	$('#textareaInput').load(inputFile, function() {
+        // callback
+        if ($("#checkboxAutoload").attr("checked") === "checked")
+            Phylowood.initialize();
+    });
 
 };
 
@@ -1662,7 +1666,6 @@ Phylowood.drawMarkersDiscretePie = function() {
                 .attr("transform", function(d) {
                     return "translate(" + d.data.x + "," + d.data.y + ")";
                 })
-            // draw paths according to this.arc
               .append("svg:path")
                 .attr("class", "marker")
                 .attr("fill", function(d) { return d.data.color; })
@@ -1706,11 +1709,10 @@ Phylowood.drawMarkersDiscretePie = function() {
                     }
                 })
 
-                // adjust for zoom
+                // adjust pie radii for zoom
                 Phylowood.zoomScale = Math.pow(2, Phylowood.map.zoom() - Phylowood.bestZoom);
-                //Phylowood.arcs[i].attr("d", Phylowood.arc);
-                //this.arcs[i] = this.pie[i].selectAll(".arc" + i);
-                Phylowood.pie[i].selectAll(".arc" + i).selectAll("path").attr("d", Phylowood.arc);
+                Phylowood.pie[i].selectAll(".arc" + i).selectAll("path")
+                    .attr("d", Phylowood.arc);
             }
         }
     });
