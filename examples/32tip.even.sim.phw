@@ -1,4 +1,5 @@
 #SETTINGS
+description Discrete biogeography of 32 taxa (simulation, \"truth\") in the Bay Area of California.
 drawtype pie
 pieslicestyle even
 piefillstyle outwards

@@ -1,4 +1,5 @@
 #SETTINGS
+description Discrete phylogeography of H5N1 in China from 1993-2005yr.
 piestyle full
 drawtype pie
 modeltype phylogeography
