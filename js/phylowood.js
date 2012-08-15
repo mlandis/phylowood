@@ -168,6 +168,7 @@ Phylowood.initSettings = function() {
     this.modelType = "phylogeography";
     this.areaType = "continuous";
     this.mapType = "clean";
+    this.descriptionStr = "";
 
     if (typeof this.settingsStr !== "undefined") {
         settingsTokens = this.settingsStr.split("\n");
@@ -193,6 +194,9 @@ Phylowood.initSettings = function() {
                 Phylowood.mapType = s[1];
             else if (s[0] === "markerradius")
                 Phylowood.markerRadius = s[1];
+            else if (s[0] === "description")
+                for (var j = 1; j < s.length; j++)
+                    Phylowood.descriptionStr += s[j];
         }
     }
 };
@@ -1167,9 +1171,9 @@ Phylowood.drawTree = function() {
         .style("stroke", "white");
 
     this.svgTimeTicks.append("svg:line")
-        .attr("x1", divWtt - 10)
+        .attr("x1", divW + 10)
         .attr("y1", 15)
-        .attr("x2", divWtt - 10)
+        .attr("x2", divW + 10)
         .attr("y2", divHtt)
 		.style("stroke-width", 3)
         .style("stroke", "white");
@@ -1193,7 +1197,7 @@ Phylowood.drawTree = function() {
         .style("fill","white")
         .attr("font-family", "Courier")
         .attr("font-size", "12")
-        .attr("x", divWtt - 10)
+        .attr("x", divW + 10)
         .attr("y", 10)
         .attr("dx", function() {
             var bbox = this.getBBox();
@@ -1205,7 +1209,7 @@ Phylowood.drawTree = function() {
         .style("fill","white")
         .attr("font-family", "Courier")
         .attr("font-size", "12")
-        .attr("x", (divWtt - 20 - this.xRoot)/2 - 15)
+        .attr("x", (divW - this.xRoot)/2 - 15)
         .attr("y", 10);
 
     this.curPhyloTimeText = this.svgTimeTicks.append("svg:text")
@@ -1213,9 +1217,16 @@ Phylowood.drawTree = function() {
         .style("fill","white")
         .attr("font-family", "Courier")
         .attr("font-size", "12")
-        .attr("x", (divWtt - 20 - this.xRoot)/2)
+        .attr("x", (divW - this.xRoot)/2)
         .attr("y", 10);
     
+    d3.selectAll("#divDescription").append("svg").append("svg:text")
+        .text(Phylowood.descriptionStr)
+        .attr("x", 5)
+        .attr("y", 15)
+        .style("fill","white")
+        .attr("font-family", "Courier")
+        .attr("font-size", "16");
     
     /*
 
@@ -1271,6 +1282,7 @@ Phylowood.initNodeColors = function() {
 		}
 	}
 }
+
 
 Phylowood.initAnimationData = function() {
 
