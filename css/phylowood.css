@@ -117,6 +117,14 @@ text {
 	float:left;
 }
 
+#divAbout {
+    position:absolute;
+	background-color:#717679;
+	top:5px;
+	width:1200px;
+	float:left;
+}
+
 #toolbar {
 	padding: 15px 4px;
 }
