@@ -195,8 +195,14 @@ Phylowood.initSettings = function() {
             else if (s[0] === "markerradius")
                 Phylowood.markerRadius = s[1];
             else if (s[0] === "description")
+            {
                 for (var j = 1; j < s.length; j++)
+                {
                     Phylowood.descriptionStr += s[j];
+                    if (j !== s.length - 1)
+                        Phylowood.descriptionStr += " ";
+                }
+            }
         }
     }
 };
@@ -1222,8 +1228,13 @@ Phylowood.drawTree = function() {
     
     d3.selectAll("#divDescription").append("svg").append("svg:text")
         .text(Phylowood.descriptionStr)
-        .attr("x", 5)
+        .attr("x", 0)
         .attr("y", 15)
+        .attr("dx", function() {
+            var bbox = this.getBBox();
+            var w = $("#divDescription").width();
+            return (w - bbox.width) / 2;
+        })
         .style("fill","white")
         .attr("font-family", "Courier")
         .attr("font-size", "16");
@@ -1339,8 +1350,10 @@ Phylowood.initAnimationData = function() {
                 color[i] = "hsl(" + c[0] + "," + 100*c[1] + "%," + 100*c[2] + "%)";
 
                 // populate divergenceTicks[], excluding 0
-                //if (startClockIdx[i] !== 0)
-                    this.divergenceTicks.push(startClockIdx[i]);
+                this.divergenceTicks.push(startClockIdx[i]);
+                // also treat terminal taxa as divergence events
+                if (p.descendants.length === 0)
+                    this.divergenceTicks.push(endClockIdx[i]);
             }
             
             // use jQuery to gather array of unique divergence times
