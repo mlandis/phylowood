@@ -32,11 +32,6 @@ text {
 	float:left;
 }
 
-#checkboxLabel {
-    font-size:small;
-    color:white;
-}
-
 #divCtrl {
 	position: absolute;
 	top:80px;
@@ -141,6 +136,11 @@ text {
     height: 80px;
     width: 830px;
     resize:none;
+}
+
+#checkboxLabel {
+    font-size:small;
+    color:white;
 }
 
 #buttonReset {
