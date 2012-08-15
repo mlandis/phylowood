@@ -1,7 +1,7 @@
 #SETTINGS
 modeltype phylogeography
 areatype continuous
-timestart 3030
+timestart 1971.96
 timeunit yr
 markerradius 10
 
