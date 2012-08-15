@@ -684,6 +684,23 @@ Phylowood.maskContinuumForBranch = function(d) {
 				return null;
 		}
 	);//.style("visibility", "hidden");
+
+    // update maskContinuum data for in animationData
+    for (var i = 0; i < Phylowood.numAreas; i++)
+    {
+        for (var j = 0; j < Phylowood.animationData[i].length; j++)
+        {
+            for (var k = 0; k < d.heritage.length; k++)
+            {
+                if (Phylowood.animationData[i][j].id === d.heritage[k])
+                {
+                    Phylowood.animationData[i][j].maskContinuum = true;
+                    k = d.heritage.length;
+                }
+            }
+        }
+    }
+
 	Phylowood.updateMarkers();
 }
 
@@ -725,6 +742,23 @@ Phylowood.unmaskContinuumForBranch = function(d) {
 
 		}
 	);//.attr("visibility","visible");
+    
+    // update maskContinuum data for in animationData
+    for (var i = 0; i < Phylowood.numAreas; i++)
+    {
+        for (var j = 0; j < Phylowood.animationData[i].length; j++)
+        {
+            for (var k = 0; k < d.heritage.length; k++)
+            {
+                if (Phylowood.animationData[i][j].id === d.heritage[k])
+                {
+                    Phylowood.animationData[i][j].maskContinuum = false;
+                    k = d.heritage.length;
+                }
+            }
+        }
+    }
+
 	Phylowood.updateMarkers();
 }
 
@@ -891,6 +925,26 @@ Phylowood.highlightContinuumForBranch = function(d) {
         .attr("y", 80)
         .attr("class","infoBranch")
         .style("fill","white");
+    
+    for (var i = 0; i < Phylowood.numAreas; i++)
+    {
+        for (var j = 0; j < Phylowood.animationData[i].length; j++)
+        {
+            for (var k = 0; k < d.heritage.length; k++)
+            {
+                var found = false;
+                if (Phylowood.animationData[i][j].id === d.heritage[k])
+                {
+                    found = true;
+                    k = d.heritage.length;
+                }
+            }
+            if (found)
+                Phylowood.animationData[i][j].highlightContinuum = true;
+            else
+                Phylowood.animationData[i][j].highlightContinuum = false;
+        }
+    }
 }
 
 Phylowood.unhighlightContinuumForBranch = function() {
@@ -941,6 +995,14 @@ Phylowood.unhighlightContinuumForBranch = function() {
     d3.selectAll("#divPhylo svg text").remove();
     this.svgFilter.selectAll(".infoBranch").remove();
     //transition().attr("visibility","hidden"); // fade out??
+    
+    for (var i = 0; i < Phylowood.numAreas; i++)
+    {
+        for (var j = 0; j < Phylowood.animationData[i].length; j++)
+        {
+            Phylowood.animationData[i][j].highlightContinuum = true;
+        }
+    }
 }
 
 Phylowood.drawTree = function() {
@@ -2182,26 +2244,21 @@ Phylowood.updateMarkers = function() {
             }
         }
        
-        // force redraw if curClockTick has passed over a divergence event
+        // force a redraw if curClockTick has passed over a divergence event
         if (Phylowood.curClockTick !== Phylowood.prevClockTick + Phylowood.playTick)
         {
-
             var curIdx = 0,
                 prevIdx = 0;
 
             for (var i = 0; i < Phylowood.divergenceTicks.length; i++)
             {
-                //console.log(i, phw.divergenceTicks[i], phw.curClockTick, phw.prevClockTick, curIdx, prevIdx);
                 if (Phylowood.curClockTick > Phylowood.divergenceTicks[i])
                     curIdx = i;
                 if (Phylowood.prevClockTick > Phylowood.divergenceTicks[i])
                     prevIdx = i;
             }
 
-            //console.log(i, phw.curClockTick, phw.prevClockTick, curIdx, prevIdx);
-
             if (curIdx !== prevIdx) {
-                //console.log("force redraw");
                 Phylowood.forceRedraw = true;
             }
         }
@@ -2209,8 +2266,6 @@ Phylowood.updateMarkers = function() {
         if (Phylowood.prevZoom === Phylowood.map.zoom() && Phylowood.zoomPauseAnimation === false)
         {
             // cladogenesis (add / remove pie slices)
-            // NOTE: this seems to be the bottleneck for performance
-            //       sensitive to large numbers of areas or lineages
             if ($.inArray(Phylowood.curClockTick, Phylowood.divergenceTicks) !== -1 
                 || Phylowood.forceRedraw === true)
             {
@@ -2218,7 +2273,6 @@ Phylowood.updateMarkers = function() {
                 if (Phylowood.playTick < 0.0 && Phylowood.curClockTick !== 0)
                     Phylowood.curClockTick = Phylowood.curClockTick - 1;
 
-                //console.log("cg", Phylowood.curClockTick, Phylowood.prevClockTick, Phylowood.forceRedraw);
                 for (var i = 0; i < this.numAreas; i++)
                 {
                     if (this.animationData[i].length !== 0)
@@ -2226,14 +2280,12 @@ Phylowood.updateMarkers = function() {
                         // remove old pie 
                         this.arcs[i].remove();
 
-
-                        // How can I instantiate fewer arcs?
-
                         // add new pie
                         this.arcs[i] = this.pie[i].selectAll(".arc" + i)
                             .data(Phylowood.donut(Phylowood.animationData[i]).filter(function(d) {
-                                if (typeof d.data.val[Phylowood.curClockTick] !== "undefined")
-                                    return d;
+                                if (typeof d.data.val[Phylowood.curClockTick] !== "undefined"
+                                    && d.data.maskContinuum === false)
+                                        return d;
                             }))
                           .enter().append("svg:g")
                             .attr("class","arc" + i)
