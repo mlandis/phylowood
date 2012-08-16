@@ -872,47 +872,58 @@ Phylowood.highlightContinuumForBranch = function(d) {
         .style("fill", function() { return d.color; })
 
     // permanent labels
-    this.svgFilter.append("svg:text")
-        .text("Lineage name:")
-        .attr("x", 435)
-        .attr("y", 40)
-        .attr("class","infoBranch")
-        .style("fill","white");
+    
+    var yStart, yMod, yVal;
+    yStart = 24; yMod = 21; yVal = yStart;    
 
     this.svgFilter.append("svg:text")
         .text("Lineage id:")
         .attr("x", 435)
-        .attr("y", 20)
+        .attr("y", yVal)
         .attr("class","infoBranch")
         .style("fill","white");
+    yVal += yMod;        
+    
+    this.svgFilter.append("svg:text")
+        .text("Lineage name:")
+        .attr("x", 435)
+        .attr("y", yVal)
+        .attr("class","infoBranch")
+        .style("fill","white");
+    yVal += yMod;        
 
     this.svgFilter.append("svg:text")
         .text("Lineage start:")
         .attr("x", 435)
-        .attr("y", 60)
+        .attr("y", yVal)
         .attr("class","infoBranch")
         .style("fill","white");
+    yVal += yMod;        
 
     this.svgFilter.append("svg:text")
         .text("Lineage end:")
         .attr("x", 435)
-        .attr("y", 80)
+        .attr("y", yVal)
         .attr("class","infoBranch")
         .style("fill","white");
+    yVal += yMod;        
+
+	yVal = yStart;
+    this.svgFilter.append("svg:text")
+        .text(function() { return d.id; })
+        .attr("x", 595)
+        .attr("y", yVal)
+        .attr("class","infoBranch")
+        .style("fill","white");
+    yVal += yMod;      
 
     this.svgFilter.append("svg:text")
         .text(function() { return d.name; })
         .attr("x", 595)
-        .attr("y", 40)
+        .attr("y", yVal)
         .attr("class","infoBranch")
         .style("fill","white");
-
-    this.svgFilter.append("svg:text")
-        .text(function() { return d.id; })
-        .attr("x", 595)
-        .attr("y", 20)
-        .attr("class","infoBranch")
-        .style("fill","white");
+    yVal += yMod;        
 
     this.svgFilter.append("svg:text")
         .text(function() {
@@ -920,9 +931,10 @@ Phylowood.highlightContinuumForBranch = function(d) {
             return t.toFixed(2) + " " + Phylowood.phyloTimeUnit;
         })
         .attr("x", 595)
-        .attr("y", 60)
+        .attr("y", yVal)
         .attr("class","infoBranch")
         .style("fill","white");
+    yVal += yMod;            
     
     this.svgFilter.append("svg:text")
         .text(function() {
@@ -930,9 +942,10 @@ Phylowood.highlightContinuumForBranch = function(d) {
             return t.toFixed(2) + " " + Phylowood.phyloTimeUnit;
         })
         .attr("x", 595)
-        .attr("y", 80)
+        .attr("y", yVal)
         .attr("class","infoBranch")
         .style("fill","white");
+    yVal += yMod;            
     
     for (var i = 0; i < Phylowood.numAreas; i++)
     {
@@ -1174,78 +1187,23 @@ Phylowood.drawTree = function() {
 	divHtt = $("#divTimeTicks").height();
 	divWtt = $("#divTimeTicks").width();
 
-    this.svgTimeTicks = d3.selectAll("#divTimeTicks").append("svg");
-
-    this.svgTimeTicks.append("svg:line")
-        .attr("x1", 10 + this.xRoot)
-        .attr("y1", 15)
-        .attr("x2", 10 + this.xRoot)
-        .attr("y2", divHtt)
-		.style("stroke-width", 3)
-        .style("stroke", "white");
-
-    this.svgTimeTicks.append("svg:line")
-        .attr("x1", divW + 10)
-        .attr("y1", 15)
-        .attr("x2", divW + 10)
-        .attr("y2", divHtt)
-		.style("stroke-width", 3)
-        .style("stroke", "white");
-
-    this.svgTimeTicks.append("svg:text")
-        .text(function() {
-            var t = Phylowood.phyloTimeOffset;
-            return t.toFixed(2) + " " + Phylowood.phyloTimeUnit;
-        })
-        .style("fill","white")
-        .attr("font-family", "Courier")
-        .attr("font-size", "12")
-        .attr("x", 8 + this.xRoot)
-        .attr("y", 10);
-
-    this.svgTimeTicks.append("svg:text")
-        .text(function() {
-            var t = Phylowood.endPhyloTime + Phylowood.phyloTimeOffset;
-            return t.toFixed(2) + " " + Phylowood.phyloTimeUnit;
-        })
-        .style("fill","white")
-        .attr("font-family", "Courier")
-        .attr("font-size", "12")
-        .attr("x", divW + 10)
-        .attr("y", 10)
-        .attr("dx", function() {
-            var bbox = this.getBBox();
-            return -bbox.width;
-        });
-
-    this.svgTimeTicks.append("svg:text")
-        .text("t=")
-        .style("fill","white")
-        .attr("font-family", "Courier")
-        .attr("font-size", "12")
-        .attr("x", (divW - this.xRoot)/2 - 15)
-        .attr("y", 10);
+  	this.svgTimeTicks = d3.selectAll("#divTimeTicks").append("svg");
 
     this.curPhyloTimeText = this.svgTimeTicks.append("svg:text")
         .text("")
-        .style("fill","white")
-        .attr("font-family", "Courier")
-        .attr("font-size", "12")
-        .attr("x", (divW - this.xRoot)/2)
-        .attr("y", 10);
+        .attr("x", 100)
+        .attr("y", 20)
+        .style("fill","white")        
+        .style("font-size", "16") 
+        .style("text-anchor", "end");
+
     
     d3.selectAll("#divDescription").append("svg").append("svg:text")
         .text(Phylowood.descriptionStr)
         .attr("x", 0)
-        .attr("y", 15)
-        .attr("dx", function() {
-            var bbox = this.getBBox();
-            var w = $("#divDescription").width();
-            return (w - bbox.width) / 2;
-        })
+        .attr("y", 20)
         .style("fill","white")
-        .attr("font-family", "Courier")
-        .attr("font-size", "16");
+        .style("font-size", "16");
     
     /*
 
@@ -1568,61 +1526,74 @@ Phylowood.highlightContinuumByMarker = function(m) {
             if (this.nodes[i].id === m.id)
                 this.highlightContinuumForBranch(this.nodes[i]);
     }
+    
+    var yStart, yMod, yVal;
+    yStart = 24; yMod = 21; yVal = yStart;
+    
     this.svgFilter.append("svg:text")
         .text("Marker name:")
         .attr("x", 10)
-        .attr("y", 20)
+        .attr("y", yVal)
         .attr("class","infoMarker")
         .style("fill","white");
+    yVal += yMod;
 
     this.svgFilter.append("svg:text")
         .text("Marker latitude:")
         .attr("x", 10)
-        .attr("y", 40)
+        .attr("y", yVal)
         .attr("class","infoMarker")
         .style("fill","white");
+    yVal += yMod;        
 
     this.svgFilter.append("svg:text")
         .text("Marker longitude:")
         .attr("x", 10)
-        .attr("y", 60)
+        .attr("y", yVal)
         .attr("class","infoMarker")
         .style("fill","white");
+    yVal += yMod;        
 
     this.svgFilter.append("svg:text")
         .text("Marker value:")
         .attr("x", 10)
-        .attr("y", 80)
+        .attr("y", yVal)
         .attr("class","infoMarker")
         .style("fill","white");
-
+    yVal += yMod;      
+     
+	yVal = yStart;
     this.svgFilter.append("svg:text")
         .text(name)
         .attr("x", 190)
-        .attr("y", 20)
+        .attr("y", yVal)
         .attr("class","infoMarker")
         .style("fill","white");
+    yVal += yMod;              
 
     this.svgFilter.append("svg:text")
         .text(parseFloat(lat).toFixed(2))
         .attr("x", 190)
-        .attr("y", 40)
+        .attr("y", yVal)
         .attr("class","infoMarker")
         .style("fill","white");
+    yVal += yMod;              
 
     this.svgFilter.append("svg:text")
         .text(parseFloat(lon).toFixed(2))
         .attr("x", 190)
-        .attr("y", 60)
+        .attr("y", yVal)
         .attr("class","infoMarker")
         .style("fill","white");
+    yVal += yMod;              
     
     this.svgFilter.append("svg:text")
         .text(val.toFixed(2))
         .attr("x", 190)
-        .attr("y", 80)
+        .attr("y", yVal)
         .attr("class","infoMarker")
         .style("fill","white");
+    yVal += yMod;              
 
 };
 
@@ -2099,10 +2070,6 @@ Phylowood.initPlayer = function() {
 		.attr("x2", 0)
 		.attr("y1", 0)
 		.attr("y2", $( "#divPhylo" ).height())
-		.style("stroke", "black")
-		.style("stroke-width", 2)
-		.style("stroke-dasharray", 2, 10)
-		.style("stroke-opacity", .7)
 		.call(d3.behavior.drag()
     		.on("drag", function(d) {     			
     			Phylowood.drag(d3.event.dx)

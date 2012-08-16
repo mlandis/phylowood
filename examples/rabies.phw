@@ -1,5 +1,5 @@
 #SETTINGS
-description Continuous phylogeography of rabies in Northeast United States from 1971-2005yr.
+description Continuous phylogeographic diffusion of rabies in Northeast USA from 1971 to 2005.
 modeltype phylogeography
 areatype continuous
 timestart 1971.96

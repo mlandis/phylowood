@@ -7,7 +7,7 @@ tree = ""
 filename = ARGV[0]
 infile = File.new(filename, "r")
 infile.each { |line|
-	if m = line.match(/^tree[^(]+(.+)/)
+	if m = line.match(/^\s*tree[^(]+(.+)/)
 		tree = m[1]
 	end
 }
@@ -18,7 +18,11 @@ ids = []
 tree.scan(/[\(\,](\d+)\[/) {|s|
 	ids.push(Integer(s[0]))
 }
-id = ids.max
+if ids.length > 0
+	id = ids.max
+else
+	id = 0
+end
 
 # Add numbers to internal nodes
 tree.gsub!(/\)\[/) {|s| 
@@ -28,7 +32,7 @@ tree.gsub!(/\)\[/) {|s|
 
 # Go through tree and print location distributions for each node
 puts "#STATES"
-tree.scan(/(\d+)\[\&([A-Z0-9a-z\,\.\-\{\}\_\%\=]+)\]/) {|s|
+tree.scan(/([A-Za-z0-9\-\_]+)\[\&([A-Z0-9a-z\,\.\-\{\}\_\%\=]+)\]/) {|s|
 	id = s[0]
 	labels = s[1]
 	print id
