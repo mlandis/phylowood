@@ -139,11 +139,21 @@ text {
 }
 
 #checkboxLabel {
-    font-size:small;
     color:white;
+    font-family:"Courier";
+    font-size="12";
+}
+#manualLink {
+    color:white;
+    font-family:"Courier";
+    font-size="12";
+    float:right;
 }
 
 #buttonReset {
+    float:right;
+}
+#buttonHelp {
     float:right;
 }
 

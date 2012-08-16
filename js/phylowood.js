@@ -161,7 +161,7 @@ Phylowood.initSettings = function() {
     var settingsTokens;
 
     this.phyloTimeOffset = 0.0;
-    this.phyloTimeUnit = "Myr";
+    this.phyloTimeUnit = "";
     this.pieSliceStyle = "even";
     this.pieFillStyle = "outwards";
     this.markerRadius = "20.0";

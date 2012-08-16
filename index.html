@@ -28,6 +28,7 @@
 	<!-- logo made using http://fontmeme.com/hollywood-font/ -->
   </div>
 
+
   <div id="divCtrl">
 	<!-- <input type="file" id="files" name="files[]" multiple />
 	Input URL: <input type="text" id="textInputHttp" value="examples/bayarea.eg.out" />
@@ -35,8 +36,8 @@
 	 -->
 	<!-- <img alt="phylowood" src="create.png"><br> -->
     <input type="button" id="buttonReset" value="Reset" onClick="window.location.reload()">
+    <input type="button" id="buttonHelp" value="Help" onClick="window.open('http://github.com/mlandis/phylowood/wiki', '_blank')">
 	<input type="button" id="buttonApply" value="Load" onClick="Phylowood.initialize();" />
-	<!--<input type="button" id="buttonReset" value="Reset" onClick="Phylowood.reset();" />-->
 	<select id="selectDemoData" onChange="Phylowood.loadInput();">
 		<option value="nothing" selected="selected">select demo</option>
 		<option value="examples/32tip.even.sim.phw">sim-even</option>
