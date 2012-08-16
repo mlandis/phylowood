@@ -645,6 +645,7 @@ DRAW
 Phylowood.maskContinuumForBranch = function(d) {
 
     Phylowood.forceRedraw = true;
+    Phylowood.forceHighlightToRedraw = true;
 
 	// mask heritage of branch
 	this.treeSvg.selectAll("line").select(
@@ -710,13 +711,12 @@ Phylowood.maskContinuumForBranch = function(d) {
             }
         }
     }
-
-	Phylowood.updateMarkers();
 }
 
 Phylowood.unmaskContinuumForBranch = function(d) {
 
     Phylowood.forceRedraw = true;
+    Phylowood.forceHighlightToRedraw = true;
 
 	// unmask heritage of branch				
 	this.treeSvg.selectAll("line").select(
@@ -768,8 +768,6 @@ Phylowood.unmaskContinuumForBranch = function(d) {
             }
         }
     }
-
-	Phylowood.updateMarkers();
 }
 
 
@@ -955,6 +953,11 @@ Phylowood.highlightContinuumForBranch = function(d) {
                 Phylowood.animationData[i][j].highlightContinuum = false;
         }
     }
+    if (Phylowood.forceHighlightToRedraw = true)
+    {
+        Phylowood.updateMarkers();
+    }
+    Phylowood.forceHighlightToRedraw = false;
 }
 
 Phylowood.unhighlightContinuumForBranch = function() {
@@ -1013,6 +1016,11 @@ Phylowood.unhighlightContinuumForBranch = function() {
             Phylowood.animationData[i][j].highlightContinuum = true;
         }
     }
+    if (Phylowood.forceHighlightToRedraw = true)
+    {
+        Phylowood.updateMarkers();
+    }
+    Phylowood.forceHighlightToRedraw = false;
 }
 
 Phylowood.drawTree = function() {
