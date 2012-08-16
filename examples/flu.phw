@@ -1,5 +1,5 @@
 #SETTINGS
-description Discrete phylogeography of influenza from 2000-2007yr.
+description Discrete phylogeography of influenza H3N2 from 2000 to 2007.
 piestyle full
 drawtype pie
 modeltype phylogeography

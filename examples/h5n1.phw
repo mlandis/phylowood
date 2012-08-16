@@ -1,5 +1,5 @@
 #SETTINGS
-description Discrete phylogeography of H5N1 in China from 1993-2005yr.
+description Discrete phylogeography of influenza H5N1 in China from 1993 to 2005.
 piestyle full
 drawtype pie
 modeltype phylogeography
