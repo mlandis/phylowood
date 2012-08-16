@@ -54,7 +54,7 @@ text {
 
 #divPhylo {
 	position: absolute;
-	top:130px;
+	top:100px;
 	left:0px;
     padding: 10px;
 	background-color:#818689;
@@ -65,7 +65,7 @@ text {
 
 #divTimeTicks {
     position: absolute;
-    top:100px;
+    top:70px;
     left:1100px;
     background-color:#717679;
     height:30px;
@@ -75,7 +75,7 @@ text {
 
 #divDescription {
     position: absolute;
-    top:100px;
+    top:70px;
     left:0px;
 	background-color:#717679;
     height:30px;
@@ -88,7 +88,7 @@ text {
 
 #divGeo {
 	position: absolute;
-	top:130px;
+	top:100px;
 	left:350px;
 	background-color:#818689;
 	height:500px;
@@ -98,7 +98,7 @@ text {
 
 #divPlay {
 	position: absolute;
-	top:620px;
+	top:590px;
 	left:0px;
 	background-color:#818689;
 	height:100px;
@@ -121,7 +121,7 @@ text {
 
 #divFilter {
 	position:absolute;
-	top:620px;
+	top:590px;
 	left:350px;
 	background-color:#818689;
 	height:100px;
