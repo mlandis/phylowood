@@ -2071,7 +2071,7 @@ Phylowood.initPlayer = function() {
 		.attr("y1", 0)
 		.attr("y2", $( "#divPhylo" ).height())
 		.call(d3.behavior.drag()
-    		.on("drag", function(d) {     			
+    		.on("drag", function(d) {
     			Phylowood.drag(d3.event.dx)
     		}) );
 
@@ -2093,9 +2093,15 @@ Phylowood.initPlayer = function() {
 
 // drag time by delta x pixels for the phyloSlider line
 Phylowood.drag = function(dx) {
+    this.prevClockTick = this.curClockTick; // ??
 	this.curClockTick += Phylowood.pxToTickScale(dx); 
-	this.sliderBusy = true;
-	this.updateDisplay();
+    this.curClockTick = Math.round(this.curClockTick);
+    if (this.curClockTick >= this.numClockTicks)
+        this.curClockTick = this.numClockTicks - 1;
+    else if (this.curClockTick < 0)
+        this.curClockTick = 0;
+    //this.updateSlider();
+    this.updateDisplay();
 }
 
 Phylowood.animStart = function() {
