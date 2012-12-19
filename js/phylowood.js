@@ -151,7 +151,7 @@ Phylowood.initSettings = function() {
     this.modelType = "biogeography";
     this.areaType = "discrete";
     this.mapType = "clean";
-    this.minAreaVal = 0.1;
+    this.minAreaVal = 0.0;
     this.descriptionStr = "";
 
     if (typeof this.settingsStr !== "undefined") {

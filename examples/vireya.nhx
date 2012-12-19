@@ -9,6 +9,7 @@ Begin phylowood;
 	piefillstyle	outwards
 	timestart	-55.0
 	markerradius	300.0
+	minareaval	0.1
 	description	Rhododendron section Vireya in Malesia
 
 Begin taxa;
