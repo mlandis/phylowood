@@ -6,7 +6,7 @@ modeltype phylogeography
 areatype discrete
 timestart 1993.74
 timeunit yr
-markerradius 600
+markerradius 300
 
 #GEO
 25.93 118.25

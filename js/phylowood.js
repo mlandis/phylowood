@@ -159,7 +159,7 @@ Phylowood.initSettings = function() {
 
         // assign phylowood settings
         for (var i = 0; i < settingsTokens.length; i++) {
-            console.log(settingsTokens[i])
+            //console.log(settingsTokens[i])
 
             var s = trim1(settingsTokens[i]).split(/\s+/g);
             //var s = settingsTokens[i].split(" ");
@@ -249,8 +249,6 @@ Phylowood.initGeo = function() {
             if (lineTokens[2].indexOf(';') !== -1)
                 lineTokens[2] = lineTokens[2].slice(0,-1);
 
-            console.log(coordsIdx);
-
             this.geoCoords[coordsIdx] =
             {
                 name: lineTokens[0],
@@ -295,7 +293,7 @@ Phylowood.initGeo = function() {
 	console.log(this.geoCoords);
 	console.log(this.divCoords);
 	console.log(this.geoDistances);
-	*/
+*/
 };
 
 Phylowood.initTree = function() {
@@ -335,6 +333,7 @@ Phylowood.initTree = function() {
         }    
     }
 
+
     Phylowood.buildTree();
 };    
 
@@ -350,6 +349,7 @@ Phylowood.buildTree = function() {
 
 	for (var i = 0; i < this.nhxStr.length; i++) {
 		var c = this.nhxStr[i];
+
 		if (c === ' ')
 			continue;
 		if (   c === '(' || c === ')'
@@ -390,8 +390,6 @@ Phylowood.buildTree = function() {
 		if ( c === ';' )
 			break;
 	}
-
-    //console.log(newickTokens);
 
 	// construct Tree from newickTokens	
 	this.nodes = [];
@@ -1392,6 +1390,8 @@ Phylowood.initAnimationData = function() {
                 var q = p.ancestor || p;
                 //val[i] = 0;
                 val[i] = p.states[j];
+                //if (typeof p.states[j] === undefined)
+                //    console.log(i,j,p);
 
                 // time lineage i exists
                 tClockStart[i]  = (p.timeStart / this.treeHeight) * this.endClockTime;
@@ -1509,7 +1509,7 @@ Phylowood.initAnimationData = function() {
                         "maskContinuum": false,
                         "highlightContinuum": true
                     };
-                    // console.log(j,i,x);
+                    //console.log(j,i,x);
                     this.animationData[j].push(x);
                 }
             }
@@ -1961,6 +1961,7 @@ Phylowood.drawMarkersDiscretePie = function() {
               .enter().append("svg:g")
                 .attr("class","arc" + i)
                 .attr("transform", function(d) {
+                    //console.log(d.data);
                     return "translate(" + d.data.x + "," + d.data.y + ")";
                 })
               .append("svg:path")
@@ -2072,7 +2073,6 @@ Phylowood.drawMap = function() {
     else if (typeof this.mapType !== "undefined")
         url = this.mapType;
 
-    console.log(meanLat,meanLon);
 
 	// create the map object, add it to #divGeo
 	var map = po.map()
