@@ -151,6 +151,7 @@ Phylowood.initSettings = function() {
     this.modelType = "biogeography";
     this.areaType = "discrete";
     this.mapType = "clean";
+    this.minAreaVal = 0.1;
     this.descriptionStr = "";
 
     if (typeof this.settingsStr !== "undefined") {
@@ -180,6 +181,8 @@ Phylowood.initSettings = function() {
                 Phylowood.mapType = s[1];
             else if (s[0] === "markerradius")
                 Phylowood.markerRadius = s[1];
+            else if (s[0] === "minareaval")
+                Phylwoood.minAreaVal = s[1];
             else if (s[0] === "description")
             {
                 for (var j = 1; j < s.length; j++)
@@ -519,7 +522,12 @@ Phylowood.buildTree = function() {
                         valTokens = varTokens[1].slice(1,-1).split(',');
                         valVec = [];
                         for (var k = 0; k < valTokens.length; k++)
-                            valVec[k] = parseFloat(valTokens[k])
+                        {
+                            x = parseFloat(valTokens[k])
+                            if (x < this.minAreaVal)
+                                x = 0.0;
+                            valVec[k] = x; 
+                        }
                         p.states = valVec;
                     }
                     else {
