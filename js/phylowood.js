@@ -182,7 +182,7 @@ Phylowood.initSettings = function() {
             else if (s[0] === "markerradius")
                 Phylowood.markerRadius = s[1];
             else if (s[0] === "minareaval")
-                Phylwoood.minAreaVal = s[1];
+                Phylowood.minAreaVal = s[1];
             else if (s[0] === "description")
             {
                 for (var j = 1; j < s.length; j++)
