@@ -7,7 +7,7 @@ Begin phylowood;
 	maptype	clean
 	pieslicestyle	even
 	piefillstyle	outwards
-	timestart	-55.0
+	timestart	-60.0
 	markerradius	300.0
 	description	Rhododendron section Vireya in Malesia
 
