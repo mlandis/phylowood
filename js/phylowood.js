@@ -69,7 +69,7 @@ Phylowood.initialize = function() {
 
 	// initialize raw data
     this.initSettings();
-	this.initStates();
+	this.initTaxa();
 	this.initGeo();
 	this.initTree();
 	
@@ -111,31 +111,30 @@ Phylowood.parseInput = function() {
 	// parse inputTokens
 	this.treeStr = "";
 	this.geoStr = "";
-	this.statesStr = "";
+	this.taxaStr = "";
     this.settingsStr = "";
 	var parseSelect = "";
-	
+
 	for (var i = 0; i < inputTokens.length; i++) {
-        if (inputTokens[i] === "#SETTINGS")
+        if (inputTokens[i] === "Begin phylowood;")
             parseSelect = "settings";
-		else if (inputTokens[i] === "#GEO")
+		else if (inputTokens[i] === "Begin geo;")
 			parseSelect = "geo";
-		else if (inputTokens[i] === "#STATES")
-			parseSelect = "states";
-		else if (inputTokens[i] === "#TREE")
+		else if (inputTokens[i] === "Begin taxa;")
+			parseSelect = "taxa";
+		else if (inputTokens[i] === "Begin trees;")
 			parseSelect = "tree";
         else if (parseSelect === "settings")
             this.settingsStr += inputTokens[i] + "\n";
 		else if (parseSelect === "geo")
 			this.geoStr += inputTokens[i] + "\n";
-		else if (parseSelect === "states")
-			this.statesStr += inputTokens[i] + "\n";
+		else if (parseSelect === "taxa")
+			this.taxaStr += inputTokens[i] + "\n";
 		else if (parseSelect === "tree")
 			this.treeStr += inputTokens[i] + "\n";
 		else
 			; // do nothing
 	}
-	
 };
 
 Phylowood.initSettings = function() {
@@ -147,9 +146,10 @@ Phylowood.initSettings = function() {
     this.phyloTimeUnit = "";
     this.pieSliceStyle = "even";
     this.pieFillStyle = "outwards";
-    this.markerRadius = "20.0";
-    this.modelType = "phylogeography";
-    this.areaType = "continuous";
+    this.markerRadius = "300.0";
+    this.drawType = "pie";
+    this.modelType = "biogeography";
+    this.areaType = "discrete";
     this.mapType = "clean";
     this.descriptionStr = "";
 
@@ -158,7 +158,10 @@ Phylowood.initSettings = function() {
 
         // assign phylowood settings
         for (var i = 0; i < settingsTokens.length; i++) {
-            var s = settingsTokens[i].split(" ");
+            console.log(settingsTokens[i])
+
+            var s = trim1(settingsTokens[i]).split(/\s+/g);
+            //var s = settingsTokens[i].split(" ");
             if (s[0] === "drawtype")
                 Phylowood.drawType = s[1];
             else if (s[0] === "modeltype")
@@ -190,88 +193,95 @@ Phylowood.initSettings = function() {
     }
 };
 
-Phylowood.initStates = function() {
-	
-	// tokenize statesTokens
-	var statesTokens = this.statesStr.split("\n");
+Phylowood.initTaxa = function() {
 
-    // threshhold to mask small values
-    this.showThreshhold = 0.05;
+    this.taxaTokens = this.taxaStr.split('\n');
+    this.numTaxa = -1;
+    this.taxa = [];
+    var taxaIdx = -1;
 
-	// store tokens into taxa and states
-	this.taxa = [];
-	this.states = [];
-	var taxonTokens;
-	
-	for (var i = 0; i < statesTokens.length; i++) {
-		taxonTokens = statesTokens[i].split(" ");
-		if (taxonTokens.length > 1) {
-			this.taxa.push(taxonTokens[0]);
-			var taxonVals = [];
-			for (var j = 1; j < taxonTokens.length; j++) {
-                var v = parseFloat(taxonTokens[j]);
-                if (v < this.showThreshhold)
-                    v = 0.0;
-				taxonVals.push(v);
-			}
-			this.states.push(taxonVals);
-		}
-	}
+    for (var i = 0; i < this.taxaTokens.length; i++)
+    {
+        var lineTokens = trim1(this.taxaTokens[i]).split(/\s+/g);
 
-	this.numNodes = this.states.length;
-	this.numTips = (this.numNodes + 1) / 2;
-	
-	// console.log("Phylowood.initStates():"); console.log(this.taxa); console.log(this.states);
-	
+        // get number of taxa
+        if (lineTokens.length > 1)
+            if (lineTokens[0] === 'Dimensions')
+                this.numTaxa = parseInt(lineTokens[1].split('=')[1].slice(0,-1));
+
+        // we populate taxa[] in the tree block
+    }
+
+    this.numTips = this.numTaxa;
 };
 
 Phylowood.initGeo = function() {
 
 	// tokensize geoStr
-	var geoTokens = this.geoStr.split("\n");
+	this.geoTokens = this.geoStr.split("\n");
 
 	// assign geoTokens to geoCoords	
 	var coordTokens;
 	this.geoCoords = [];
 	this.maxGeoCoords = [-181.0, -181.0, 181.0, 181.0]; // [N, E, S, W]
+    var coordsIdx = -1;
 	
 	// input expects "latitude longitude"
 	// maps to [i][0] and [i][1] resp.
-	for (var i = 0; i < geoTokens.length; i++) {
-		var coordVals = [];
-		coordTokens = geoTokens[i].split(" ");
-		if (coordTokens.length == 2) {
-			// store coordinates
-			this.geoCoords.push({"lat":coordTokens[0], "lon":coordTokens[1]});
+	for (var i = 0; i < this.geoTokens.length; i++) {
 
-			// compute maxima for geographical coordinates
-			if (this.geoCoords[i].lat > this.maxGeoCoords[0]) // N
-				this.maxGeoCoords[0] = this.geoCoords[i].lat;
-			if (this.geoCoords[i].lon > this.maxGeoCoords[1]) // E
-				this.maxGeoCoords[1] = this.geoCoords[i].lon;
-			if (this.geoCoords[i].lat < this.maxGeoCoords[2]) // S
-				this.maxGeoCoords[2] = this.geoCoords[i].lat;
-			if (this.geoCoords[i].lon < this.maxGeoCoords[3]) // W
-				this.maxGeoCoords[4] = this.geoCoords[i].lon;
-		}
-	}
-	
-	var numAreas = this.geoCoords.length;
-	this.numAreas = numAreas;
+        var lineTokens = trim1(this.geoTokens[i]).split(/\s+/g);
+        
+        // get number of areas
+        if (lineTokens.length > 1)
+            if (lineTokens[0] === 'Dimensions')
+                this.numAreas = parseInt(lineTokens[1].split('=')[1].slice(0,-1));
+        
+        // get coordinates
+        if (lineTokens[0] === 'Coords')
+            coordsIdx = 0;
+
+        else if (coordsIdx >= 0 && coordsIdx < this.numAreas)
+        {
+            if (lineTokens[2].indexOf(';') !== -1)
+                lineTokens[2] = lineTokens[2].slice(0,-1);
+
+            console.log(coordsIdx);
+
+            this.geoCoords[coordsIdx] =
+            {
+                name: lineTokens[0],
+                lat: parseFloat(lineTokens[1]),
+                lon: parseFloat(lineTokens[2])
+            };
+
+            if (this.geoCoords[coordsIdx].lat > this.maxGeoCoords[0]) // N
+                this.maxGeoCoords[0] = this.geoCoords[coordsIdx].lat;
+            if (this.geoCoords[coordsIdx].lon > this.maxGeoCoords[1]) // E
+                this.maxGeoCoords[1] = this.geoCoords[coordsIdx].lon;
+            if (this.geoCoords[coordsIdx].lat < this.maxGeoCoords[2]) // S
+                this.maxGeoCoords[2] = this.geoCoords[coordsIdx].lat;
+            if (this.geoCoords[coordsIdx].lon < this.maxGeoCoords[3]) // W
+                this.maxGeoCoords[4] = this.geoCoords[coordsIdx].lon;
+
+            coordsIdx++;
+        }
+    }
 	
 	// construct distance matrix geoDistances
 	this.distanceType = "Euclidean";
 	this.geoDistances = [];
-	for (var i = 0; i < numAreas; i++) {
+	for (var i = 0; i < this.numAreas; i++) {
 		var distanceVals = [];
-		for (var j = 0; j < numAreas; j++) {
+		for (var j = 0; j < this.numAreas; j++) {
 			if (i === j) {
 				distanceVals.push(0.0);
 			}
 			else {
 				distanceVals.push( Phylowood.distance(
 					this.geoCoords[i],
-					this.geoCoords[j]));
+					this.geoCoords[j])
+                );
 			}
 		}
 		this.geoDistances.push(distanceVals);
@@ -287,57 +297,108 @@ Phylowood.initGeo = function() {
 
 Phylowood.initTree = function() {
 
+    // parse treeStr
+    this.treeTokens = this.treeStr.split('\n');
+    this.nhxStr = "";
+    this.nodes = [];
+    var nodeIdx = -1;
+    
+    for (var i = 0; i < this.treeTokens.length; i++) 
+    {    
+        var lineTokens = trim1(this.treeTokens[i]).split(/\s+/g).filter(function() { return true} );
+
+        // get taxon names
+        if (lineTokens[0] === 'Translate')
+            nodeIdx = 0; 
+
+        else if (nodeIdx >= 0 && nodeIdx < this.numTaxa)
+        {    
+            if (lineTokens[1].indexOf(';') !== -1 || lineTokens[1].indexOf(',') !== -1)
+                lineTokens[1] = lineTokens[1].slice(0,-1);
+            
+            var idx = parseInt(lineTokens[0]);
+            this.taxa[idx] = lineTokens[1].replace("_",". ");
+            nodeIdx++;
+        }    
+
+        else if (lineTokens[0] === 'tree')
+        {    
+            if (lineTokens[2] === '=') 
+                this.nhxStr = lineTokens[3];
+            else {
+                var lt = lineTokens[1];
+                this.nhxStr = lt.slice(lt.indexOf('='),lt.length);
+            }    
+        }    
+    }
+
+    Phylowood.buildTree();
+};    
+
+
+Phylowood.buildTree = function() {
+
 	// parse Newick string
-	var newickStr = this.treeStr;
 	var readTaxonName = false;
 	var readBrlen = false;
-	var numTaxa = 0;
+    var readData = false;
 	var temp = "";
 	var newickTokens = [];
-	for (var i = 0; i < newickStr.length; i++) {
-		var c = newickStr[i];
+
+	for (var i = 0; i < this.nhxStr.length; i++) {
+		var c = this.nhxStr[i];
 		if (c === ' ')
 			continue;
-		if (c === '(' || c === ')' || c === ',' || c === ':' || c === ';') {
+		if (   c === '(' || c === ')'
+            || c === ':' || c === ';'
+            || c === '[' || c === ']'
+            || c === ',' || c === '&') {
+
 			temp = c;
 			newickTokens.push(temp);
 			if ( c === ':' )
 				readBrlen = true;
-			else
-				readBrlen = false;
+            else if (c === '(' || c === ')' || c === ';' || c == ',')
+                readBrLen = false;
+            else if (c === '[')
+                readData = true;
+            else if (c === ']')
+                readData = false;
+
 		}
 		else {
 			// the character is part of a taxon name
 			var j = i;
 			var taxonName = "";
-			while ( newickStr[j] !== '('
-			     && newickStr[j] !== ')'
-			     && newickStr[j] !== ','
-			     && newickStr[j] !== ':'
-			     && newickStr[j] !== ';' )
+			while ( this.nhxStr[j] !== '('
+			     && this.nhxStr[j] !== ')'
+			     && (this.nhxStr[j] !== ',' || readData === true)
+			     && this.nhxStr[j] !== ':'
+			     && this.nhxStr[j] !== ';'
+                 && this.nhxStr[j] !== '['
+                 && this.nhxStr[j] !== ']')
 			{
-				taxonName += newickStr[j];
+				taxonName += this.nhxStr[j];
 				j++;
 			}
 			newickTokens.push(taxonName);
 			i = j - 1;
-			if ( readBrlen === false )
-				numTaxa++;
-			readBrlen = false;
 		}
 		if ( c === ';' )
 			break;
 	}
-	
+
+    //console.log(newickTokens);
+
 	// construct Tree from newickTokens	
 	this.nodes = [];
 	this.root = null;
 	var p = null;
+    var readBrlen = false;
+    var readData = false;
 
-	readBrlen = false;
-	
 	for (var i = 0; i < newickTokens.length; i++) {
-		
+	
 		// indicates new node
 		if ( newickTokens[i] === "(" ) {
 
@@ -354,6 +415,7 @@ Phylowood.initTree = function() {
 				p = q;
 			}
 			readBrlen = false;
+            readData = false;
 		}
 		
 		// indicates end of clade
@@ -365,6 +427,7 @@ Phylowood.initTree = function() {
                 console.log("Phylowood.initTree(): Problem going down tree");
             }
 			readBrlen = false;
+            readData = false;
 		}
 		
 		// indicates divergence event
@@ -376,13 +439,33 @@ Phylowood.initTree = function() {
                 console.log("Phylowood.initTree(): Problem going down tree");
             }
 			readBrlen = false;
+            readData = false;
 		}
 		
 		// next token is branch length
 		else if ( newickTokens[i] === ":" )
 		{
 			readBrlen = true;
+            readData = false;
 		}
+
+        // next token starts nhx data
+        else if (newickTokens[i] === '[')
+        {
+            readBrlen = false;
+            readData = true;
+        }
+
+        // next token ends nhx data
+        else if (newickTokens[i] === ']')
+        {
+            readBrlen = false;
+            readData = false;
+        }
+
+        // next token is a variable
+        else if (newickTokens[i] === '&')
+            ;
 		
 		// no tokens (should) remain
 		else if ( newickTokens[i] === ";" ) {
@@ -390,23 +473,14 @@ Phylowood.initTree = function() {
 		}
 		else {
 			// taxon name token
-			if (readBrlen === false) {
-        		var tipName = newickTokens[i];
-        		var tipIdx = -1;
-        		for (var j = 0; j < this.taxa.length; j++) {
-        			if (tipName === this.taxa[j]) {
-        				tipIdx = j;
-        				break;
-        			}
-        		}
-        		if (tipIdx === -1) {
-        			console.log("Phylowood.initTree(): Could not find " + tipName + " in Phylowood.taxa");
-        		}
-        		
+			if (!readBrlen && !readData) {
+        		var tipIdx = parseInt(newickTokens[i]);
+        		var tipName = this.taxa[tipIdx];
+
         		// internal node
         		if (newickTokens[i-1] === ")") {
         			p.id = tipIdx;
-        			p.name = tipName;
+        			p.name = newickTokens[i];
         		}
         		
         		// tip node
@@ -422,7 +496,7 @@ Phylowood.initTree = function() {
 			}
 			
 			// branch length token
-			else {
+			else if (readBrlen && ! readData) {
 				// reading a branch length 
 				var x = parseFloat(newickTokens[i]);
 				if (x < 0.00001)
@@ -430,17 +504,45 @@ Phylowood.initTree = function() {
                 p.len = x;
 				readBrlen = false;
 			}
+
+            // nhx data
+            else if (readData)
+            {
+                // split for each variable by &
+                nhxTokens = newickTokens[i].split('&');
+                for (var j = 0; j < nhxTokens.length; j++) {
+
+                    // find variable assignments
+                    var varTokens = nhxTokens[j].split('=');
+
+                    if (varTokens[0] === 'area_pp') {
+                        valTokens = varTokens[1].slice(1,-1).split(',');
+                        valVec = [];
+                        for (var k = 0; k < valTokens.length; k++)
+                            valVec[k] = parseFloat(valTokens[k])
+                        p.states = valVec;
+                    }
+                    else {
+                        ; // e.g. other variables
+                    }
+                }
+            }
 		}
 	}
 
+    this.numNodes = this.nodes.length;
+
 	// assign states to nodes
 	for (var i = 0; i < this.numNodes; i++) {
-		for (var j = 0; j < this.states.length; j++) {
-			if (this.nodes[i].name === this.taxa[j]) {
-				this.nodes[i].states = this.states[j];
-				this.nodes[i].id = j;
-			}
-		}
+		//for (var j = 0; j < this.taxa.length; j++) {
+		//	if (this.nodes[i].name === this.taxa[j]) {
+				//this.nodes[i].states = this.states[j];
+		//		this.nodes[i].id = i;
+	//		}
+     //       else {
+                this.nodes[i].id = i; 
+       //     }
+	//	}
 	}
 
     // this is used to add a "false" branch to the root for phylo controls
@@ -1095,6 +1197,7 @@ Phylowood.drawTree = function() {
 			if (yStart == divH) yStart -=2;
 			if (yStart == 0.0) yStart += 2;
 			if (yEnd == 0.0) yEnd +=2;
+
 
 			// add horizontal lines
 			this.phyloDrawData.push({
@@ -1921,15 +2024,16 @@ Phylowood.drawMap = function() {
 	for (var i = 0; i < coords.length; i++) {
 	
 		// latitude
-		var lat = parseFloat(coords[i].lat);
+		var lat = coords[i].lat;
 		meanLat += lat;
 		if (lat < minLat) { minLat = lat; }
 		if (lat > maxLat) { maxLat = lat; }
 	
 		// longitude
-		var lon = parseFloat(coords[i].lon);	
+		var lon = coords[i].lon;	
 		if (lon < minLon) { minLon = lon; }
 		if (lon > maxLon) { maxLon = lon; }		
+
 		// convert to 0 to 360
 		if (lon < 0) { lon = 360 + lon; }
 		meanLon += lon;	
@@ -1941,10 +2045,11 @@ Phylowood.drawMap = function() {
 	if (meanLon > 180) {
 		meanLon = meanLon - 360
 	}
-		
+	
 	// create polymaps object
 	var po = org.polymaps;
 	this.po = po;
+
 
     // use url from #SETTINGS block
     var url;
@@ -1959,11 +2064,13 @@ Phylowood.drawMap = function() {
     else if (typeof this.mapType !== "undefined")
         url = this.mapType;
 
+    console.log(meanLat,meanLon);
+
 	// create the map object, add it to #divGeo
 	var map = po.map()
 		.container(d3.select("#divGeo").append("svg:svg").node())
 		.center({lat:meanLat,lon:meanLon})
-		.zoom(15)
+		.zoom(13)
 		.add(po.interact())
 		.add(po.image()
 		  .url(po.url( url )
@@ -2527,6 +2634,11 @@ Phylowood.rnorm = function(mu, sigma) {
         "x": sqrt_u * Math.cos(2 * Math.PI * v),
         "y": sqrt_u * Math.sin(2 * Math.PI * v)
     };
+}
+
+function trim1 (str)
+{
+    return str.replace(/^\s\s*/, '').replace(/\s\s*$/, '');
 }
 
 /***
