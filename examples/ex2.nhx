@@ -7,7 +7,7 @@ Begin phylowood;
     maptype clean
     pieslicestyle even
     piefillstyle outwards
-    timestart 33.3.0
+    timestart -33.3.0
     timeunit Myr
     markerradus 50.0
     description Example 2
