@@ -28,7 +28,6 @@
 	<!-- logo made using http://fontmeme.com/hollywood-font/ -->	
   </div>
 
-
   <div id="divCtrlTop">
     <input type="button" id="buttonHelp" value="Help" onClick="window.open('http://github.com/mlandis/phylowood/wiki', '_blank')">
     <input type="button" id="buttonReset" value="Reset" onClick="window.location.reload()">
@@ -44,6 +43,7 @@
 		<option value="examples/vireya.nhx">vireya</option>
         <!-- <option value="examples/ex2.nhx">ex2</option> -->
 	</select>
+<!--	<button id="toggle">Show underlying select</button> -->
     <input type="checkbox" id="checkboxAutoload" name="autoLoad" checked><label id="checkboxLabel">Auto-Load</label></input>
   </div>
 
@@ -85,6 +85,11 @@ just click or double-click a lineage
   <div id="divPlay" class="player">
   <div id="divSlider"></div><br>
   <script>
+  $(function() {
+  	if (window.location.search !== "")
+  		Phylowood.readInputFromHttp();
+  });
+  
   $(function() {
 	$( "#divSlider" ).slider({
 		//option: {"step": 10},
@@ -175,7 +180,6 @@ just click or double-click a lineage
 			Phylowood.animEnd();
 		});
 	});
-
     </script>
 	<span id="toolbar" class="ui-widget-header ui-corner-all">
 		<button id="beginning">go to beginning</button>

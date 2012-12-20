@@ -7,16 +7,32 @@ INPUT
 ***/
 
 Phylowood.readInputFromHttp = function() {
-	this.inputHttp = $( "#textInputHttp" ).attr("value");
-	$.get(Phylowood.inputHttp, function(response) {
-		//if (Phylowood.inputStr === "")
+	//this.inputHttp = $( "#textInputHttp" ).attr("value");
+    this.inputHttp = window.location.search;
+    
+    // ignore empty queries
+    if (this.inputHttp === "")
+        return;
+
+    // ignore non-URL queries
+    if (this.inputHttp.slice(0,5) !== "?url=")
+        return;
+
+    var urlquery = this.inputHttp.slice(5,this.inputHttp.length);
+    console.log(urlquery);
+
+	$.get(urlquery, function(response) {
 		Phylowood.inputStr = response;
 	})
 	.success(function() { })
 	.error(function() { })
 	.complete(function() { 
-		Phylowood.loadInput();
-	});
+        $('#textareaInput').load(urlquery, function() {
+            // callback
+            if ($("#checkboxAutoload").attr("checked") === "checked")
+                Phylowood.initialize();
+        });
+    });
 };
 
 Phylowood.loadInput = function() {
