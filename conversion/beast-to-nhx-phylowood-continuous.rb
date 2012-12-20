@@ -7,8 +7,7 @@
 # Walk through file and save NEWICK tree 
 tree = ""
 filestr = ""
-#filename = ARGV[0]
-filename = "/Users/mlandis/Documents/code/phylowood/conversion/RacRABV_cont_0.8_MCC_snyder.trees"
+filename = ARGV[0]
 infile = File.new(filename, "r")
 infile.each { |line|
 	if m = line.match(/^tree[^(]+(.+)/)

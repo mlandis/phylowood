@@ -94,7 +94,6 @@ tree.scan(/\[\&([A-Z0-9a-z\,\.\-\{\}\_\%\=\"]+)\]/) {|s|
 }
 
 # Go through tree and strip out annotations
-i = 0
 treestr = tree.gsub(/\[\&[A-Z0-9a-z\,\.\-\{\}\_\%\=\"]+\]/) {|s|}
 
 # Go through treestr and insert new areastr
