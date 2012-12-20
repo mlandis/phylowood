@@ -497,7 +497,7 @@ Phylowood.buildTree = function() {
 			}
 			
 			// branch length token
-			else if (readBrlen && ! readData) {
+			else if (readBrlen && !readData) {
 				// reading a branch length 
 				var x = parseFloat(newickTokens[i]);
 				if (x < 0.00001)
