@@ -9,6 +9,8 @@ INPUT
 Phylowood.readInputFromHttp = function() {
 	//this.inputHttp = $( "#textInputHttp" ).attr("value");
     this.inputHttp = window.location.search;
+
+    console.log (this.inputHttp);
     
     // ignore empty queries
     if (this.inputHttp === "")
@@ -20,6 +22,7 @@ Phylowood.readInputFromHttp = function() {
 
     var urlquery = this.inputHttp.slice(5,this.inputHttp.length);
     console.log(urlquery);
+
 
 	$.get(urlquery, function(response) {
 		Phylowood.inputStr = response;
