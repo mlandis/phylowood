@@ -4,20 +4,20 @@ Phylowood: Browser-based Interactive Animations of Ancestral Dispersal and Diver
 * Project homepage: http://github.com/mlandis/phylowood
 * Live demo: http://mlandis.github.com/phylowood/
 
-## To get started:
+## To get started
 
-Paste your input here.
-...or select and load a demo.
+1. Choose an item from the "Select Demo" menu
+2. Click play to begin your animation
+3. Click the "Help" button to learn more
 
-Click apply to read in your data and initialize your animation.
+## Features
 
-Once your data loads, click play to begin your animation.
+- Control time using the media bar
+- Control space using the map app
+- Highlight a lineage group using mouseover (temporary)
+- Mask a lineage group using double click (persistent)
+- Unmask a lineage group using click (persistent)
 
-
-## Other tips:
-
-Control time with the media buttons
-...or just drag the slider.
-
-Let's call a lineage, its ancestors, and its descendants the lineages' continuum.  Hovering over a 
-lineage highlights its continuum.
+## Have your own data?
+- Paste your .nhx file contents here and click "Load"
+- For more on the .nhx file format, click "Help"
