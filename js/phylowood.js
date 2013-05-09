@@ -2043,35 +2043,35 @@ Phylowood.drawMap = function() {
 	var foci = [coords.length]; // cluster foci, i.e. areas lat,lons
 
 	// find center and extent of coords
-	var meanLat = 0,
-		meanLon = 0,
-		minLat = 90,
-		maxLat = -90,
-		minLon = 180,
-		maxLon = -180;
+	this.meanLat = 0;
+	this.meanLon = 0;
+	this.minLat = 90;
+	this.maxLat = -90;
+	this.minLon = 180;
+	this.maxLon = -180;
 	for (var i = 0; i < coords.length; i++) {
 	
 		// latitude
 		var lat = coords[i].lat;
-		meanLat += lat;
-		if (lat < minLat) { minLat = lat; }
-		if (lat > maxLat) { maxLat = lat; }
+		this.meanLat += lat;
+		if (lat < this.minLat) { this.minLat = lat; }
+		if (lat > this.maxLat) { this.maxLat = lat; }
 	
 		// longitude
 		var lon = coords[i].lon;	
-		if (lon < minLon) { minLon = lon; }
-		if (lon > maxLon) { maxLon = lon; }		
+		if (lon < this.minLon) { this.minLon = lon; }
+		if (lon > this.maxLon) { this.maxLon = lon; }		
 
 		// convert to 0 to 360
 		if (lon < 0) { lon = 360 + lon; }
-		meanLon += lon;	
+		this.meanLon += lon;	
 		
 	}
-	meanLat /= coords.length;
-	meanLon /= coords.length;
+	this.meanLat /= coords.length;
+	this.meanLon /= coords.length;
 	// convert back to -180 to 180
-	if (meanLon > 180) {
-		meanLon = meanLon - 360
+	if (this.meanLon > 180) {
+		this.meanLon = this.meanLon - 360
 	}
 	
 	// create polymaps object
@@ -2096,7 +2096,7 @@ Phylowood.drawMap = function() {
 	// create the map object, add it to #divGeo
 	var map = po.map()
 		.container(d3.select("#divGeo").append("svg:svg").node())
-		.center({lat:meanLat,lon:meanLon})
+		.center({lat:this.meanLat,lon:this.meanLon})
 		.zoom(13)
 		.add(po.interact())
 		.add(po.image()
@@ -2115,19 +2115,19 @@ Phylowood.drawMap = function() {
 	// zoom out to fit all the foci	
 	// need to center map at {0,0} when zoom is 1 to put entire globe in view
     var autoZoomSize = 0.25;
-	while (minLat < map.extent()[0].lat) { 
+	while (this.minLat < map.extent()[0].lat) { 
 		map.zoomBy(-autoZoomSize); 
 		if (map.zoom() <= 2) { map.center({lat:20,lon:20}) }
 	}
-	while (minLon < map.extent()[0].lon) { 
+	while (this.minLon < map.extent()[0].lon) { 
 		map.zoomBy(-autoZoomSize); 
 		if (map.zoom() <= 2) { map.center({lat:20,lon:20}) }		
 	}	
-	while (maxLat > map.extent()[1].lat) { 
+	while (this.maxLat > map.extent()[1].lat) { 
 		map.zoomBy(-autoZoomSize); 
 		if (map.zoom() <= 2) { map.center({lat:20,lon:20}) }		
 	}	
-	while (maxLon > map.extent()[1].lon) { 
+	while (this.maxLon > map.extent()[1].lon) { 
 		map.zoomBy(-autoZoomSize); 
 		if (map.zoom() <= 2) { map.center({lat:20,lon:20}) }		
 	}
@@ -2147,11 +2147,7 @@ Phylowood.drawMap = function() {
 		
 	var layer = d3.select("#divGeo svg").insert("svg:g", ".compass");
 
-    this.maxLat = maxLat;
-    this.minLat = minLat;
-    this.maxLon = maxLon;
-    this.minLon = minLon;
-    this.areaDensity = (maxLat - minLat) * (maxLon- minLon) / coords.length;
+    this.areaDensity = coords.length / ((this.maxLat - this.minLat) * (this.maxLon- this.minLon));
     this.zoomScale = Math.pow(2, Phylowood.map.zoom() - Phylowood.bestZoom);
 
 
