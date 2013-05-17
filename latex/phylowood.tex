@@ -35,7 +35,7 @@
 
 \begin{titlepage}
 \begin{center}
-{\Large\bf Phylowood: Interactive Web-based Animations of\\Biogeographical and Phylogeographical Histories}
+{\Large\bf Phylowood: Interactive Web-based Animations of \\ Biogeographic and Phylogeographic Histories}
 % R.H. Phylowood Animations
 
 \bigskip
@@ -59,7 +59,7 @@ University of Edinburgh, Edinburgh, UK \\
 
 \begin{abstract}
 
-\noindent {\bf Summary:} Phylowood is a web service that uses Javascript to generate in-browser animations of biogeographical and phylogeographical histories from annotated phylogenetic input. The animations are interactive, allowing the user to adjust spatial and temporal resolution, and highlight phylogenetic lineages of interest.
+\noindent {\bf Summary:} Phylowood is a web service that uses Javascript to generate in-browser animations of biogeographic and phylogeographic histories from annotated phylogenetic input. The animations are interactive, allowing the user to adjust spatial and temporal resolution, and highlight phylogenetic lineages of interest.
 
 \noindent {\bf Availability:} All documentation and source code for Phylowood is freely available at \\
 \texttt{https://github.com/mlandis/phylowood} and a live web application is available at \\
@@ -70,8 +70,6 @@ University of Edinburgh, Edinburgh, UK \\
 \end{abstract}
 
 \end{titlepage}
-
-
 
 % \noindent [ancestral area analysis; historical biogeography; phylogeography; interactive animation; web service]
 
@@ -91,7 +89,9 @@ Phylowood has two primary display panels: the phylogeny panel and the geography 
 
 Filtering out uninteresting data is key to exploration and summarization. Phylowood allows users to mask, unmask, and highlight sets of branches using simple doubleclick, click, and mouseover events through either the phylogeny or geography displays. For example, mask and unmask commands may be used to remove all but 10 lineages from a dataset containing 1000 taxa. To unmask all lineages, simply single click the branch leading the root. Mouseover events provide information about highlighted lineage below the geography panel and help users to connect phylogenetic lineages to their geographic counterparts.
 
-The geography panel contains a dynamic map, capable of zooming and panning, and the area markers representing geographic distributions at the current time point for unmasked phylogenetic lineages. As geographic representations reflect the underlying model assumptions of the ancestral area reconstructions, we allow several styles: continuous phylogeography, discrete phylogeography, and discrete biogeography. In the case of continous phylogeographic state, each node in the reconstructed phylogeny has a unique latitude and longitude. Here, Phylowood displays each branch in the phylogeny as a separate geographic marker. In the case of discrete phylogeography or discrete biogeography, there are a limited number of possible geographic locations to which phylogenetic lineages may be assigned. At a given phylogenetic branch, the area (size) of a corresponding geographic marker is proportional to the weight assigned to that geographic state. Depending on reconstruction methodology, this weight may represent posterior probability, confidence metric, or parsimony score. Intermediate values along phylogenetic branches are interpolated between reconstructed internal phylogenetic nodes. In the discrete phylogeographic or biogeographic scenarios, interpolation represents posterior probability, etc..., of assignment along a branch of the phylogeny. In the continous phylogeographic scenario, interpolation represents the reconstructed continous location along a branch of the phylogeny. Similar to the branches in the phylogenetic panel, area markers respond to the highlight mouseover command.
+The geography panel contains a dynamic map, capable of zooming and panning, and the area markers representing geographic distributions at the current time point for unmasked phylogenetic lineages. As geographic representations reflect the underlying model assumptions of the ancestral area reconstructions, we allow several styles: continuous phylogeography, discrete phylogeography, and discrete biogeography. In the case of continuous phylogeographic state, each node in the reconstructed phylogeny has a unique latitude and longitude. Here, Phylowood displays each branch in the phylogeny as a separate geographic marker. In the case of discrete phylogeography or discrete biogeography, there are a limited number of possible geographic locations to which phylogenetic lineages may be assigned. At a given phylogenetic branch, the area (size) of a corresponding geographic marker is proportional to the weight assigned to that geographic state. Depending on reconstruction methodology, this weight may represent posterior probability, confidence metric, or parsimony score. Intermediate values along phylogenetic branches are interpolated between reconstructed internal phylogenetic nodes. In the discrete phylogeographic or biogeographic scenarios, interpolation represents posterior probability, etc..., of assignment along a branch of the phylogeny. In the continuous phylogeographic scenario, interpolation represents the reconstructed continuous location along a branch of the phylogeny. Similar to the branches in the phylogenetic panel, area markers respond to the highlight mouseover command.
+
+We provide several demonstration datasets, encompassing continuous phylogeographic, discrete phylogeographic, and discrete biogeographic scenarios. Users can easily animate their own datasets through the web service. Additionally, the hosting of code and data on GitHub allows users to easily fork the repository and provide one-click links to their own custom visualizations. This is intended to make sharing of specific visualizations as easy as possible.
 
 \section{Implementation}
 
@@ -99,15 +99,15 @@ Phylowood was developed in Javascript, and thus can be used with any HTML5-compl
 
 Animations are generated from a NEXUS format file, specifying the animation settings, the geographical coordinates, the taxa names, and a New Hampshire extended format (NEWICK) tree annotated with ancestral area values. This format was adopted to accommodate a variety of methods, since Phylowood is agnostic about the method underlying the results. We currently provide Ruby scripts to convert BEAST output to Phylowood format, with more to be developed upon demand. BayArea produces Phylowood format files natively.
 
-While we provide several demonstrative datasets, users can easily animate their own results through the web service. To further explore Phylowood's features, visit \texttt{http://github.com/mlandis/phylowood/wiki} for help and tutorials.
-
 \section{Example}
 
 [WE LEARN SOMETHING ABOUT VIREYA USING BAYAREA + PHYLOWOOD.]
 
 \section{Conclusion}
 
-[IMPORTANCE OF SOPHISTICATED VISUALIZATION TECHNIQUES AS DATA INCREASES]
+Phylogeographic and biogeographic methods combine genetic and geographic data across individuals or across species in order to infer complex spatiotemporal processes. Joint phylogenetic and geographic reconstructions produced by these methods benefit from sophisticated visualization techniques that highlight connections between geography and genotype. As phylogeographic and biogeographic datasets continue to increase in size and complexity, harnessing appropriate visualization techniques will be increasingly important. We present Phylowood as such a visualization tool to explore and share geographically-tagged phylogenies. 
+
+To further explore Phylowood's features, visit \texttt{http://github.com/mlandis/phylowood/wiki} for help and tutorials.
 
 \section*{Acknowledgments}
 
@@ -126,7 +126,7 @@ MJL was supported by funding provided by Google Summer of Code 2012, and grants 
 \begin{center}
 \includegraphics[width=\textwidth]{phylowood}
 \caption{
-Sample still frame from Phylowood. The results shown are from the discrete biogeographical analysis of {\it Rhododendron} section {\it Vireya} in Malesia using BayArea. Much of the phylogenetic tree has been masked using mouse-issue commands, leaving two clades and their shared ancestry unmasked. The media slider indicates the current position of the animation with respect to the time-calibrated phylogeny, for which time six unmasked lineages are animated.  For the current animation time, each extant lineage is allocated an equal width slice of the pie. For each color, the depth of the slice indicates the approximate marginal posterior probability of the lineage occupying the area at that time. Pie slices are sorted phylogenetically, making the relative position of absent slices informative. Consulting the geography panel, we find the taxa from the top clade appear to be allopatric with respect to taxa from the bottom clade at -15.5Myr. The interactive animation is available at \texttt{http://mlandis.github.io/phylowood/?url=examples/vireya.nhx}.
+Sample still frame from Phylowood. The results shown are from the discrete biogeographic analysis of {\it Rhododendron} section {\it Vireya} in Malaysia using BayArea. Much of the phylogenetic tree has been masked using mouse-issue commands, leaving two clades and their shared ancestry unmasked. The media slider indicates the current position of the animation with respect to the time-calibrated phylogeny, for which time six unmasked lineages are animated.  For the current animation time, each extant lineage is allocated an equal width slice of the pie. For each color, the depth of the slice indicates the approximate marginal posterior probability of the lineage occupying the area at that time. Pie slices are sorted phylogenetically, making the relative position of absent slices informative. Consulting the geography panel, we find the taxa from the top clade appear to be allopatric with respect to taxa from the bottom clade at -15.5Myr. The interactive animation is available at \texttt{http://mlandis.github.io/phylowood/?url=examples/vireya.nhx}.
 }
 \label{phylowood}
 \end{center}
