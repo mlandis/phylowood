@@ -95,15 +95,13 @@ We provide several demonstration datasets, encompassing continuous phylogeograph
 
 \section{Implementation}
 
-Phylowood was developed in Javascript, and thus compatible with any HTML5-compliant web browsers with no installation required. SVG objects are managed and animated using D3.js (\url{http://d3js.org}). Map tiles are fetched from Cloudmade (\url{http://cloudmade.com}) using Polymaps (\url{http://polymaps.org}). Source code is published under the GNU Software License and made freely available at \url{http://github.com/mlandis/phylowood}.
+Phylowood was developed in Javascript, and thus compatible with any HTML5-compliant web browsers with no installation required. SVG objects are managed and animated using D3.js. Map tiles are fetched from Cloudmade using Polymaps. Source code is published under the GNU Software License and made freely available at \url{http://github.com/mlandis/phylowood}.
 
 Animations are generated from a NEXUS format file, specifying the animation settings, the geographical coordinates, the taxa names, and a New Hampshire extended format (NEWICK) tree annotated with ancestral area values. This format was adopted to accommodate a variety of methods, since Phylowood is agnostic about the method underlying the results. We currently provide Ruby scripts to convert BEAST output to Phylowood format, with more to be developed upon demand. BayArea produces Phylowood format files natively.
 
 \section{Example: {\it Vireya}}
 
-{\it Rhododendron} section {\it Vireya} are group of flowering plants distributed throughout the Malesian archipelago (Figure \ref{phylowood}). From the posterior probabilities of ancestral range reconstructions, \cite{landis12} infer the ancestor common to Malesian {\it Vireya} originated on continental Asia, concurring with results reported in \cite{webb12}. Approximately 35-45 Mya, {\it Vireya} first colonize islands east of both Wallace's and Lydekker's Lines, known barriers to dispersal events. Interestingly, this clade's range spans strictly east of Lydekker's Line while no other taxa in the study have successfully colonized the region.
-
-While such a verbal description of the inferred colonization scenario may not be immediately clear, it is made evident using Phylowood by filtering and animating these otherwise high-dimensional data: 1. Masking clades whose colors appear west of Lydekker's Line; 2. Panning the map over Malesia; 3. Filtering out areas with low probability; 4. Beginning the animation at 45 Mya.
+{\it Rhododendron} section {\it Vireya} are group of flowering plants distributed throughout the Malesian archipelago (Figure \ref{phylowood}). From the posterior probabilities of ancestral range reconstructions, \cite{landis12} infer the ancestor common to Malesian {\it Vireya} originated on continental Asia, concurring with results reported in \cite{webb12}. Approximately 35-45 Mya, {\it Vireya} first colonize islands east of both Wallace's and Lydekker's Lines, known barriers to dispersal events. Interestingly, this clade's range spans strictly east of Lydekker's Line while no other taxa in the study have successfully colonized the region. This scenario is made evident using Phylowood by filtering and animating these otherwise high-dimensional data: 1. Masking clades whose colors appear west of Lydekker's Line; 2. Panning the map over Malesia; 3. Filtering out areas with low probability; 4. Beginning the animation at 45 Mya.
 
 \section{Conclusion}
 
