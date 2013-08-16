@@ -87,17 +87,25 @@ Phylowood.initialize = function() {
 	this.parseInput();
 
 	// initialize raw data
+    console.log("initSettings\n")
     this.initSettings();
+    console.log("initTaxa\n")
 	this.initTaxa();
+    console.log("initGeo\n")
 	this.initGeo();
+    console.log("initTree\n")
 	this.initTree();
 	
 	// draw from data
+    console.log("initNodeColors\n")
 	this.initNodeColors();
+    console.log("drawTree\n")
 	this.drawTree();
+    console.log("drawMap\n")
 	this.drawMap();
 	
     // initialize animation data
+    console.log("initAnimationData\n")
     this.initAnimationData();
 
     if (this.modelType === "phylogeography"
@@ -1995,6 +2003,25 @@ Phylowood.drawMarkersDiscretePie = function() {
                 });
         }
     }
+   
+   /*
+   // MJL: add lines to discrete visualization
+    // draw lines
+    var layer = d3.select("#divGeo svg");
+    this.nodelines = layer.selectAll("line.tracer")
+        .data(data)
+      .enter().append("svg:line")
+        .attr("class","tracer")
+        .attr("x1", function(d) { return d.x[d.startClockTick]; })
+        .attr("y1", function(d) { return d.y[d.startClockTick]; })
+        .attr("x2", function(d) { return d.x[d.startClockTick]; })
+        .attr("y2", function(d) { return d.y[d.startClockTick]; })
+        .attr("stroke", function(d) { return d.color; })
+        .style("stroke-width", function() {
+            var v = Phylowood.markerRadius * 0.5;
+            return Math.pow(2, Phylowood.map.zoom() - Phylowood.bestZoom) * Math.sqrt(v);
+        });
+*/
 
     // rescale discrete pie markers if the map perspective changes
 	this.map.on("move", function() {
@@ -2114,23 +2141,25 @@ Phylowood.drawMap = function() {
 	
 	// zoom out to fit all the foci	
 	// need to center map at {0,0} when zoom is 1 to put entire globe in view
+    console.log("auto-fitting map\n")
     var autoZoomSize = 0.25;
 	while (this.minLat < map.extent()[0].lat) { 
 		map.zoomBy(-autoZoomSize); 
-		if (map.zoom() <= 2) { map.center({lat:20,lon:20}) }
+		if (map.zoom() <= 2) { map.center({lat:20,lon:20});break }
 	}
 	while (this.minLon < map.extent()[0].lon) { 
 		map.zoomBy(-autoZoomSize); 
-		if (map.zoom() <= 2) { map.center({lat:20,lon:20}) }		
+		if (map.zoom() <= 2) { map.center({lat:20,lon:20});break }		
 	}	
 	while (this.maxLat > map.extent()[1].lat) { 
 		map.zoomBy(-autoZoomSize); 
-		if (map.zoom() <= 2) { map.center({lat:20,lon:20}) }		
+		if (map.zoom() <= 2) { map.center({lat:20,lon:20});break }		
 	}	
 	while (this.maxLon > map.extent()[1].lon) { 
 		map.zoomBy(-autoZoomSize); 
-		if (map.zoom() <= 2) { map.center({lat:20,lon:20}) }		
+		if (map.zoom() <= 2) { map.center({lat:20,lon:20});break }		
 	}
+    console.log("autofitting map complete\n")
 
 	this.bestZoom = map.zoom();	
     this.prevZoom = map.zoom();
