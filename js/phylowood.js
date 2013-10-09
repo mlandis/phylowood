@@ -1373,10 +1373,15 @@ Phylowood.initNodeColors = function() {
 	
     var hStart=0.0;
     var hEnd=300.0;
-    if (Phylowood.colorType==="colorblind")
+    if (Phylowood.colorType==="redless")
     {
         hStart=60.0;
         hEnd=240.0;
+    }
+    else if (Phylowood.colorType==="greenless")
+    {
+        hStart=180.0;
+        hEnd=360.0;
     }
     console.log(hStart,hEnd);
 	var lStep = 0.6 / this.treeHeight; //(this.nodesByTime[this.numNodes-1].timeEnd - this.nodesByTime[0].timeStart);

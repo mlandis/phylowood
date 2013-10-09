@@ -12,7 +12,7 @@ Begin phylowood;
 	markerradius	300.0
 	minareaval	0.0
 	description	Discrete phylogeography of influenza H5N1 in China from 1993 to 2005.
-    colortype colorblind
+    colortype redless
 End;
 
 Begin taxa;
