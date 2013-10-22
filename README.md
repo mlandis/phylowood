@@ -2,7 +2,7 @@ Phylowood: Browser-based Interactive Animations of Ancestral Dispersal and Diver
 =======================================================================================
 
 * Project homepage: http://github.com/mlandis/phylowood
-* Live demo: http://mlandis.github.com/phylowood/
+* Live demo: http://mlandis.github.io/phylowood/
 * Help page: http://github.com/mlandis/phylowood/wiki
 
 ## To get started
