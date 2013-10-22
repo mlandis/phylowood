@@ -20,5 +20,14 @@ Phylowood: Browser-based Interactive Animations of Ancestral Dispersal and Diver
 - Unmask a lineage group using click (persistent)
 
 ## Have your own data?
+
 - Paste your .nhx file contents here and click "Load"
 - For more on the .nhx file format, click "Help"
+
+## Compatibility
+
+Browser compatibility has been verified for:
+ - Mac
+   * Google Chrome
+   * Firefox
+   * Safari
