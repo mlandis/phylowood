@@ -12,6 +12,8 @@ Begin phylowood;
 	markerradius	300.0
 	minareaval	0.1
 	description	Discrete biogeography of Rhododendron section Vireya in Malesia from 55Mya to present.
+    colortype userdefined
+    tipcolors 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 50 50 50 50 100 100 100 100 100 100 100 100 100 100 100 100 170 170 170 170 170 170 170 170 220 220 220 220 220 220 270 270 270 270 270 270 270 300 300 300 300
 End;
 
 Begin taxa;

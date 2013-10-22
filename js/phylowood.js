@@ -180,6 +180,9 @@ Phylowood.initSettings = function() {
     this.mapType = "clean";
     this.minAreaVal = 0.0;
     this.descriptionStr = "";
+    this.colorType="full";
+    this.tipColors=[];
+    this.tipColorTypes=[];
 
     if (typeof this.settingsStr !== "undefined") {
         settingsTokens = this.settingsStr.split("\n");
@@ -218,6 +221,17 @@ Phylowood.initSettings = function() {
                     if (j !== s.length - 1)
                         Phylowood.descriptionStr += " ";
                 }
+            }
+            else if (s[0] === "colortype")
+                Phylowood.colorType = s[1];
+            else if (s[0] === "tipcolors")
+            {
+                tc=[];
+                for (var j = 1; j < s.length; j++)
+                {
+                    tc.push(parseInt(s[j]));
+                }
+                Phylowood.tipColors = tc;
             }
         }
     }
@@ -609,6 +623,7 @@ Phylowood.buildTree = function() {
                     .sort(function(a,b){return a.timeEnd - b.timeEnd;})
                     .sort(function(a,b){return a.timeStart - b.timeStart;});
 
+
     // reset times with the "false" branch at the root
     this.rootEnd = 0.05 * this.nodesByTime[this.numNodes-1].timeEnd;
     this.root.len = this.rootEnd;
@@ -669,8 +684,18 @@ Phylowood.buildTree = function() {
 		Phylowood.nodesPostorder[poIdx] = p;
 		poIdx++;
 	}
-
 	downPass(this.root);
+
+    // tips by postorder
+    this.nodesTipsPostorder = [];
+    for (var i = 0; i < Phylowood.nodesPostorder.length; i++)
+    {
+        var p = this.nodesPostorder[i];
+        if (p.descendants.length === 0)
+        {
+            Phylowood.nodesTipsPostorder.push(p);
+        }
+    }
 
     // array of nodes by id
     this.nodesById = [];
@@ -1346,20 +1371,49 @@ Phylowood.drawTree = function() {
 
 Phylowood.initNodeColors = function() {
 	
+    var hStart=0.0;
+    var hEnd=300.0;
+    if (Phylowood.colorType==="redless")
+    {
+        hStart=60.0;
+        hEnd=240.0;
+    }
+    else if (Phylowood.colorType==="greenless")
+    {
+        hStart=180.0;
+        hEnd=360.0;
+    }
+    console.log(hStart,hEnd);
 	var lStep = 0.6 / this.treeHeight; //(this.nodesByTime[this.numNodes-1].timeEnd - this.nodesByTime[0].timeStart);
-	var hStep = 300.0 / (this.numTips - 1);
+	var hStep = (hEnd-hStart) / (this.numTips - 1);
 
 	var lValue = 0.0;
-	var hValue = 0.0;
+    //var hValue = 0.0;
+    var hValue = hStart;
 
 	// assign colors uniformly across tips
 	for (var i = 0; i < this.numNodes; i++) {
 		if (this.nodes[i].descendants.length === 0) {
+
+            console.log(hValue);
+            
+            // see if color specified for tip
 			lValue = 1.0 - lStep*this.nodes[i].timeEnd;
 			this.nodes[i].color = [hValue, 1, lValue];
 			hValue += hStep;
 		}
 	}
+
+    // assign tip colors if given
+    console.log(this.tipColors);
+    if (this.colorType==="userdefined")
+    {
+        for (var i = 0; i < this.nodesTipsPostorder.length; i++)
+        {
+			lValue = 1.0 - lStep*this.nodesTipsPostorder[i].timeEnd;
+            this.nodesTipsPostorder[i].color = [this.tipColors[i], 1, lValue];
+        }
+    }
 
 	// set internal nodes based on tip colors
 	for (var i = this.numNodes-1; i >= 0; i--) {
