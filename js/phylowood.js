@@ -1,3 +1,27 @@
+/*
+The MIT License (MIT)
+
+Copyright (c) 2013 Michael Landis, Trevor Bedford
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+*/
+
 // namespace
 var Phylowood = Phylowood || {};
 var phw = Phylowood; // shortname
@@ -381,6 +405,7 @@ Phylowood.initTree = function() {
 
 Phylowood.buildTree = function() {
 
+    console.log("buildTree\n");
 	// parse Newick string
 	var readTaxonName = false;
 	var readBrlen = false;
@@ -557,7 +582,7 @@ Phylowood.buildTree = function() {
                     // find variable assignments
                     var varTokens = nhxTokens[j].split('=');
 
-                    if (varTokens[0] === 'area_pp') {
+                    if (varTokens[0] === 'area_pp' || varTokens[0] === 'ch') {
                         valTokens = varTokens[1].slice(1,-1).split(',');
                         valVec = [];
                         for (var k = 0; k < valTokens.length; k++)
@@ -592,6 +617,7 @@ Phylowood.buildTree = function() {
 	//	}
 	}
 
+    console.log("0\n");
     // this is used to add a "false" branch to the root for phylo controls
     this.rootEnd = 0.0;
 
@@ -611,6 +637,7 @@ Phylowood.buildTree = function() {
 		}
 	}
 
+    console.log("A");
     // initialize times to get tree height
 	setTime(this.root);
 	
@@ -640,6 +667,7 @@ Phylowood.buildTree = function() {
                 this.endPhyloTime = t;
         }
     }
+    console.log("B");
 
     // assign treeLength
     this.treeLength = 0.0;
@@ -697,6 +725,7 @@ Phylowood.buildTree = function() {
         }
     }
 
+    console.log("C\n");
     // array of nodes by id
     this.nodesById = [];
     for (var i = 0; i < this.numNodes; i++)
