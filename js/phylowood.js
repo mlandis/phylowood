@@ -606,18 +606,9 @@ Phylowood.buildTree = function() {
 
 	// assign states to nodes
 	for (var i = 0; i < this.numNodes; i++) {
-		//for (var j = 0; j < this.taxa.length; j++) {
-		//	if (this.nodes[i].name === this.taxa[j]) {
-				//this.nodes[i].states = this.states[j];
-		//		this.nodes[i].id = i;
-	//		}
-     //       else {
-                this.nodes[i].id = i; 
-       //     }
-	//	}
+        this.nodes[i].id = i; 
 	}
 
-    console.log("0\n");
     // this is used to add a "false" branch to the root for phylo controls
     this.rootEnd = 0.0;
 
@@ -637,7 +628,6 @@ Phylowood.buildTree = function() {
 		}
 	}
 
-    console.log("A");
     // initialize times to get tree height
 	setTime(this.root);
 	
@@ -667,7 +657,6 @@ Phylowood.buildTree = function() {
                 this.endPhyloTime = t;
         }
     }
-    console.log("B");
 
     // assign treeLength
     this.treeLength = 0.0;
@@ -725,7 +714,6 @@ Phylowood.buildTree = function() {
         }
     }
 
-    console.log("C\n");
     // array of nodes by id
     this.nodesById = [];
     for (var i = 0; i < this.numNodes; i++)
@@ -1424,8 +1412,6 @@ Phylowood.initNodeColors = function() {
 	for (var i = 0; i < this.numNodes; i++) {
 		if (this.nodes[i].descendants.length === 0) {
 
-            console.log(hValue);
-            
             // see if color specified for tip
 			lValue = 1.0 - lStep*this.nodes[i].timeEnd;
 			this.nodes[i].color = [hValue, 1, lValue];
@@ -1434,7 +1420,6 @@ Phylowood.initNodeColors = function() {
 	}
 
     // assign tip colors if given
-    console.log(this.tipColors);
     if (this.colorType==="userdefined")
     {
         for (var i = 0; i < this.nodesTipsPostorder.length; i++)
