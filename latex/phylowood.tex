@@ -3,7 +3,6 @@
 \pubyear{2013}
 
 \begin{document}
-\bibliographystyle{natbib}
 
 \firstpage{1}
 
@@ -22,7 +21,7 @@ $^{2}$Institute of Evolution, University of Edinburgh, Edinburgh, UK}
 
 \section{Summary:} Phylowood is a web service that uses Javascript to generate in-browser animations of biogeographic and phylogeographic histories from annotated phylogenetic input. The animations are interactive, allowing the user to adjust spatial and temporal resolution, and highlight phylogenetic lineages of interest.
 
-\section{Availability:} All documentation and source code for Phylowood is freely available at \href{https://github.com/mlandis/phylowood}{https://github.com/mlandis/phylowood} and a live web application is available at \href{https://mlandis.github.io/phylowood}{https://github.com/mlandis/phylowood}.
+\section{Availability:} All documentation and source code for Phylowood is freely available at \href{https://github.com/mlandis/phylowood}{https://github.com/mlandis/phylowood} and a live web application is available at \href{https://mlandis.github.io/phylowood}{https://mlandis.github.io/phylowood}.
 
 \section{Contact:} \href{mlandis@berkeley.edu}{mlandis@berkeley.edu}
 \end{abstract}
@@ -32,6 +31,8 @@ $^{2}$Institute of Evolution, University of Edinburgh, Edinburgh, UK}
 The fields of phylogeography and biogeography study the processes that give rise to the observed geographical distributions across individuals and across species, respectively. Methods to infer migration processes and reconstruct ancestral geographical distributions in a phylogenetic context have recently enjoyed increased popularity \citep{ree08, lemey09, yu10, landis12}. The resulting ancestral reconstructions are inherently high dimensional; they describe distributions across space, time and phylogenetic lineage, and consequently, can be difficult to interpret. Here, we introduce Phylowood, a web utility that generates interactive animations to facilitate the exploration and summarization of such complex reconstructions.
 %.\citep{ronquist97, beerli01, ree08, lemmon08, lemey09, yu10, landis12}
 Phylowood takes phylogeographic output from BEAST \citep{drummond12} or biogeographic output from BayArea \citep{landis12} in the form of NEWICK trees in which internal nodes are annotated with inferred ancestral locations. Biogeographic reconstructions differ in associating species with multiple geographic locations representing the species' range, instead of associating an individual with a single geographic location. Phylowood plots the reconstructed geographic distribution across individuals or species at a particular point in time and explores temporal dynamics through animation.
+Although similar in basic approach to the program SPREAD \cite{bielejec11}, Phylowood is designed for ease-of-use and frictionless sharing.
+It is entirely implemented within the web browser, allowing users to run the program without installing additional software.
 
 \section{Use}
 
@@ -83,7 +84,7 @@ We would like to thank the National Evolutionary Synthesis Center (NESCent), esp
 
 MJL was supported by funding provided by Google Summer of Code 2012, and grants from the NSF (DEB-0445453) and NIH (GM-069801) awarded to John P.\ Huelsenbeck.  TB was supported by a Newton International Fellowship from the Royal Society.  
 
-
+\bibliographystyle{natbib}
 \bibliography{bayes}
 
 \end{document}
