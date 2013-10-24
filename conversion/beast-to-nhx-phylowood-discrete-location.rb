@@ -55,6 +55,9 @@ g = g.uniq.sort
 geotokens = geotokens.uniq.sort
 
 # Complete geo block
+for i in 0..(geotokens.length-1)
+    geotokens[i] = geotokens[i] + " [LATITUDE] [LONGITUDE]"
+end
 for i in 0..(geotokens.length-2)
     geotokens[i] = geotokens[i] + ","
 end
@@ -140,6 +143,4 @@ for i in 0..treetokens.length
 end
 linetokens[-2] += "\n"
 
-outfile = File.open("out.txt","w")
-outfile << linetokens.join("\n")
-outfile.close
+puts linetokens
