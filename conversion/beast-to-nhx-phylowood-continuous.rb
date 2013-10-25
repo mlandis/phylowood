@@ -25,7 +25,7 @@ settingstokens = ['Begin phylowood;',
 "\tmodeltype\tphylogeography",
 "\tareatype\tcontinuous",
 "\tmaptype\tclean",
-"\ttimestart\t1970",
+"\ttimestart\t0.0",
 "\ttimeunit\tyr",
 "\tmarkerradius\t200.0",
 "\tminareaval\t0.0",
@@ -53,7 +53,7 @@ tree.scan(/\[\&([A-Z0-9a-z\,\.\-\{\}\_\%\=]+)\]/) {|s|
 
 # Create geo block
 geotokens = []
-for i in 0..lat.length
+for i in 0...lat.length
     geotokens[i] = "\t\t" + i.to_s + " " + lat[i] + " " + lon[i] + (i < lat.length-1 ? "," : "")
 end
 geotokens.insert(0, 'Begin geo;')
@@ -65,9 +65,9 @@ geotokens.insert(-1, 'End;')
 
 # create area strings
 areastr = []
-for i in 0..lat.length
+for i in 0...lat.length
     areastr[i] = "[&area_pp={"
-    for j in 0..lat.length
+    for j in 0...lat.length
         if j != 0
             areastr[i] += ","
         end
@@ -125,6 +125,5 @@ for i in 0..treetokens.length
 end
 linetokens[-2] += "\n"
 
-outfile = File.open("out.txt","w")
-outfile << linetokens.join("\n")
-outfile.close
+puts linetokens
+
