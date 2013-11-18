@@ -2322,12 +2322,12 @@ Phylowood.animStart = function() {
 	
     this.prevClockTick = this.curClockTick;
 	this.curClockTick = 0;
-    if (this.finalUpdateDisplay === false)
+    if (this.finalUpdateDisplay === true) //false)
     {
-        this.finalUpdateDisplay = true;
+        this.finalUpdateDisplay = false; //true;
         this.updateDisplay();
     }
-    this.finalUpdateDisplay = false;
+    //this.finalUpdateDisplay = false;
 
     $( "#play" ).button("option", { label: "play", icons: { primary: "ui-icon-play" }});
     clearInterval(Phylowood.ticker);
@@ -2342,12 +2342,12 @@ Phylowood.animEnd = function() {
 	
     this.prevClockTick = this.curClockTick;
 	this.curClockTick = this.numClockTicks - 1;
-    if (this.finalUpdateDisplay === false)
+    if (this.finalUpdateDisplay === true) //false)
     {
-        this.finalUpdateDisplay = true;
+        this.finalUpdateDisplay = false;//true;
         this.updateDisplay();
     }
-    this.finalUpdateDisplay = false;
+    //this.finalUpdateDisplay = false;
 
     $( "#play" ).button("option", { label: "play", icons: { primary: "ui-icon-play" }});
     clearInterval(Phylowood.ticker);
@@ -2414,6 +2414,17 @@ Phylowood.changeSlider = function() {
 	if (typeof Phylowood.sliderBusy !== "undefined" && Phylowood.sliderLock === false) {
         Phylowood.prevClockTick = Phylowood.curClockTick;
 		Phylowood.curClockTick = $( "#divSlider" ).slider("option","value");
+        if (Phylowood.curClockTick === Phylowood.numClockTicks)
+        {
+            Phylowood.curClockTick -= 1;
+            Phylowood.finalUpdateDisplay = true;
+        }
+        else if (Phylowood.curClockTick === -1)
+        {
+            Phylowood.curClockTick = 0;
+            Phylowood.finalUpdateDisplay = true;
+        }
+
         if (this.sliderBusy === true || this.pauseAnimation === true)
 	        this.updateDisplay();
 	}
@@ -2430,22 +2441,27 @@ Phylowood.updateSlider = function() {
         var t = Phylowood.curClockTick * Phylowood.phyloTick + Phylowood.phyloTimeOffset - Phylowood.root.len;
         return t.toFixed(2) + " " + Phylowood.phyloTimeUnit;
     });
+    console.log("updateSlider() " + Phylowood.curClockTick);
     Phylowood.sliderLock = false;
 }
 
 Phylowood.updateDisplay = function() {
 
 	// update slider position
-        Phylowood.updateMarkers();
+    Phylowood.updateMarkers();
 
-        if (Phylowood.finalUpdateDisplay === true)
+    if (Phylowood.finalUpdateDisplay === true)
+    {
+        if (Phylowood.curClockTick >= Phylowood.numClockTicks - 1)
         {
-            if (Phylowood.curClockTick >= Phylowood.numClockTicks - 1)
-                Phylowood.animEnd();
-            else if (Phylowood.curClockTick < 0)
-                Phylowood.animStart();
+            Phylowood.animEnd();
         }
-        Phylowood.updateSlider();
+        else if (Phylowood.curClockTick <= 0)
+        {
+            Phylowood.animStart();
+        }
+    }
+    Phylowood.updateSlider();
 }
 
 Phylowood.updateMarkers = function() {
@@ -2581,11 +2597,11 @@ Phylowood.updateMarkers = function() {
         }*/
 
         // stop at boundaries
-        if (Phylowood.curClockTick >= Phylowood.numClockTicks - 1)
+        if (Phylowood.curClockTick >= Phylowood.numClockTicks - 1 && Phylowood.curClockTick !== Phylowood.prevClockTick)
         {
             Phylowood.finalUpdateDisplay = true;    
         }
-        else if (Phylowood.curClockTick < 0)
+        else if (Phylowood.curClockTick <= 0 && Phylowood.prevClockTick !== Phylowood.curClockTick)
         {
             Phylowood.finalUpdateDisplay = true;    
         }
