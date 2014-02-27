@@ -5,6 +5,8 @@ Phylowood: Browser-based Interactive Phylogeographic Animations
 * Live demo: http://mlandis.github.io/phylowood/
 * Help page: http://github.com/mlandis/phylowood/wiki
 
+![Phylowood demo gif](https://raw.github.com/mlandis/phylowood/gh-pages/img/phylowood-demo.gif)
+
 ## To get started
 
 1. Choose an item from the "Select Demo" menu
