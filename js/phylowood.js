@@ -1582,6 +1582,7 @@ Phylowood.initAnimationData = function() {
 
             var temp = [ this.divergenceTicks[0] ];
 
+            console.log(phw.divergenceTicks);
             for (var i = 1; i < this.divergenceTicks.length; i++)
             {
                 // already in temp[]?
@@ -1589,7 +1590,6 @@ Phylowood.initAnimationData = function() {
 
                 for (var k = 0; k < temp.length; k++)
                 {
-                
                     if (this.divergenceTicks[i] === temp[k])
                     {
                         found = true;
@@ -1607,7 +1607,7 @@ Phylowood.initAnimationData = function() {
                             addIdx++;
                         }
                     }
-                    temp.splice(addIdx,1,this.divergenceTicks[i]);
+                    temp.splice(addIdx,0,this.divergenceTicks[i]);
                 }
             }
             this.divergenceTicks = temp;
@@ -2546,7 +2546,8 @@ Phylowood.updateMarkers = function() {
                 this.arcs[i] = this.pie[i].selectAll(".arc" + i);
             }
         }
-       
+      
+        // MJL 140312: not sure this actually does anything...
         // force a redraw if curClockTick has passed over a divergence event
         if (Phylowood.curClockTick !== Phylowood.prevClockTick + Phylowood.playTick)
         {
