@@ -2238,15 +2238,22 @@ Phylowood.drawMap = function() {
     // use url from #SETTINGS block
     var url;
     if (this.mapType === "wordy")
+        url = "http://{S}tiles.mapbox.com" + "/v3/mlandis.hgp88mgm" + "/{Z}/{X}/{Y}.png";
+        /*
         url = "http://{S}tile.cloudmade.com"
 		    + "/5b7ebc9342d84da7b27ca499a238df9d" // http://cloudmade.com/register
 		    + "/999/256/{Z}/{X}/{Y}.png"; // dark, streets, fast
+            */
     else if (this.mapType === "clean")
+        url = "http://{S}tiles.mapbox.com" + "/v3/mlandis.hgp12886" + "/{Z}/{X}/{Y}.png";
+        /*
         url = "http://{S}tile.cloudmade.com"
 		    + "/5b7ebc9342d84da7b27ca499a238df9d" // http://cloudmade.com/register
 		    + "/44979/256/{Z}/{X}/{Y}.png"; // dark, clean, slower
+            */
     else if (typeof this.mapType !== "undefined")
         url = this.mapType;
+
 
 
 	// create the map object, add it to #divGeo
@@ -2257,14 +2264,13 @@ Phylowood.drawMap = function() {
 		.add(po.interact())
 		.add(po.image()
 		  .url(po.url( url )
-
 /*
           "http://{S}tile.cloudmade.com"
 		  + "/5b7ebc9342d84da7b27ca499a238df9d" // http://cloudmade.com/register
 		  + "/999/256/{Z}/{X}/{Y}.png") // dark, streets, fast
 //		  + "/44979/256/{Z}/{X}/{Y}.png") // dark, blank, slow
 */
-		  .hosts(["a.", "b.", "c.", ""])))
+		  .hosts(["a.", "b.", "c.", "d."])))
 		.add(po.compass().pan("none"));
 	this.map = map;
 	
@@ -2937,6 +2943,12 @@ Phylowood.testPolyMaps = function() {
 		.url(po.url("http://{S}tile.cloudmade.com"
 		+ "/87d72d27ad3a48939015cdbd06980326" // http://cloudmade.com/register
 		+ "/2/256/{Z}/{X}/{Y}.png")
+        /*
+		.url(po.url("http://{S}.tiles.mapbox.com"
+		//+ "/87d72d27ad3a48939015cdbd06980326" // http://cloudmade.com/register
+        + "/v3/mlandis.hgp12886"
+		+ "/{Z}/{X}/{Y}.png")
+        */
 		.hosts(["a.", "b.", "c.", ""])));
 		
 	map.add(po.compass()
