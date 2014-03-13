@@ -15,6 +15,7 @@ Phylowood: Browser-based Interactive Phylogeographic Animations
 
 ## Features
 
+- Drag-and-drop (or copy-and-paste) to load files
 - Control time using the media bar
 - Control space using the map app
 - Highlight a lineage group using mouseover (temporary)

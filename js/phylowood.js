@@ -26,6 +26,40 @@ THE SOFTWARE.
 var Phylowood = Phylowood || {};
 var phw = Phylowood; // shortname
 
+
+/***
+INIT EVENT HANDLERS
+***/
+$(document).ready(function() {
+
+    $('#textareaInput').on('dragover', function(event) {
+        event.preventDefault();
+        return false;
+    });
+
+    $('#textareaInput').on('dragend', function(event) {
+        event.preventDefault();
+        return false;
+    });
+
+    $('#textareaInput').on('drop', function(event) {
+        event.preventDefault();
+        inputFile = event.originalEvent.dataTransfer.files[0];
+        readFile(inputFile, function (event) {
+            $('#textareaInput').val(event.target.result);
+            if ($("#checkboxAutoload").attr("checked") === "checked")
+                Phylowood.initialize();
+        });
+    });
+});
+
+function readFile(file, onLoadCallback) {
+    var reader = new FileReader();
+    reader.onload = onLoadCallback;
+    reader.readAsText(file);
+}
+
+
 /***
 INPUT
 ***/
@@ -72,6 +106,7 @@ Phylowood.loadInput = function() {
     });
 
 };
+
 
 $( "#selectDemoData" ).change(function() {
 
