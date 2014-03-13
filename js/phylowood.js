@@ -1582,7 +1582,7 @@ Phylowood.initAnimationData = function() {
 
             var temp = [ this.divergenceTicks[0] ];
 
-            console.log(phw.divergenceTicks);
+            //console.log(phw.divergenceTicks);
             for (var i = 1; i < this.divergenceTicks.length; i++)
             {
                 // already in temp[]?
