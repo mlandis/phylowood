@@ -843,7 +843,7 @@ Phylowood.maskContinuumForBranch = function(d) {
     Phylowood.forceHighlightToRedraw = true;
 
 	// mask heritage of branch
-	this.treeSvg.selectAll("line").select(
+	this.treeSvg.selectAll("line.phylo").select(
 		function(b) {
 
 			var found = false;
@@ -914,7 +914,7 @@ Phylowood.unmaskContinuumForBranch = function(d) {
     Phylowood.forceHighlightToRedraw = true;
 
 	// unmask heritage of branch				
-	this.treeSvg.selectAll("line").select(
+	this.treeSvg.selectAll("line.phylo").select(
 		function(b) {
 			//console.log(b);
 		
@@ -1173,7 +1173,7 @@ Phylowood.unhighlightContinuumForBranch = function() {
     Phylowood.forceRedraw = true;
 
 	// unmask all branches 
-	this.treeSvg.selectAll("line").select(
+	this.treeSvg.selectAll("line.phylo").select(
 		function(b) {
 			if (b.maskContinuum === false)
 				return this;
@@ -1354,6 +1354,32 @@ Phylowood.drawTree = function() {
 	//	}
 				
 	}
+
+	this.treeDrawLines_box = this.treeSvg.selectAll("line.phylo_box")
+				.data(this.phyloDrawData)
+				.enter()
+				.append("svg:line")
+                .attr("class","phylo_box")
+				.attr("x1", function(d) { return d.x1phy; })
+				.attr("x2", function(d) { return d.x2phy; })
+				.attr("y1", function(d) { return d.y1phy; })
+				.attr("y2", function(d) { return d.y2phy; })
+				.style("stroke", function(d) { return d.color; })
+                .style("stroke-opacity", 0.0)
+				.style("stroke-width", 20)
+				.on("mouseover", function(d) {
+					Phylowood.highlightContinuumForBranch(d);
+				})
+				.on("mouseout", function(d) {
+					Phylowood.unhighlightContinuumForBranch();
+				})
+				.on("click", function(d) {
+					Phylowood.unmaskContinuumForBranch(d);
+				})
+				.on("dblclick", function(d) {
+					Phylowood.maskContinuumForBranch(d);
+				});
+
 	
 	this.treeDrawLines = this.treeSvg.selectAll("line.phylo")
 				.data(this.phyloDrawData)
