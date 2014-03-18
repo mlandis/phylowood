@@ -326,7 +326,8 @@ Phylowood.initGeo = function() {
 	// assign geoTokens to geoCoords	
 	var coordTokens;
 	this.geoCoords = [];
-	this.maxGeoCoords = [-181.0, -181.0, 181.0, 181.0]; // [N, E, S, W]
+    //this.maxGeoCoords = [-91.0, -181.0, 91.0, 181.0]; // [N, E, S, W]
+	this.maxGeoCoords = [-Infinity, -Infinity, Infinity, Infinity]; // [N, E, S, W]
     var coordsIdx = -1;
 	
 	// input expects "latitude longitude"
@@ -368,6 +369,19 @@ Phylowood.initGeo = function() {
             coordsIdx++;
         }
     }
+
+    /*
+    if (this.maxGeoCoords[1] - this.maxGeoCoords[3] > -this.maxGeoCoords[3] - -this.maxGeoCoords[1])
+    {
+        for (var i = 0; i < this.geoCoords.length; i++)
+        {
+            if (this.geoCoords[i].lon < 0)
+            {
+                this.geoCoords[i].lon += 360;
+            }
+        }
+    }
+    */
 	
 	// construct distance matrix geoDistances
 	this.distanceType = "Euclidean";
@@ -2201,10 +2215,16 @@ Phylowood.drawMap = function() {
 	// find center and extent of coords
 	this.meanLat = 0;
 	this.meanLon = 0;
+	this.minLat = Infinity;
+	this.maxLat = -Infinity;
+	this.minLon = Infinity;
+	this.maxLon = -Infinity;
+    /*
 	this.minLat = 90;
 	this.maxLat = -90;
 	this.minLon = 180;
 	this.maxLon = -180;
+    */
 	for (var i = 0; i < coords.length; i++) {
 	
 		// latitude
@@ -2223,6 +2243,7 @@ Phylowood.drawMap = function() {
 		this.meanLon += lon;	
 		
 	}
+
 	this.meanLat /= coords.length;
 	this.meanLon /= coords.length;
 	// convert back to -180 to 180
