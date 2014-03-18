@@ -2239,7 +2239,7 @@ Phylowood.drawMap = function() {
 		if (lon > this.maxLon) { this.maxLon = lon; }		
 
 		// convert to 0 to 360
-		if (lon < 0) { lon = 360 + lon; }
+		// if (lon < 0) { lon = 360 + lon; }
 		this.meanLon += lon;	
 		
 	}
@@ -2247,9 +2247,9 @@ Phylowood.drawMap = function() {
 	this.meanLat /= coords.length;
 	this.meanLon /= coords.length;
 	// convert back to -180 to 180
-	if (this.meanLon > 180) {
-		this.meanLon = this.meanLon - 360
-	}
+	//if (this.meanLon > 180) {
+	//	this.meanLon = this.meanLon - 360
+	//}
 	
 	// create polymaps object
 	var po = org.polymaps;
