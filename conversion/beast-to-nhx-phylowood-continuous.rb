@@ -29,7 +29,7 @@ settingstokens = ['Begin phylowood;',
 "\ttimeunit\tyr",
 "\tmarkerradius\t200.0",
 "\tminareaval\t0.0",
-"\tdescription\tDiscrete phylogeography (default settings)",
+"\tdescription\tContinuous phylogeography (default settings)",
 "End;"]
 
 

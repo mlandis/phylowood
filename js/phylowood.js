@@ -202,13 +202,13 @@ Phylowood.parseInput = function() {
 	var parseSelect = "";
 
 	for (var i = 0; i < inputTokens.length; i++) {
-        if (inputTokens[i] === "Begin phylowood;")
+        if (inputTokens[i].toLowerCase() === "Begin phylowood;".toLowerCase())
             parseSelect = "settings";
-		else if (inputTokens[i] === "Begin geo;")
+		else if (inputTokens[i].toLowerCase() === "Begin geo;".toLowerCase())
 			parseSelect = "geo";
-		else if (inputTokens[i] === "Begin taxa;")
+		else if (inputTokens[i].toLowerCase() === "Begin taxa;".toLowerCase())
 			parseSelect = "taxa";
-		else if (inputTokens[i] === "Begin trees;")
+		else if (inputTokens[i].toLowerCase() === "Begin trees;".toLowerCase())
 			parseSelect = "tree";
         else if (parseSelect === "settings")
             this.settingsStr += inputTokens[i] + "\n";
@@ -251,6 +251,7 @@ Phylowood.initSettings = function() {
             //console.log(settingsTokens[i])
 
             var s = trim1(settingsTokens[i]).split(/\s+/g);
+            s[0] = s[0].toLowerCase();
             //var s = settingsTokens[i].split(" ");
             if (s[0] === "drawtype")
                 Phylowood.drawType = s[1];
@@ -309,7 +310,7 @@ Phylowood.initTaxa = function() {
 
         // get number of taxa
         if (lineTokens.length > 1)
-            if (lineTokens[0] === 'Dimensions')
+            if (lineTokens[0].toLowerCase() === 'dimensions')
                 this.numTaxa = parseInt(lineTokens[1].split('=')[1].slice(0,-1));
 
         // we populate taxa[] in the tree block
@@ -338,11 +339,11 @@ Phylowood.initGeo = function() {
         
         // get number of areas
         if (lineTokens.length > 1)
-            if (lineTokens[0] === 'Dimensions')
+            if (lineTokens[0].toLowerCase() === 'dimensions')
                 this.numAreas = parseInt(lineTokens[1].split('=')[1].slice(0,-1));
         
         // get coordinates
-        if (lineTokens[0] === 'Coords')
+        if (lineTokens[0].toLowerCase() === 'coords')
             coordsIdx = 0;
 
         else if (coordsIdx >= 0 && coordsIdx < this.numAreas)
@@ -423,7 +424,7 @@ Phylowood.initTree = function() {
         var lineTokens = trim1(this.treeTokens[i]).split(/\s+/g).filter(function() { return true} );
 
         // get taxon names
-        if (lineTokens[0] === 'Translate')
+        if (lineTokens[0].toLowerCase() === 'translate')
             nodeIdx = 0; 
 
         else if (nodeIdx >= 0 && nodeIdx < this.numTaxa)
@@ -436,7 +437,7 @@ Phylowood.initTree = function() {
             nodeIdx++;
         }    
 
-        else if (lineTokens[0] === 'tree')
+        else if (lineTokens[0].toLowerCase() === 'tree')
         {    
             if (lineTokens[2] === '=') 
                 this.nhxStr = lineTokens[3];
@@ -524,6 +525,7 @@ Phylowood.buildTree = function() {
 				this.root = p;
 			}
 			else {
+                console.log(p,q);
 				var q = new Phylowood.Node;
 				q.ancestor = p;
 				this.nodes.push(q);
@@ -537,6 +539,7 @@ Phylowood.buildTree = function() {
 		// indicates end of clade
 		else if ( newickTokens[i] === ")" ) {
             if (p.ancestor !== null) {
+                console.log(p);
             	p = p.ancestor;
             }
             else {
@@ -549,6 +552,7 @@ Phylowood.buildTree = function() {
 		// indicates divergence event
 		else if ( newickTokens[i] === "," ) {
             if (p.ancestor !== null) {
+                console.log(p);
                 p = p.ancestor;
             }
             else {
@@ -590,17 +594,20 @@ Phylowood.buildTree = function() {
 		else {
 			// taxon name token
 			if (!readBrlen && !readData) {
+                console.log(newickTokens[i])
         		var tipIdx = parseInt(newickTokens[i]);
         		var tipName = this.taxa[tipIdx];
-
+                console.log(tipIdx);
         		// internal node
         		if (newickTokens[i-1] === ")") {
+                    console.log('internal')
         			p.id = tipIdx;
         			p.name = newickTokens[i];
         		}
         		
         		// tip node
         		else {
+                    console.log('tip')
 					var q = new Phylowood.Node;
 					q.id = tipIdx;
 					q.ancestor = p;
@@ -608,6 +615,7 @@ Phylowood.buildTree = function() {
 					this.nodes.push(q);
 					p.descendants.push(q);
 					p = q;
+                    console.log(q);
 				}
 			}
 			
@@ -624,6 +632,7 @@ Phylowood.buildTree = function() {
             // nhx data
             else if (readData)
             {
+                console.log(p);
                 // split for each variable by &
                 nhxTokens = newickTokens[i].split('&');
                 for (var j = 0; j < nhxTokens.length; j++) {
@@ -642,6 +651,7 @@ Phylowood.buildTree = function() {
                             valVec[k] = x; 
                         }
                         p.states = valVec;
+                        console.log(p);
                     }
                     else {
                         ; // e.g. other variables
@@ -658,6 +668,7 @@ Phylowood.buildTree = function() {
         this.nodes[i].id = i; 
 	}
 
+    console.log(phw.nodes[1])
     // this is used to add a "false" branch to the root for phylo controls
     this.rootEnd = 0.0;
 
@@ -676,6 +687,7 @@ Phylowood.buildTree = function() {
 			setTime(p.descendants[i], p.timeEnd);
 		}
 	}
+    console.log(phw.nodes[1])
 
     // initialize times to get tree height
 	setTime(this.root);
@@ -695,6 +707,7 @@ Phylowood.buildTree = function() {
     this.root.len = this.rootEnd;
     setTime(this.root);
 
+    console.log(phw.nodes[1])
     // get phylo start and end times (treeheight + offset)
 	this.startPhyloTime = this.nodesByTime[0].timeStart;
 	this.endPhyloTime = this.nodesByTime[this.numNodes-1].timeEnd;
@@ -707,6 +720,7 @@ Phylowood.buildTree = function() {
         }
     }
 
+    console.log(phw.nodes[1])
     // assign treeLength
     this.treeLength = 0.0;
     for (var i = 0 ; i < this.numNodes; i++)
