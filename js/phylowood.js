@@ -525,7 +525,6 @@ Phylowood.buildTree = function() {
 				this.root = p;
 			}
 			else {
-                console.log(p,q);
 				var q = new Phylowood.Node;
 				q.ancestor = p;
 				this.nodes.push(q);
@@ -539,7 +538,6 @@ Phylowood.buildTree = function() {
 		// indicates end of clade
 		else if ( newickTokens[i] === ")" ) {
             if (p.ancestor !== null) {
-                console.log(p);
             	p = p.ancestor;
             }
             else {
@@ -552,7 +550,6 @@ Phylowood.buildTree = function() {
 		// indicates divergence event
 		else if ( newickTokens[i] === "," ) {
             if (p.ancestor !== null) {
-                console.log(p);
                 p = p.ancestor;
             }
             else {
@@ -594,20 +591,16 @@ Phylowood.buildTree = function() {
 		else {
 			// taxon name token
 			if (!readBrlen && !readData) {
-                console.log(newickTokens[i])
         		var tipIdx = parseInt(newickTokens[i]);
         		var tipName = this.taxa[tipIdx];
-                console.log(tipIdx);
         		// internal node
         		if (newickTokens[i-1] === ")") {
-                    console.log('internal')
         			p.id = tipIdx;
         			p.name = newickTokens[i];
         		}
         		
         		// tip node
         		else {
-                    console.log('tip')
 					var q = new Phylowood.Node;
 					q.id = tipIdx;
 					q.ancestor = p;
@@ -615,7 +608,6 @@ Phylowood.buildTree = function() {
 					this.nodes.push(q);
 					p.descendants.push(q);
 					p = q;
-                    console.log(q);
 				}
 			}
 			
@@ -625,14 +617,13 @@ Phylowood.buildTree = function() {
 				var x = parseFloat(newickTokens[i]);
 				if (x < 0.00001)
 					x = 0.00001;
-                p.len = x;
+                p.len = Math.round(x*1000000)/1000000;
 				readBrlen = false;
 			}
 
             // nhx data
             else if (readData)
             {
-                console.log(p);
                 // split for each variable by &
                 nhxTokens = newickTokens[i].split('&');
                 for (var j = 0; j < nhxTokens.length; j++) {
@@ -651,7 +642,6 @@ Phylowood.buildTree = function() {
                             valVec[k] = x; 
                         }
                         p.states = valVec;
-                        console.log(p);
                     }
                     else {
                         ; // e.g. other variables
@@ -687,7 +677,6 @@ Phylowood.buildTree = function() {
 			setTime(p.descendants[i], p.timeEnd);
 		}
 	}
-    console.log(phw.nodes[1])
 
     // initialize times to get tree height
 	setTime(this.root);
@@ -707,7 +696,6 @@ Phylowood.buildTree = function() {
     this.root.len = this.rootEnd;
     setTime(this.root);
 
-    console.log(phw.nodes[1])
     // get phylo start and end times (treeheight + offset)
 	this.startPhyloTime = this.nodesByTime[0].timeStart;
 	this.endPhyloTime = this.nodesByTime[this.numNodes-1].timeEnd;
@@ -720,7 +708,6 @@ Phylowood.buildTree = function() {
         }
     }
 
-    console.log(phw.nodes[1])
     // assign treeLength
     this.treeLength = 0.0;
     for (var i = 0 ; i < this.numNodes; i++)

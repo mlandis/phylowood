@@ -18,7 +18,7 @@ infile.each { |line|
 infile.close
 linetokens = filestr.split("\n")
 
-
+print linetokens.to_s + "\n"
 # Create settings block
 
 settingstokens = ['Begin phylowood;',
@@ -44,12 +44,16 @@ tree.scan(/\[\&([A-Z0-9a-z\,\.\-\{\}\_\%\=]+)\]/) {|s|
 	
     labels = s[0]
 	labels.scan(/location1=([A-Za-z0-9\.\-]+)/) {|s|
+	#labels.scan(/latlong1=([A-Za-z0-9\.\-]+)/) {|s|
 		lat.push(s[0])
 	}	
 	labels.scan(/location2=([A-Za-z0-9\.\-]+)/) {|s|
+	#labels.scan(/latlong2=([A-Za-z0-9\.\-]+)/) {|s|
 		lon.push(s[0])
 	}	
 }
+
+print lat.length.to_s + "\n"
 
 # Create geo block
 geotokens = []
@@ -79,6 +83,7 @@ for i in 0...lat.length
     end
     areastr[i] += "}]"
 end
+#areastr=""
 
 # Go through tree and strip out annotations
 treestr = tree.gsub(/\[\&[A-Z0-9a-z\,\.\-\{\}\_\%\=]+\]/) {|s|}
@@ -125,5 +130,5 @@ for i in 0..treetokens.length
 end
 linetokens[-2] += "\n"
 
-puts linetokens
+#puts linetokens
 
