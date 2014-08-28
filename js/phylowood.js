@@ -1589,7 +1589,12 @@ Phylowood.initAnimationData = function() {
                 if (p.pa_states.length === 0)
                     vTick[i] = (q.states[j] - p.states[j]) / numClockIdx[i];
                 else
-                    vTick[i] = (p.pa_states[j] - p.states[j]) / numClockIdx[i];
+                {
+                    if (p.ancestor !== null)
+                        vTick[i] = (p.pa_states[j] - p.states[j]) / numClockIdx[i];
+                    else
+                        vTick[i] = (q.states[j] - p.states[j]) / numClockIdx[i];
+                }
                 //console.log(val[i], p.states[j]);
 
                 // lineage colors
