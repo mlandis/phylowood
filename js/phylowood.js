@@ -643,6 +643,18 @@ Phylowood.buildTree = function() {
                         }
                         p.states = valVec;
                     }
+                    else if (varTokens[0] == 'pa') {
+                        valTokens = varTokens[1].slice(1,-1).split(',');
+                        valVec = [];
+                        for (var k = 0; k < valTokens.length; k++)
+                        {
+                            x = parseFloat(valTokens[k])
+                            if (x < this.minAreaVal)
+                                x = 0.0;
+                            valVec[k] = x; 
+                        }
+                        p.pa_states = valVec;
+                    }
                     else {
                         ; // e.g. other variables
                     }
@@ -826,6 +838,7 @@ Phylowood.Node = function() {
 		this.img = [];
 		this.color = [0,0,0];
 		this.states = [];
+        this.pa_states = [];
 		this.coord = 0;
 		this.heritage = [];
 		
@@ -1573,7 +1586,10 @@ Phylowood.initAnimationData = function() {
                 numClockIdx[i] = endClockIdx[i] - startClockIdx[i] + 1;
                 
                 // vals and vTicks 
-                vTick[i] = (q.states[j] - p.states[j]) / numClockIdx[i];
+                if (p.pa_states.length === 0)
+                    vTick[i] = (q.states[j] - p.states[j]) / numClockIdx[i];
+                else
+                    vTick[i] = (p.pa_states[j] - p.states[j]) / numClockIdx[i];
                 //console.log(val[i], p.states[j]);
 
                 // lineage colors
@@ -2316,6 +2332,7 @@ Phylowood.drawMap = function() {
 		map.zoomBy(-autoZoomSize); 
 		if (map.zoom() <= 2) { map.center({lat:20,lon:20});break }		
 	}
+    map.zoomBy(-0.5);
     console.log("autofitting map complete\n")
 
 	this.bestZoom = map.zoom();	
