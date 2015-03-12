@@ -202,7 +202,9 @@ Phylowood.parseInput = function() {
 	var parseSelect = "";
 
 	for (var i = 0; i < inputTokens.length; i++) {
-        if (inputTokens[i].toLowerCase() === "Begin phylowood;".toLowerCase())
+        if (inputTokens[i].toLowerCase() === "End;".toLowerCase())
+            parseSelect = "";
+        else if (inputTokens[i].toLowerCase() === "Begin phylowood;".toLowerCase())
             parseSelect = "settings";
 		else if (inputTokens[i].toLowerCase() === "Begin geo;".toLowerCase())
 			parseSelect = "geo";
@@ -630,7 +632,7 @@ Phylowood.buildTree = function() {
 
                     // find variable assignments
                     var varTokens = nhxTokens[j].split('=');
-
+                    
                     if (varTokens[0] === 'area_pp' || varTokens[0] === 'ch') {
                         valTokens = varTokens[1].slice(1,-1).split(',');
                         valVec = [];
