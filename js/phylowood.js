@@ -313,8 +313,10 @@ Phylowood.initTaxa = function() {
         // get number of taxa
         if (lineTokens.length > 1) {
             if (lineTokens[0].toLowerCase() === 'dimensions') {
+                console.log(lineTokens)
                 lineTokens = lineTokens.splice(0,1)
                 lineTokens = lineTokens.join("")
+                console.log(lineTokens)
                 this.numTaxa = parseInt(lineTokens.split('=')[1].slice(0,-1));
                 if (this.numTaxa !== this.numTaxa) {
                     console.log('Error parsing int from ' + this.taxaTokens[i] + '\n'); 
