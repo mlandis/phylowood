@@ -311,9 +311,16 @@ Phylowood.initTaxa = function() {
         var lineTokens = trim1(this.taxaTokens[i]).split(/\s+/g);
 
         // get number of taxa
-        if (lineTokens.length > 1)
-            if (lineTokens[0].toLowerCase() === 'dimensions')
-                this.numTaxa = parseInt(lineTokens[1].split('=')[1].slice(0,-1));
+        if (lineTokens.length > 1) {
+            if (lineTokens[0].toLowerCase() === 'dimensions') {
+                lineTokens = lineTokens.splice(0,1)
+                lineTokens = lineTokens.join("")
+                this.numTaxa = parseInt(lineTokens.split('=')[1].slice(0,-1));
+                if (this.numTaxa !== this.numTaxa) {
+                    console.log('Error parsing int from ' + this.taxaTokens[i] + '\n'); 
+                }
+            }
+        }
 
         // we populate taxa[] in the tree block
     }
